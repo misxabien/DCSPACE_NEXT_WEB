@@ -1,0 +1,257 @@
+﻿/* Certificates */
+:root {
+  --brown-icon: #5c4033;
+  --brown-shadow: rgba(60, 40, 28, 0.55);
+  --nav-active: #5c88e5;
+  --main-pad-x: 48px;
+  --main-pad-y: 36px;
+  --cert-grid-gap: 28px;
+  --cert-radius: 14px;
+}
+
+      .main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        background: var(--cream-bg);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #3d3530 #e8dcc8;
+      }
+
+      .main::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .main::-webkit-scrollbar-track {
+        background: #e8dcc8;
+      }
+
+      .main::-webkit-scrollbar-thumb {
+        background: #3d3530;
+        border-radius: 3px;
+      }
+
+      .main__header {
+        padding: var(--main-pad-y) var(--main-pad-x) 18px;
+        flex-shrink: 0;
+      }
+
+      .main__header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .main__title {
+        font-size: clamp(2rem, 4.2vw, 2.75rem);
+        font-weight: 800;
+        color: #fffef8;
+        letter-spacing: 0.02em;
+        line-height: 1.1;
+        text-shadow:
+          3px 3px 0 var(--brown-shadow),
+          2px 2px 0 var(--brown-shadow),
+          1px 1px 0 rgba(60, 40, 28, 0.35);
+      }
+
+      .main__tools {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .main__tool {
+        width: 40px;
+        height: 40px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: var(--brown-icon);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+      }
+
+      .main__tool:hover {
+        background: rgba(92, 64, 51, 0.08);
+      }
+
+      .main__tool svg {
+        width: 26px;
+        height: 26px;
+      }
+
+      .main__divider {
+        height: 1px;
+        background: var(--brown-icon);
+        opacity: 0.55;
+        margin-top: 22px;
+        max-width: 100%;
+      }
+
+      .main__grid-wrap {
+        padding: 24px var(--main-pad-x) 48px;
+        flex: 1;
+      }
+
+      .cert-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--cert-grid-gap);
+        max-width: 1120px;
+        width: 100%;
+      }
+
+      .app.is-sidebar-collapsed .cert-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        max-width: 1240px;
+      }
+
+      .cert-card {
+        border-radius: var(--cert-radius);
+        background: var(--cert-card-bg);
+        border: 1px solid var(--cert-card-border);
+        box-shadow: 4px 6px 0 rgba(60, 40, 28, 0.06), 6px 10px 22px rgba(60, 40, 28, 0.08);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      .cert-card__badge {
+        flex: 1;
+        min-height: 132px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 20px 20px;
+        background: linear-gradient(180deg, rgba(255, 253, 248, 1) 0%, var(--cert-card-bg) 100%);
+      }
+
+      .cert-card__badge svg {
+        width: 72px;
+        height: 72px;
+        color: var(--cert-text);
+        filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.08));
+      }
+
+      .cert-card__divider {
+        height: 1px;
+        background: rgba(180, 155, 115, 0.35);
+        margin: 0 14px;
+      }
+
+      .cert-card__footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 16px 18px 18px;
+      }
+
+      .cert-card__title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--cert-text);
+        letter-spacing: 0.01em;
+        line-height: 1.35;
+        margin: 0;
+      }
+
+      .cert-card__date {
+        margin: 6px 0 0;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--cert-muted);
+        letter-spacing: 0.02em;
+      }
+
+      .cert-card__view {
+        flex-shrink: 0;
+        border: 1px solid var(--cert-view-border);
+        background: linear-gradient(180deg, #fde047 0%, var(--cert-view-bg) 100%);
+        color: var(--cert-text);
+        font-family: inherit;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 8px 18px;
+        border-radius: 999px;
+        cursor: pointer;
+        box-shadow: 0 1px 0 rgba(200, 170, 40, 0.45);
+        transition: transform 0.15s ease, filter 0.15s ease;
+      }
+
+      .cert-card__view:hover {
+        filter: brightness(1.03);
+        transform: translateY(-1px);
+      }
+
+      .cert-card__view:active {
+        transform: translateY(0);
+      }
+
+      .cert-card__view:focus-visible {
+        outline: 2px solid var(--nav-active);
+        outline-offset: 2px;
+      }
+
+      @media (max-width: 1100px) {
+        .app.is-sidebar-collapsed .cert-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          max-width: 1120px;
+        }
+      }
+
+      @media (max-width: 960px) {
+        .app {
+          flex-direction: column;
+        }
+
+        .sidebar {
+          width: 100%;
+          flex-direction: row;
+          flex-wrap: wrap;
+          align-items: flex-start;
+          padding: 20px;
+        }
+
+        .sidebar__top {
+          width: 100%;
+          margin-bottom: 20px;
+        }
+
+        .nav {
+          flex-direction: row;
+          flex-wrap: wrap;
+          width: 100%;
+        }
+
+        .nav a {
+          padding: 10px 16px;
+        }
+
+        .sidebar__spacer {
+          display: none;
+        }
+
+        .sidebar__brand {
+          width: 100%;
+          margin-top: 20px;
+        }
+
+        .cert-grid,
+        .app.is-sidebar-collapsed .cert-grid {
+          grid-template-columns: 1fr;
+          max-width: 100%;
+        }
+
+        :root {
+          --main-pad-x: 24px;
+        }
+      }

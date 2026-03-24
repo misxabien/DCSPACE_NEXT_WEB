@@ -1,0 +1,94 @@
+@import "../styles/sidebar.css";
+
+:root {
+  --cream-bg: #fdf5e6;
+  --sidebar-bg: #a2c2f9;
+  --sidebar-bg-deep: #96b8f5;
+  --nav-active: #5c88e5;
+  --gold-text: #c5a059;
+  --brown-icon: #5c4033;
+  --brown-shadow: rgba(60, 40, 28, 0.55);
+  --card-cream: #faf6ec;
+  --card-hover-blue: #3f82f5;
+  --btn-gold: #e8c86a;
+  --btn-gold-border: #c9a84a;
+  --btn-brown: #4a3528;
+  --btn-green: #5a9e6f;
+  --hamburger: #2a4d8f;
+  --sidebar-width: 302px;
+  --main-pad-x: 48px;
+  --main-pad-y: 36px;
+  --grid-gap: 26px;
+  --card-radius: 14px;
+  /* --font-montserrat is set on <html> by next/font; keep named stack for page CSS */
+  --font: var(--font-montserrat), "Montserrat", system-ui, -apple-system, sans-serif;
+  --main-accent: linear-gradient(180deg, #fdf5e6 0%, #f4ead4 55%, #eee2c4 100%);
+  --profile-blue: #89b4ff;
+  --profile-blue-ink: #2a4d8f;
+  --profile-brown: #5d4037;
+  --profile-red: #e33e33;
+  --profile-row-divider: rgba(220, 198, 161, 0.85);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  color-scheme: light;
+}
+
+html,
+body {
+  max-width: 100vw;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  /* Primary font from next/font montserrat.className; keep below for any overrides */
+  font-family: var(--font);
+  background: var(--cream-bg);
+  color: #2a2118;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Shared main column (shell); page CSS adds headers and content */
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #3d3530 #e8dcc8;
+}
+
+.main::-webkit-scrollbar {
+  width: 6px;
+}
+
+.main::-webkit-scrollbar-track {
+  background: #e8dcc8;
+}
+
+.main::-webkit-scrollbar-thumb {
+  background: #3d3530;
+  border-radius: 3px;
+}
+
+@media (max-width: 960px) {
+  :root {
+    --main-pad-x: 24px;
+  }
+}
