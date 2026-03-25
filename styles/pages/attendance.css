@@ -1,0 +1,524 @@
+/* Attendance — from 06-attendance.html */
+:root {
+  --att-title-gold: #bba478;
+  --att-text: #4e4437;
+  --att-placeholder: #8a7d68;
+  --att-border-tan: #e8dcc4;
+  --brown-icon: #5c4033;
+  --brown-shadow: rgba(60, 40, 28, 0.55);
+  --gold-text: #c5a059;
+  --main-pad-x: 48px;
+  --main-pad-y: 36px;
+  --grid-gap: 26px;
+  --card-radius: 14px;
+  --card-cream: #faf6ec;
+  --card-hover-blue: #3f82f5;
+  --btn-gold: #e8c86a;
+  --btn-gold-border: #c9a84a;
+  --btn-brown: #4a3528;
+  --btn-green: #5a9e6f;
+  --font: var(--font-montserrat), system-ui, sans-serif;
+  --cream-bg: #fdf5e6;
+}
+
+      .main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        background: var(--cream-bg);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #3d3530 #e8dcc8;
+      }
+
+      .main::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .main::-webkit-scrollbar-track {
+        background: #e8dcc8;
+      }
+
+      .main::-webkit-scrollbar-thumb {
+        background: #3d3530;
+        border-radius: 3px;
+      }
+
+      .main__header {
+        padding: var(--main-pad-y) var(--main-pad-x) 18px;
+        flex-shrink: 0;
+      }
+
+      .main__header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .main__title {
+        font-size: clamp(2rem, 4.2vw, 2.75rem);
+        font-weight: 800;
+        color: #fffef8;
+        letter-spacing: 0.02em;
+        line-height: 1.1;
+        text-shadow: 3px 3px 0 var(--brown-shadow), 2px 2px 0 var(--brown-shadow), 1px 1px 0 rgba(60, 40, 28, 0.35);
+      }
+
+      .main__tools {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .main__tool {
+        width: 40px;
+        height: 40px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        color: var(--brown-icon);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+      }
+
+      .main__tool:hover {
+        background: rgba(92, 64, 51, 0.08);
+      }
+
+      .main__tool svg {
+        width: 26px;
+        height: 26px;
+      }
+
+      .main__divider {
+        height: 1px;
+        background: var(--brown-icon);
+        opacity: 0.55;
+        margin-top: 22px;
+        max-width: 100%;
+      }
+
+      .main__grid-wrap {
+        padding: 18px var(--main-pad-x) 48px;
+        flex: 1;
+      }
+
+      .attendance-shell {
+        max-width: 1120px;
+      }
+
+      .attendance-top {
+        margin-top: -2px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .attendance-subtitle {
+        font-size: clamp(1.7rem, 2.8vw, 2rem);
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        color: var(--att-title-gold);
+        text-shadow: none;
+      }
+
+      .search {
+        height: 36px;
+        width: min(360px, 56vw);
+        border: 1px solid var(--att-border-tan);
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 10px 0 12px;
+        color: var(--att-text);
+        background: #fff;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.65),
+          0 1px 0 rgba(60, 40, 28, 0.08);
+      }
+
+      .search svg {
+        width: 17px;
+        height: 17px;
+        flex-shrink: 0;
+        opacity: 0.88;
+      }
+
+      .search input {
+        border: none;
+        outline: none;
+        background: transparent;
+        font-family: inherit;
+        color: var(--att-text);
+        font-size: 0.9rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        width: 100%;
+        min-width: 0;
+      }
+
+      .search input::placeholder {
+        color: var(--att-placeholder);
+        font-weight: 600;
+      }
+
+      .clear-btn {
+        width: 24px;
+        height: 24px;
+        border: 1px solid var(--att-border-tan);
+        border-radius: 50%;
+        background: #fff;
+        color: var(--att-text);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+        line-height: 1;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .table-wrap {
+        margin-top: 10px;
+        border-radius: 10px;
+      }
+
+      .attendance-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .attendance-table thead th {
+        text-align: left;
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        color: var(--att-text);
+        padding: 10px 14px 8px;
+        background: transparent;
+        white-space: nowrap;
+      }
+
+      .attendance-table tbody td {
+        padding: 10px 14px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: var(--att-text);
+        background: transparent;
+        border-top: 1px solid var(--att-border-tan);
+      }
+
+      .attendance-table tbody tr:hover td {
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .cell-muted {
+        font-weight: 700;
+        color: var(--att-text);
+      }
+
+      .cert {
+        font-weight: 700;
+        color: var(--att-text);
+      }
+
+      .open-btn {
+        border: none;
+        cursor: pointer;
+        border-radius: 999px;
+        padding: 5px 12px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: inherit;
+      }
+
+      a.open-btn {
+        text-decoration: none;
+      }
+
+      .open-btn--ghost {
+        background: #fff;
+        border: 1px solid var(--att-border-tan);
+        color: var(--att-text);
+        box-shadow: 0 1px 0 rgba(92, 75, 55, 0.06);
+      }
+
+      .open-btn--primary {
+        background: #fff;
+        border: 1px solid var(--att-border-tan);
+        color: var(--att-text);
+        box-shadow: 0 1px 0 rgba(92, 75, 55, 0.06);
+      }
+
+      .open-btn svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+
+      .open-btn:focus-visible {
+        outline: 2px solid rgba(25, 100, 220, 0.75);
+        outline-offset: 2px;
+      }
+
+      .open-btn:hover,
+      .open-btn:focus-visible {
+        background: linear-gradient(180deg, #6ea8ff 0%, #2f78f0 100%);
+        border: 1px solid rgba(26, 80, 170, 0.35);
+        color: #fff;
+        box-shadow: 0 2px 0 rgba(28, 55, 110, 0.22);
+      }
+
+      .col-open {
+        width: 1%;
+        text-align: right;
+      }
+
+      .attendance-table thead th.col-open {
+        text-align: right;
+      }
+
+      .footer-controls {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 26px;
+      }
+
+      .segmented {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        overflow: hidden;
+        border: 1px solid var(--att-border-tan);
+        background: #fff;
+      }
+
+      .segmented button {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 6px 10px;
+        font-family: inherit;
+        font-size: 0.76rem;
+        font-weight: 800;
+        color: var(--att-text);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .segmented button + button {
+        border-left: 1px solid var(--att-border-tan);
+      }
+
+      .segmented svg {
+        width: 14px;
+        height: 14px;
+        opacity: 0.9;
+      }
+
+      .event-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--grid-gap);
+        max-width: 1120px;
+      }
+
+      .card {
+        border-radius: var(--card-radius);
+        box-shadow: 4px 6px 0 rgba(60, 40, 28, 0.08), 8px 12px 24px rgba(60, 40, 28, 0.06);
+        overflow: hidden;
+        position: relative;
+        min-height: 168px;
+        background: var(--card-cream);
+        transition: background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+        cursor: pointer;
+      }
+
+      .card__inner {
+        display: flex;
+        align-items: center;
+        min-height: 168px;
+        padding: 18px 22px 18px 30px;
+        gap: 24px;
+      }
+
+      .card__date-col {
+        flex-shrink: 0;
+        width: 112px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding-top: 0;
+      }
+
+      .card__date {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-weight: 800;
+        line-height: 1.05;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--gold-text);
+        transition: color 0.18s ease;
+      }
+
+      .card__date-month {
+        display: block;
+        font-size: 1.85rem;
+      }
+
+      .card__date-day {
+        display: block;
+        font-size: 3.9rem;
+        line-height: 0.95;
+        margin-top: 4px;
+      }
+
+      .card__date-year {
+        display: block;
+        font-size: 1.2rem;
+        margin-top: 4px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: none;
+      }
+
+      .card__body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+
+      .card__event-name {
+        font-weight: 800;
+        font-size: 1.28rem;
+        margin-bottom: 0;
+        letter-spacing: 0.01em;
+        color: #2a2118;
+        transition: color 0.18s ease;
+      }
+
+      .card__meta {
+        font-weight: 500;
+        font-size: 1rem;
+        line-height: 1.45;
+        color: #4a4036;
+        margin-top: 12px;
+        transition: color 0.18s ease;
+      }
+
+      .btn-details {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-family: var(--font);
+        font-weight: 700;
+        font-size: 0.7rem;
+        border: none;
+        cursor: pointer;
+        color: #2a2118;
+      }
+
+      .btn-details--gold {
+        background: linear-gradient(180deg, #f0d578 0%, var(--btn-gold) 100%);
+        border: 1px solid var(--btn-gold-border);
+      }
+
+      .btn-details--brown {
+        background: linear-gradient(180deg, #5c4336 0%, var(--btn-brown) 100%);
+        color: #f5f0e8;
+        border: 1px solid #3d2a22;
+      }
+
+      .btn-details--green {
+        background: linear-gradient(180deg, #6fb082 0%, var(--btn-green) 100%);
+        color: #fff;
+        border: 1px solid #3d7a4f;
+      }
+
+      .card:hover {
+        background: var(--card-hover-blue);
+        box-shadow: 4px 6px 0 rgba(20, 30, 90, 0.2), 8px 14px 28px rgba(20, 25, 70, 0.25);
+        transform: translateY(-1px);
+      }
+
+      .card:hover .card__date,
+      .card:hover .card__meta {
+        color: #dce8ff;
+      }
+
+      .card:hover .card__event-name {
+        color: #ffffff;
+      }
+
+      @media (max-width: 960px) {
+        .app {
+          flex-direction: column;
+        }
+
+        .sidebar {
+          width: 100%;
+          flex-direction: row;
+          flex-wrap: wrap;
+          align-items: flex-start;
+          padding: 20px;
+        }
+
+        .sidebar__top {
+          width: 100%;
+          margin-bottom: 20px;
+        }
+
+        .nav {
+          flex-direction: row;
+          flex-wrap: wrap;
+          width: 100%;
+        }
+
+        .nav a {
+          padding: 10px 16px;
+        }
+
+        .sidebar__spacer {
+          display: none;
+        }
+
+        .sidebar__brand {
+          width: 100%;
+          margin-top: 20px;
+        }
+
+        .event-grid {
+          grid-template-columns: 1fr;
+        }
+
+        :root {
+          --main-pad-x: 24px;
+        }
+
+        .attendance-top {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .search {
+          width: 100%;
+        }
+      }
