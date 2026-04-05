@@ -2,9 +2,9 @@
 
 > Update 2026-04-05
 >
-> - E-Certificate and Attendance backend routes are now implemented for frame 277:714.
-> - Admins can fetch an event-scoped attendee list and toggle attendee active status per event.
-> - The next unimplemented screen is frame 405:334 Feedback Overview.
+> - Feedback Overview backend route is now implemented for frame 405:334.
+> - The current confirmed admin backend screen list is fully scaffolded.
+> - The next step is dependency wiring and verification inside the real project.
 
 This workspace contains the admin-side backend scaffold for the DC Space Web UI.
 
@@ -15,9 +15,12 @@ The implementation is based on the provided Figma-backed JSON brief and covers o
 The backend currently supports the admin flows tied to these screens:
 
 - Login
-- Dashboard
+- Dashboard / Analytics
+- Event Management
 - Notifications
 - Users Management
+- E-Certificate & Attendance
+- Feedback Overview
 
 The scaffold was built with these rules:
 

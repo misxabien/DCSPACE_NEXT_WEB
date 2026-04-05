@@ -2,9 +2,9 @@
 
 > Latest update
 >
-> - Frame 277:714 E-Certificate and Attendance is complete for the current backend scope.
-> - Certificates routes now return an event-scoped attendee list and support attendee status toggling.
-> - The next screen to implement is frame 405:334 Feedback Overview.
+> - Frame 405:334 Feedback Overview is complete for the current backend scope.
+> - The current confirmed admin backend screen list is fully scaffolded.
+> - The next step is dependency wiring and verification inside the real project.
 
 This plan is based on the current repository state and the latest confirmed admin backend scope.
 
@@ -345,7 +345,7 @@ feat(admin-certificates): add attendance and certificate APIs for frame 277:714
 
 Status:
 
-- next screen to implement
+- completed for the current backend scope
 
 What is needed:
 
