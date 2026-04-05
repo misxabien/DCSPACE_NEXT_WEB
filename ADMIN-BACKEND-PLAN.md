@@ -2,9 +2,9 @@
 
 > Latest update
 >
-> - Frame 101:161 Users Management Table refinement is complete for the current backend scope.
-> - Users list responses now include table-ready RFID, registration status, timestamp, and pagination summary fields.
-> - The next screen to implement is frame 131:473 Users Management Actions Dropdown completion.
+> - Frame 131:473 Users Management Actions Dropdown completion is complete for the current backend scope.
+> - Users actions now use explicit action handling and assign-to-event validates the target event.
+> - The next screen to implement is frame 277:714 E-Certificate and Attendance.
 
 This plan is based on the current repository state and the latest confirmed admin backend scope.
 

@@ -18,14 +18,62 @@ function toErrorResponse(error: unknown) {
     error instanceof Error &&
     (error.name === "ValidationError" || error.name === "AuthenticationError")
   ) {
-    return NextResponse.json({ error: error.message }, { status: error.name === "AuthenticationError" ? 401 : 400 });
+    return NextResponse.json(
+      { error: error.message },
+      { status: error.name === "AuthenticationError" ? 401 : 400 },
+    );
   }
 
-  if (error instanceof Error && (error.name === "NotFoundError" || error.name === "AuthorizationError")) {
-    return NextResponse.json({ error: error.message }, { status: error.name === "NotFoundError" ? 404 : 403 });
+  if (
+    error instanceof Error &&
+    (error.name === "NotFoundError" || error.name === "AuthorizationError")
+  ) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: error.name === "NotFoundError" ? 404 : 403 },
+    );
   }
 
   return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+}
+
+function hasEditableFields(body: Record<string, unknown>) {
+  return [
+    "name",
+    "email",
+    "role",
+    "organization",
+    "studentId",
+    "rfid",
+    "isActive",
+    "registrationStatus",
+  ].some((key) => body[key] !== undefined);
+}
+
+function normalizeUserAction(body: Record<string, unknown>) {
+  const rawAction = typeof body.action === "string" ? body.action.trim().toLowerCase() : "";
+
+  if (rawAction === "edit" || rawAction === "edituser") {
+    return "editUser" as const;
+  }
+
+  if (rawAction === "toggle" || rawAction === "togglestatus") {
+    return "toggleStatus" as const;
+  }
+
+  if (rawAction === "resetpassword") {
+    return "resetPassword" as const;
+  }
+
+  if (rawAction === "assigntoevent") {
+    return "assignToEvent" as const;
+  }
+
+  if (!rawAction && hasEditableFields(body)) {
+    return "editUser" as const;
+  }
+
+  return null;
 }
 
 export async function PATCH(
@@ -37,23 +85,27 @@ export async function PATCH(
 
     const { id } = context.params;
     const body = (await request.json()) as Record<string, unknown>;
-    const action = typeof body.action === "string" ? body.action : "edit";
+    const action = normalizeUserAction(body);
 
     if (!id) {
       return NextResponse.json({ error: "User id is required" }, { status: 400 });
     }
 
-    if (action === "toggle") {
+    if (!action) {
+      return NextResponse.json({ error: "Unsupported action" }, { status: 400 });
+    }
+
+    if (action === "toggleStatus") {
       const user = await toggleUserStatus(
         id,
         body.isActive === undefined ? undefined : Boolean(body.isActive),
       );
-      return NextResponse.json(user, { status: 200 });
+      return NextResponse.json({ action, user }, { status: 200 });
     }
 
     if (action === "resetPassword") {
       const result = await resetUserPassword(id);
-      return NextResponse.json(result, { status: 200 });
+      return NextResponse.json({ action, ...result }, { status: 200 });
     }
 
     if (action === "assignToEvent") {
@@ -62,7 +114,7 @@ export async function PATCH(
       }
 
       const result = await assignToEvent(id, { eventId: body.eventId });
-      return NextResponse.json(result, { status: 200 });
+      return NextResponse.json({ action, ...result }, { status: 200 });
     }
 
     const updatedUser = await updateUser(id, {
@@ -82,7 +134,7 @@ export async function PATCH(
         : {}),
     });
 
-    return NextResponse.json(updatedUser, { status: 200 });
+    return NextResponse.json({ action, user: updatedUser }, { status: 200 });
   } catch (error) {
     return toErrorResponse(error);
   }
@@ -103,7 +155,7 @@ export async function DELETE(
 
     const result = await deleteUser(id);
 
-    return NextResponse.json(result, { status: 200 });
+    return NextResponse.json({ action: "deleteUser", ...result }, { status: 200 });
   } catch (error) {
     return toErrorResponse(error);
   }

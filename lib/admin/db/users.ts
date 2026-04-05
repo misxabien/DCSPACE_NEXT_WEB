@@ -155,6 +155,14 @@ function mapUserRecord(user: any) {
   };
 }
 
+function mapAssignedEvent(event: any) {
+  return {
+    id: String(event._id),
+    title: event.title ?? event.name ?? "Untitled event",
+    status: (event.status ?? "unknown").toString().toLowerCase(),
+  };
+}
+
 export type RegisterUserInput = {
   name: string;
   email: string;
@@ -498,7 +506,9 @@ export async function resetUserPassword(id: string) {
  * Assigns a user to an event for the admin users action dropdown.
  */
 export async function assignToEvent(id: string, input: AssignToEventInput) {
-  if (!input.eventId?.trim()) {
+  const trimmedEventId = input.eventId?.trim();
+
+  if (!trimmedEventId) {
     throw createAppError("ValidationError", "eventId is required", 400);
   }
 
@@ -511,28 +521,42 @@ export async function assignToEvent(id: string, input: AssignToEventInput) {
     throw createAppError("NotFoundError", "User not found", 404);
   }
 
+  let eventRecord: any | null = null;
+
+  if (ObjectId.isValid(trimmedEventId)) {
+    eventRecord = await events.findOne({ _id: new ObjectId(trimmedEventId) });
+  }
+
+  if (!eventRecord) {
+    eventRecord = await events.findOne({ eventId: trimmedEventId });
+  }
+
+  if (!eventRecord) {
+    throw createAppError("NotFoundError", "Event not found", 404);
+  }
+
+  const assignedEventId = String(eventRecord._id);
+
   await users.updateOne(
     { _id: objectId },
     {
-      $addToSet: { assignedEventIds: input.eventId },
+      $addToSet: { assignedEventIds: assignedEventId },
       $set: { updatedAt: new Date() },
     },
   );
 
-  if (ObjectId.isValid(input.eventId)) {
-    await events.updateOne(
-      { _id: new ObjectId(input.eventId) },
-      {
-        $addToSet: { participantIds: id },
-        $set: { updatedAt: new Date() },
-      },
-    );
-  }
+  await events.updateOne(
+    { _id: eventRecord._id },
+    {
+      $addToSet: { participantIds: id },
+      $set: { updatedAt: new Date() },
+    },
+  );
 
   const updatedUser = await users.findOne({ _id: objectId });
 
   return {
     user: mapUserRecord(updatedUser),
-    assignedEventId: input.eventId,
+    assignedEvent: mapAssignedEvent(eventRecord),
   };
 }

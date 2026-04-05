@@ -2,8 +2,9 @@
 
 > Update 2026-04-05
 >
-> - Users list responses now include table-ready RFID, registration status, timestamp, and pagination summary fields.
-> - The next unimplemented screen is frame 131:473 Users Management Actions Dropdown completion.
+> - Users dropdown actions now use explicit backend action handling for edit, toggle, reset password, assign to event, and delete.
+> - Assign-to-event now validates the target event before updating the user.
+> - The next unimplemented screen is frame 277:714 E-Certificate and Attendance.
 
 This workspace contains the admin-side backend scaffold for the DC Space Web UI.
 
