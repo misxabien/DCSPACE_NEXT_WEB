@@ -2,9 +2,9 @@
 
 > Update 2026-04-05
 >
-> - Users dropdown actions now use explicit backend action handling for edit, toggle, reset password, assign to event, and delete.
-> - Assign-to-event now validates the target event before updating the user.
-> - The next unimplemented screen is frame 277:714 E-Certificate and Attendance.
+> - E-Certificate and Attendance backend routes are now implemented for frame 277:714.
+> - Admins can fetch an event-scoped attendee list and toggle attendee active status per event.
+> - The next unimplemented screen is frame 405:334 Feedback Overview.
 
 This workspace contains the admin-side backend scaffold for the DC Space Web UI.
 

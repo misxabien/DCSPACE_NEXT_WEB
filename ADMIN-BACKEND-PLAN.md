@@ -2,9 +2,9 @@
 
 > Latest update
 >
-> - Frame 131:473 Users Management Actions Dropdown completion is complete for the current backend scope.
-> - Users actions now use explicit action handling and assign-to-event validates the target event.
-> - The next screen to implement is frame 277:714 E-Certificate and Attendance.
+> - Frame 277:714 E-Certificate and Attendance is complete for the current backend scope.
+> - Certificates routes now return an event-scoped attendee list and support attendee status toggling.
+> - The next screen to implement is frame 405:334 Feedback Overview.
 
 This plan is based on the current repository state and the latest confirmed admin backend scope.
 
@@ -316,7 +316,7 @@ feat(admin-users): add assign-to-event action for frame 131:473
 
 Status:
 
-- not started
+- completed for the current backend scope
 
 What is needed:
 
@@ -345,7 +345,7 @@ feat(admin-certificates): add attendance and certificate APIs for frame 277:714
 
 Status:
 
-- not started
+- next screen to implement
 
 What is needed:
 
