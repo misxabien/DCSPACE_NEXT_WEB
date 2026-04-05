@@ -96,6 +96,25 @@ function toObjectId(id: string) {
   return new ObjectId(id);
 }
 
+function formatTimestamp(value: Date | string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  return {
+    iso: date.toISOString(),
+    display: new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(date),
+  };
+}
+
 function mapAuthenticatedUser(user: any) {
   return {
     id: String(user._id),
@@ -108,18 +127,29 @@ function mapAuthenticatedUser(user: any) {
 }
 
 function mapUserRecord(user: any) {
+  const timestamp = formatTimestamp(user.updatedAt ?? user.createdAt ?? null);
+  const registrationStatus = user.registrationStatus ?? (user.rfid ? "Registered" : "Not Registered");
+
   return {
     id: String(user._id),
     name: user.name ?? user.fullName ?? "",
     email: user.email ?? "",
     role: user.role ?? "student",
     organization: user.organizationName ?? user.organization?.name ?? "Unassigned",
-    studentId: user.studentId ?? user.idNumber ?? null,
     rfid: user.rfid ?? null,
-    status: user.registrationStatus ?? (user.rfid ? "Registered" : "Not Registered"),
+    registrationStatus,
     isActive: user.isActive ?? true,
+    status: registrationStatus,
+    studentId: user.studentId ?? user.idNumber ?? null,
     assignedEventIds: Array.isArray(user.assignedEventIds) ? user.assignedEventIds : [],
-    timestamp: user.updatedAt ?? user.createdAt ?? null,
+    timestamp,
+    actions: {
+      canEdit: true,
+      canResetPassword: true,
+      canAssignToEvent: true,
+      canDelete: true,
+      canToggleActive: true,
+    },
     createdAt: user.createdAt ?? null,
     updatedAt: user.updatedAt ?? null,
   };
@@ -318,6 +348,8 @@ export async function getUsers(params: GetUsersParams) {
     .toArray();
 
   const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
+  const showingFrom = total === 0 ? 0 : skip + 1;
+  const showingTo = total === 0 ? 0 : Math.min(skip + rows.length, total);
 
   return {
     users: rows.map(mapUserRecord),
@@ -328,8 +360,10 @@ export async function getUsers(params: GetUsersParams) {
       totalPages,
       hasPrevious: page > 1,
       hasNext: totalPages > 0 && page < totalPages,
-      showingFrom: total === 0 ? 0 : skip + 1,
-      showingTo: total === 0 ? 0 : Math.min(skip + rows.length, total),
+      showingFrom,
+      showingTo,
+      summary: `Showing ${showingFrom} to ${showingTo} of ${total} entries`,
+      entriesPerPageOptions: [10, 25, 50, 100],
     },
   };
 }

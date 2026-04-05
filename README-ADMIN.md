@@ -2,8 +2,8 @@
 
 > Update 2026-04-05
 >
-> - Notifications now return stable ids and viewTarget links for event and report cards.
-> - The next unimplemented screen is frame 101:161 Users Management Table refinement.
+> - Users list responses now include table-ready RFID, registration status, timestamp, and pagination summary fields.
+> - The next unimplemented screen is frame 131:473 Users Management Actions Dropdown completion.
 
 This workspace contains the admin-side backend scaffold for the DC Space Web UI.
 

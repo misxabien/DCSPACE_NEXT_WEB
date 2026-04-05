@@ -2,9 +2,9 @@
 
 > Latest update
 >
-> - Frame 81:342 Notifications alignment is complete for the current backend scope.
-> - Notification items now include stable ids and viewTarget links for the frontend View button.
-> - The next screen to implement is frame 101:161 Users Management Table refinement.
+> - Frame 101:161 Users Management Table refinement is complete for the current backend scope.
+> - Users list responses now include table-ready RFID, registration status, timestamp, and pagination summary fields.
+> - The next screen to implement is frame 131:473 Users Management Actions Dropdown completion.
 
 This plan is based on the current repository state and the latest confirmed admin backend scope.
 
