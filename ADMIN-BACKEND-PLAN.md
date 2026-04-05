@@ -2,9 +2,9 @@
 
 > Latest update
 >
-> - Frame 268:884 Event Management Pending Detail is complete for the current backend scope.
-> - Added app/api/admin/events/[id]/route.ts for GET and moderation PATCH actions.
-> - The next screen to implement is frame 274:569 Event Management Approved Detail.
+> - Frame 274:569 Event Management Approved Detail is complete for the current backend scope.
+> - Approved-event detail now disables moderation actions while still allowing comments.
+> - The next screen to implement is frame 81:342 Notifications alignment.
 
 This plan is based on the current repository state and the latest confirmed admin backend scope.
 

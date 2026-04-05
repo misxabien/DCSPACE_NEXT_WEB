@@ -106,6 +106,16 @@ function toTimeLabel(startValue: Date | string | null | undefined, endValue: Dat
   return `${formatter.format(start)} - ${formatter.format(end)}`;
 }
 
+function normalizeEventStatus(status: unknown) {
+  return (status ?? "pending").toString().toLowerCase();
+}
+
+function getAllowedActions(status: string) {
+  return status === "approved"
+    ? ["comment"]
+    : ["approve", "reject", "requestChanges", "comment"];
+}
+
 function mapEventCard(event: any) {
   const start = event.startTime ?? event.startDate ?? event.eventDate ?? null;
   const end = event.endTime ?? event.endDate ?? null;
@@ -128,13 +138,15 @@ function mapEventCard(event: any) {
       event.eventPoster ??
       event.attachments?.eventPoster ??
       null,
-    status: (event.status ?? "pending").toString().toLowerCase(),
+    status: normalizeEventStatus(event.status),
   };
 }
 
 function mapEventDetail(event: any) {
   const start = event.startTime ?? event.startDate ?? event.eventDate ?? null;
   const end = event.endTime ?? event.endDate ?? null;
+  const status = normalizeEventStatus(event.status);
+  const allowedActions = getAllowedActions(status);
 
   return {
     id: String(event._id),
@@ -154,7 +166,9 @@ function mapEventDetail(event: any) {
     minimumAttendanceTime: event.minimumAttendanceTime ?? event.minAttendanceTime ?? "N/A",
     surveyLink: event.surveyLink ?? null,
     submittedAt: event.submittedAt ?? event.createdAt ?? null,
-    status: (event.status ?? "pending").toString().toLowerCase(),
+    status,
+    canModerate: status !== "approved",
+    allowedActions,
     attachments: {
       eventPoster: event.eventPoster ?? event.attachments?.eventPoster ?? null,
       roomReservationForm:
@@ -278,11 +292,16 @@ export async function updateEventStatus(id: string, status: string, comment?: st
     throw createAppError("NotFoundError", "Event not found", 404);
   }
 
+  const currentStatus = normalizeEventStatus(existingEvent.status);
   const normalizedStatus = status.trim().toLowerCase();
   const allowedStatuses = ["approved", "rejected", "changes_requested"];
 
   if (!allowedStatuses.includes(normalizedStatus)) {
     throw createAppError("ValidationError", "Invalid event status", 400);
+  }
+
+  if (currentStatus === "approved") {
+    throw createAppError("ValidationError", "Moderation actions are disabled for approved events", 400);
   }
 
   const updateOperation: Record<string, unknown> = {
