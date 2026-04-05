@@ -78,12 +78,12 @@ function normalizeUserAction(body: Record<string, unknown>) {
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin();
 
-    const { id } = context.params;
+    const { id } = await context.params;
     const body = (await request.json()) as Record<string, unknown>;
     const action = normalizeUserAction(body);
 
@@ -142,12 +142,12 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  context: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin();
 
-    const { id } = context.params;
+    const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json({ error: "User id is required" }, { status: 400 });

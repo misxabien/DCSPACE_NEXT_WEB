@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { MongoClient, ObjectId } from "mongodb";
 
 const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
@@ -320,7 +321,7 @@ export async function updateEventStatus(id: string, status: string, comment?: st
     };
   }
 
-  await events.updateOne({ _id: objectId }, updateOperation);
+  await events.updateOne({ _id: objectId }, updateOperation as any);
   const updatedEvent = await events.findOne({ _id: objectId });
 
   return mapEventDetail(updatedEvent);
@@ -336,20 +337,19 @@ export async function postAdminComment(id: string, comment: string) {
 
   const events = await getEventsCollection();
   const objectId = toObjectId(id);
-  const result = await events.updateOne(
-    { _id: objectId },
-    {
-      $push: {
-        adminComments: {
-          message: comment.trim(),
-          createdAt: new Date(),
-        },
-      },
-      $set: {
-        updatedAt: new Date(),
+  const commentUpdate: any = {
+    $push: {
+      adminComments: {
+        message: comment.trim(),
+        createdAt: new Date(),
       },
     },
-  );
+    $set: {
+      updatedAt: new Date(),
+    },
+  };
+
+  const result = await events.updateOne({ _id: objectId }, commentUpdate);
 
   if (result.matchedCount === 0) {
     throw createAppError("NotFoundError", "Event not found", 404);
@@ -358,3 +358,4 @@ export async function postAdminComment(id: string, comment: string) {
   const updatedEvent = await events.findOne({ _id: objectId });
   return mapEventDetail(updatedEvent);
 }
+

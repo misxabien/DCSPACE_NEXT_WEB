@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { MongoClient, ObjectId } from "mongodb";
 
 const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
@@ -374,3 +375,4 @@ export async function toggleAttendeeStatus(id: string, eventId: string, nextStat
     ),
   };
 }
+

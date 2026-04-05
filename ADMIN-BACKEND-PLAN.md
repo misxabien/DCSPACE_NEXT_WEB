@@ -2,9 +2,9 @@
 
 > Latest update
 >
-> - Frame 405:334 Feedback Overview is complete for the current backend scope.
+> - The NextAuth App Router handler and backend dependency installation are now in place.
 > - The current confirmed admin backend screen list is fully scaffolded.
-> - The next step is dependency wiring and verification inside the real project.
+> - The next step is to populate environment variables and run project verification.
 
 This plan is based on the current repository state and the latest confirmed admin backend scope.
 

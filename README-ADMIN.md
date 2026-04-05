@@ -2,9 +2,9 @@
 
 > Update 2026-04-05
 >
-> - Feedback Overview backend route is now implemented for frame 405:334.
+> - The NextAuth App Router handler and backend dependency installation are now in place.
 > - The current confirmed admin backend screen list is fully scaffolded.
-> - The next step is dependency wiring and verification inside the real project.
+> - The next step is to populate environment variables and run project verification.
 
 This workspace contains the admin-side backend scaffold for the DC Space Web UI.
 
@@ -37,9 +37,9 @@ The requested stack was followed conceptually:
 - Next.js App Router
 - TypeScript
 - NextAuth.js
-- Prisma
+- MongoDB (native driver)
 
-Because this workspace started empty, the code is a scaffold and not a fully runnable app by itself yet. There is no full Next.js project config, no Prisma schema, and no installed dependencies in this folder.
+Because this workspace started empty, the code is a scaffold and not a fully verified production backend by itself yet. The core dependencies are now installed, but the MongoDB environment values and runtime verification still need to be completed.
 
 ## File Structure
 
@@ -285,7 +285,7 @@ The workspace did not include:
 
 Because of that, the logic is intentionally written as a strong starting point rather than a final deployed backend.
 
-### 2. Prisma model access is schema-flexible
+### 2. MongoDB collection access is schema-flexible
 
 The DB modules try several common model names such as:
 
@@ -296,9 +296,9 @@ The DB modules try several common model names such as:
 - `certificate`
 - `certificates`
 
-This was done so the scaffold can be adapted once the real Prisma schema is available.
+This was done so the scaffold can be adapted once the real MongoDB collections and document shapes are finalized.
 
-When the real schema is added, teammates should replace the dynamic model lookup with direct Prisma model usage.
+When the real collection contracts are finalized, teammates should replace the current flexible collection and document assumptions with explicit repository logic or models.
 
 ### 3. Password handling is scaffold-level
 
@@ -331,7 +331,7 @@ These are likely needed once the real project is wired up:
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `ALLOWED_GOOGLE_DOMAIN`
-- database connection variables used by Prisma
+- `MONGODB_URI` and `MONGODB_DB_NAME`
 
 ## Quick Summary
 
@@ -342,6 +342,7 @@ This backend scaffold gives the team:
 - dashboard data endpoints
 - notifications endpoint
 - users management endpoints
-- separated DB-layer modules for future Prisma integration
+- separated DB-layer modules for future MongoDB hardening
 
-It is ready to be integrated into the actual project structure and connected to the final Prisma schema.
+It is ready to be integrated into the actual project structure and connected to the target MongoDB environment.
+

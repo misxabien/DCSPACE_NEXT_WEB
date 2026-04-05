@@ -41,12 +41,12 @@ function mapActionToStatus(action: string) {
  */
 export async function GET(
   _request: NextRequest,
-  context: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin();
 
-    const { id } = context.params;
+    const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json({ error: "Event id is required" }, { status: 400 });
@@ -64,12 +64,12 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin();
 
-    const { id } = context.params;
+    const { id } = await context.params;
     const body = (await request.json()) as Record<string, unknown>;
     const action = typeof body.action === "string" ? body.action : "comment";
     const comment = typeof body.comment === "string" ? body.comment : undefined;

@@ -24,12 +24,12 @@ function toErrorResponse(error: unknown) {
  */
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     await requireAdmin();
 
-    const { id } = context.params;
+    const { id } = await context.params;
     const body = (await request.json()) as Record<string, unknown>;
     const eventId = typeof body.eventId === "string" ? body.eventId : "";
     const nextStatus = typeof body.toggleActive === "boolean" ? body.toggleActive : undefined;
@@ -48,3 +48,4 @@ export async function PATCH(
     return toErrorResponse(error);
   }
 }
+

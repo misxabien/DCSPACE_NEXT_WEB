@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { MongoClient, ObjectId } from "mongodb";
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { MongoClient } from "mongodb";
 
 const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
@@ -72,10 +73,17 @@ export async function getNotifications() {
     })),
   ]
     .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
-    .map(({ createdAt, ...item }) => item);
+    .map((item) => {
+      const nextItem = { ...item } as Record<string, unknown>;
+      delete nextItem.createdAt;
+      return nextItem;
+    });
 
   return {
     feed,
     total: feed.length,
   };
 }
+
+
+
