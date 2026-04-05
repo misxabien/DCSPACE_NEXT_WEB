@@ -2,9 +2,9 @@
 
 > Update 2026-04-05
 >
-> - Added app/api/admin/events/route.ts for frame 264:426 Event Management List.
-> - Added lib/admin/db/events.ts with list and detail/moderation groundwork for later event screens.
-> - The next unimplemented screen is frame 268:884 Event Management Pending Detail.
+> - Added app/api/admin/events/[id]/route.ts for frame 268:884 Event Management Pending Detail.
+> - Pending events now support GET detail and PATCH moderation actions: approve, reject, requestChanges, and comment.
+> - The next unimplemented screen is frame 274:569 Event Management Approved Detail.
 
 This workspace contains the admin-side backend scaffold for the DC Space Web UI.
 

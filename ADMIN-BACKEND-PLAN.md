@@ -2,9 +2,9 @@
 
 > Latest update
 >
-> - Frame 264:426 Event Management List is complete for the current backend scope.
-> - Added app/api/admin/events/route.ts and lib/admin/db/events.ts.
-> - The next screen to implement is frame 268:884 Event Management Pending Detail.
+> - Frame 268:884 Event Management Pending Detail is complete for the current backend scope.
+> - Added app/api/admin/events/[id]/route.ts for GET and moderation PATCH actions.
+> - The next screen to implement is frame 274:569 Event Management Approved Detail.
 
 This plan is based on the current repository state and the latest confirmed admin backend scope.
 
@@ -15,7 +15,9 @@ These backend pieces already exist:
 - middleware.ts
 - lib/admin/auth/authOptions.ts
 - lib/admin/auth/roleGuard.ts
-- app/api/admin/auth/route.ts
+- app/api/admin/auth/register/route.ts
+- app/api/admin/auth/login/route.ts
+- app/api/admin/auth/google/route.ts
 - app/api/admin/dashboard/route.ts
 - app/api/admin/notifications/route.ts
 - app/api/admin/users/route.ts
