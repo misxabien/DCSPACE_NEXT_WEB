@@ -1,11 +1,10 @@
 # DC Space Admin Backend
 
-> Update 2026-04-04
+> Update 2026-04-05
 >
-> - Auth is now split into app/api/admin/auth/register, login, and google routes.
-> - The current scaffold now assumes MongoDB-style data access instead of Prisma-style access.
-> - Dashboard analytics now uses Gemini scaffolding through app/api/admin/ai/analytics and lib/admin/ai/gemini.
-> - The next unimplemented screen is frame 264:426 Event Management List.
+> - Added app/api/admin/events/route.ts for frame 264:426 Event Management List.
+> - Added lib/admin/db/events.ts with list and detail/moderation groundwork for later event screens.
+> - The next unimplemented screen is frame 268:884 Event Management Pending Detail.
 
 This workspace contains the admin-side backend scaffold for the DC Space Web UI.
 

@@ -2,10 +2,9 @@
 
 > Latest update
 >
-> - Auth is now split into register, login, and google routes.
-> - The current implemented foundation now follows MongoDB-style scaffolding.
-> - Dashboard analytics now matches the Gemini analytics brief at a scaffold level.
-> - The next screen to implement is frame 264:426 Event Management List.
+> - Frame 264:426 Event Management List is complete for the current backend scope.
+> - Added app/api/admin/events/route.ts and lib/admin/db/events.ts.
+> - The next screen to implement is frame 268:884 Event Management Pending Detail.
 
 This plan is based on the current repository state and the latest confirmed admin backend scope.
 
