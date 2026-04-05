@@ -2,9 +2,9 @@
 
 > Latest update
 >
-> - Frame 274:569 Event Management Approved Detail is complete for the current backend scope.
-> - Approved-event detail now disables moderation actions while still allowing comments.
-> - The next screen to implement is frame 81:342 Notifications alignment.
+> - Frame 81:342 Notifications alignment is complete for the current backend scope.
+> - Notification items now include stable ids and viewTarget links for the frontend View button.
+> - The next screen to implement is frame 101:161 Users Management Table refinement.
 
 This plan is based on the current repository state and the latest confirmed admin backend scope.
 

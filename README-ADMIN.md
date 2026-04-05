@@ -2,9 +2,8 @@
 
 > Update 2026-04-05
 >
-> - Approved event detail now disables moderation actions while still allowing admin comments.
-> - The shared event detail route covers both pending and approved event screens.
-> - The next unimplemented screen is frame 81:342 Notifications alignment.
+> - Notifications now return stable ids and viewTarget links for event and report cards.
+> - The next unimplemented screen is frame 101:161 Users Management Table refinement.
 
 This workspace contains the admin-side backend scaffold for the DC Space Web UI.
 

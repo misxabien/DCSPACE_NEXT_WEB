@@ -46,24 +46,36 @@ export async function getNotifications() {
 
   const feed = [
     ...eventItems.map((item) => ({
+      id: String(item._id),
       type: "event" as const,
       title: item.title ?? item.name ?? "Untitled event",
       organizer: item.organizerName ?? item.organizer?.name ?? "Unknown organizer",
       organization: item.organizationName ?? item.organization?.name ?? "N/A",
       school: item.schoolName ?? item.school?.name ?? "N/A",
+      viewTarget: `/admin/events/${String(item._id)}`,
       createdAt: new Date(item.createdAt ?? Date.now()),
     })),
     ...reportItems.map((item) => ({
+      id: String(item._id),
       type: "report" as const,
       reportType: item.reportType ?? item.type ?? "General Report",
       event: item.eventName ?? item.event?.title ?? "Untitled event",
       reporter: item.reporterName ?? item.reporter?.name ?? "Unknown reporter",
       organizer: item.organizerName ?? item.organizer?.name ?? "Unknown organizer",
+      viewTarget:
+        item.eventId
+          ? `/admin/events/${String(item.eventId)}`
+          : item.event?._id
+            ? `/admin/events/${String(item.event._id)}`
+            : null,
       createdAt: new Date(item.createdAt ?? Date.now()),
     })),
   ]
     .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
     .map(({ createdAt, ...item }) => item);
 
-  return { feed };
+  return {
+    feed,
+    total: feed.length,
+  };
 }
