@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "../../../../lib/admin/auth/roleGuard";
+import { sendToGemini } from "../../../../lib/admin/ai/gemini";
 import {
-  getCertificateQueue,
+  getDashboardAttendanceData,
+  getDashboardCharts,
   getDashboardStats,
-  getUpcomingEvents,
 } from "../../../../lib/admin/db/dashboard";
 
 function toErrorResponse(error: unknown) {
@@ -18,17 +19,21 @@ export async function GET() {
   try {
     await requireAdmin();
 
-    const [stats, certificateQueue, upcomingEvents] = await Promise.all([
+    const [stats, attendanceData] = await Promise.all([
       getDashboardStats(),
-      getCertificateQueue(),
-      getUpcomingEvents(),
+      getDashboardAttendanceData(),
+    ]);
+
+    const [aiAnalytics, charts] = await Promise.all([
+      sendToGemini(attendanceData),
+      Promise.resolve(getDashboardCharts(attendanceData)),
     ]);
 
     return NextResponse.json(
       {
         ...stats,
-        certificateQueue,
-        upcomingEvents,
+        aiAnalytics,
+        charts,
       },
       { status: 200 },
     );

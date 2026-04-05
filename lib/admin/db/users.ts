@@ -1,31 +1,69 @@
-import { randomBytes, scryptSync } from "crypto";
-import { PrismaClient } from "@prisma/client";
+import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { MongoClient, ObjectId } from "mongodb";
 
-const globalForPrisma = globalThis as unknown as {
-  adminUsersPrisma?: PrismaClient;
+const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
+const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
+
+const globalForMongo = globalThis as unknown as {
+  adminMongoClient?: MongoClient;
+  adminMongoClientPromise?: Promise<MongoClient>;
 };
 
-const prisma = globalForPrisma.adminUsersPrisma ?? new PrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.adminUsersPrisma = prisma;
+function createAppError(name: string, message: string, status: number) {
+  const error = new Error(message) as Error & { status: number };
+  error.name = name;
+  error.status = status;
+  return error;
 }
 
-function getModel<T = any>(...names: string[]): T | null {
-  const prismaRecord = prisma as unknown as Record<string, T | undefined>;
-
-  for (const name of names) {
-    if (prismaRecord[name]) {
-      return prismaRecord[name] as T;
-    }
+async function getMongoClient() {
+  if (globalForMongo.adminMongoClient) {
+    return globalForMongo.adminMongoClient;
   }
 
-  return null;
+  if (!globalForMongo.adminMongoClientPromise) {
+    const client = new MongoClient(mongoUri);
+    globalForMongo.adminMongoClientPromise = client.connect();
+  }
+
+  globalForMongo.adminMongoClient = await globalForMongo.adminMongoClientPromise;
+  return globalForMongo.adminMongoClient;
+}
+
+async function getDatabase() {
+  const client = await getMongoClient();
+  return client.db(mongoDbName);
+}
+
+async function getUsersCollection() {
+  const db = await getDatabase();
+  return db.collection<any>("users");
+}
+
+async function getEventsCollection() {
+  const db = await getDatabase();
+  return db.collection<any>("events");
 }
 
 function hashPassword(password: string, salt = randomBytes(16).toString("hex")) {
   const hash = scryptSync(password, salt, 64).toString("hex");
   return `${salt}:${hash}`;
+}
+
+function verifyPassword(password: string, storedPassword: string) {
+  if (!storedPassword.includes(":")) {
+    return storedPassword === password;
+  }
+
+  const [salt, storedHash] = storedPassword.split(":");
+  const candidateHash = scryptSync(password, salt, 64);
+  const expectedHash = Buffer.from(storedHash, "hex");
+
+  if (candidateHash.length !== expectedHash.length) {
+    return false;
+  }
+
+  return timingSafeEqual(candidateHash, expectedHash);
 }
 
 function normalizeFilter(value: string | null | undefined) {
@@ -50,26 +88,67 @@ function normalizeFilter(value: string | null | undefined) {
   return cleaned;
 }
 
+function toObjectId(id: string) {
+  if (!ObjectId.isValid(id)) {
+    throw createAppError("ValidationError", "Invalid identifier", 400);
+  }
+
+  return new ObjectId(id);
+}
+
+function mapAuthenticatedUser(user: any) {
+  return {
+    id: String(user._id),
+    name: user.name ?? user.fullName ?? user.email ?? "",
+    email: user.email ?? "",
+    role: user.role ?? "student",
+    organization: user.organizationName ?? user.organization?.name ?? null,
+    isActive: user.isActive ?? true,
+  };
+}
+
 function mapUserRecord(user: any) {
   return {
-    id: String(user.id),
+    id: String(user._id),
     name: user.name ?? user.fullName ?? "",
     email: user.email ?? "",
     role: user.role ?? "student",
-    status: user.isActive === false ? "inactive" : "active",
-    organization:
-      user.organization?.name ?? user.organizationName ?? user.department ?? "Unassigned",
-    studentId: user.studentId ?? user.schoolId ?? user.idNumber ?? null,
+    organization: user.organizationName ?? user.organization?.name ?? "Unassigned",
+    studentId: user.studentId ?? user.idNumber ?? null,
+    rfid: user.rfid ?? null,
+    status: user.registrationStatus ?? (user.rfid ? "Registered" : "Not Registered"),
+    isActive: user.isActive ?? true,
+    assignedEventIds: Array.isArray(user.assignedEventIds) ? user.assignedEventIds : [],
+    timestamp: user.updatedAt ?? user.createdAt ?? null,
     createdAt: user.createdAt ?? null,
     updatedAt: user.updatedAt ?? null,
   };
 }
+
+export type RegisterUserInput = {
+  name: string;
+  email: string;
+  password: string;
+  role?: string;
+  organization?: string | null;
+  studentId?: string | null;
+  rfid?: string | null;
+  googleId?: string | null;
+};
+
+export type LoginUserInput = {
+  email: string;
+  password: string;
+  requireAdmin?: boolean;
+};
 
 export type GetUsersParams = {
   search?: string | null;
   role?: string | null;
   status?: string | null;
   organization?: string | null;
+  page?: number | null;
+  limit?: number | null;
 };
 
 export type CreateUserInput = {
@@ -78,6 +157,7 @@ export type CreateUserInput = {
   role: string;
   organization?: string | null;
   studentId?: string | null;
+  rfid?: string | null;
   isActive?: boolean;
   password?: string;
 };
@@ -88,38 +168,117 @@ export type UpdateUserInput = Partial<{
   role: string;
   organization: string | null;
   studentId: string | null;
+  rfid: string | null;
   isActive: boolean;
+  registrationStatus: string;
 }>;
 
-/**
- * Lists users for the admin users table with search and filter support.
- */
-export async function getUsers(params: GetUsersParams) {
-  const userModel = getModel<any>("user", "users", "accountUser", "accountUsers");
+export type AssignToEventInput = {
+  eventId: string;
+};
 
-  if (!userModel) {
-    return {
-      users: [],
-      total: 0,
-    };
+/**
+ * Registers a new user in MongoDB and assigns the default role when none is provided.
+ */
+export async function registerUser(input: RegisterUserInput) {
+  const users = await getUsersCollection();
+  const normalizedEmail = input.email.trim().toLowerCase();
+
+  const existingUser = await users.findOne({ email: normalizedEmail });
+
+  if (existingUser) {
+    throw createAppError("ValidationError", "A user with that email already exists", 400);
   }
 
+  const now = new Date();
+  const document = {
+    name: input.name,
+    email: normalizedEmail,
+    passwordHash: hashPassword(input.password),
+    role: (input.role ?? "student").toLowerCase(),
+    organizationName: input.organization ?? null,
+    studentId: input.studentId ?? null,
+    rfid: input.rfid ?? null,
+    registrationStatus: input.rfid ? "Registered" : "Not Registered",
+    isActive: true,
+    authProviders: input.googleId ? ["credentials", "google"] : ["credentials"],
+    googleId: input.googleId ?? null,
+    assignedEventIds: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const result = await users.insertOne(document);
+
+  return mapUserRecord({ ...document, _id: result.insertedId });
+}
+
+/**
+ * Logs in a registered user with email and password.
+ */
+export async function loginUser(input: LoginUserInput) {
+  const users = await getUsersCollection();
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const user = await users.findOne({ email: normalizedEmail });
+
+  if (!user || user.isActive === false) {
+    throw createAppError("AuthenticationError", "Invalid email or password", 401);
+  }
+
+  const storedPassword = user.passwordHash ?? user.password;
+
+  if (!storedPassword || !verifyPassword(input.password, storedPassword)) {
+    throw createAppError("AuthenticationError", "Invalid email or password", 401);
+  }
+
+  const authenticatedUser = mapAuthenticatedUser(user);
+
+  if (input.requireAdmin && authenticatedUser.role !== "admin") {
+    throw createAppError("AuthorizationError", "Forbidden", 403);
+  }
+
+  return authenticatedUser;
+}
+
+/**
+ * Finds a registered user by email for Google SSO and session initialization.
+ */
+export async function findUserByEmail(email: string) {
+  const users = await getUsersCollection();
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await users.findOne({ email: normalizedEmail });
+
+  if (!user) {
+    return null;
+  }
+
+  return mapAuthenticatedUser(user);
+}
+
+/**
+ * Lists users for the admin users table with filters and pagination.
+ */
+export async function getUsers(params: GetUsersParams) {
+  const users = await getUsersCollection();
   const search = normalizeFilter(params.search);
   const role = normalizeFilter(params.role);
   const status = normalizeFilter(params.status);
   const organization = normalizeFilter(params.organization);
+  const page = Math.max(Number(params.page ?? 1) || 1, 1);
+  const limit = Math.max(Number(params.limit ?? 10) || 10, 1);
+  const skip = (page - 1) * limit;
 
   const andConditions: Record<string, unknown>[] = [];
 
   if (search) {
     andConditions.push({
-      OR: [
-        { name: { contains: search, mode: "insensitive" } },
-        { fullName: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { studentId: { contains: search, mode: "insensitive" } },
-        { idNumber: { contains: search, mode: "insensitive" } },
-        { schoolId: { contains: search, mode: "insensitive" } },
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { fullName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { studentId: { $regex: search, $options: "i" } },
+        { idNumber: { $regex: search, $options: "i" } },
+        { rfid: { $regex: search, $options: "i" } },
       ],
     });
   }
@@ -131,38 +290,47 @@ export async function getUsers(params: GetUsersParams) {
   }
 
   if (status) {
-    andConditions.push({
-      isActive: status.toLowerCase() === "active",
-    });
+    const normalizedStatus = status.toLowerCase();
+
+    if (normalizedStatus === "active" || normalizedStatus === "inactive") {
+      andConditions.push({ isActive: normalizedStatus === "active" });
+    } else {
+      andConditions.push({ registrationStatus: status });
+    }
   }
 
   if (organization) {
     andConditions.push({
-      OR: [
-        { organizationName: { contains: organization, mode: "insensitive" } },
-        { department: { contains: organization, mode: "insensitive" } },
-        {
-          organization: {
-            name: { contains: organization, mode: "insensitive" },
-          },
-        },
+      $or: [
+        { organizationName: { $regex: organization, $options: "i" } },
+        { department: { $regex: organization, $options: "i" } },
       ],
     });
   }
 
-  const where = andConditions.length > 0 ? { AND: andConditions } : {};
+  const query = andConditions.length > 0 ? { $and: andConditions } : {};
+  const total = await users.countDocuments(query);
+  const rows = await users
+    .find(query)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .toArray();
 
-  const users = await userModel.findMany({
-    where,
-    include: {
-      organization: true,
-    },
-    orderBy: [{ createdAt: "desc" }],
-  });
+  const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
   return {
-    users: users.map(mapUserRecord),
-    total: users.length,
+    users: rows.map(mapUserRecord),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasPrevious: page > 1,
+      hasNext: totalPages > 0 && page < totalPages,
+      showingFrom: total === 0 ? 0 : skip + 1,
+      showingTo: total === 0 ? 0 : Math.min(skip + rows.length, total),
+    },
   };
 }
 
@@ -170,77 +338,50 @@ export async function getUsers(params: GetUsersParams) {
  * Creates a new user from the admin add-user flow.
  */
 export async function createUser(input: CreateUserInput) {
-  const userModel = getModel<any>("user", "users", "accountUser", "accountUsers");
-
-  if (!userModel) {
-    throw new Error("User model is not available");
-  }
-
-  const existingUser = await userModel.findFirst({
-    where: {
-      email: input.email,
-    },
+  const createdUser = await registerUser({
+    name: input.name,
+    email: input.email,
+    password: input.password ?? "ChangeMe123!",
+    role: input.role,
+    organization: input.organization ?? null,
+    studentId: input.studentId ?? null,
+    rfid: input.rfid ?? null,
   });
 
-  if (existingUser) {
-    const error = new Error("A user with that email already exists");
-    error.name = "ValidationError";
-    throw error;
+  if (input.isActive === false) {
+    return updateUser(createdUser.id, { isActive: false });
   }
 
-  const createdUser = await userModel.create({
-    data: {
-      name: input.name,
-      email: input.email,
-      role: input.role.toLowerCase(),
-      organizationName: input.organization ?? null,
-      studentId: input.studentId ?? null,
-      isActive: input.isActive ?? true,
-      passwordHash: hashPassword(input.password ?? "ChangeMe123!"),
-    },
-    include: {
-      organization: true,
-    },
-  });
-
-  return mapUserRecord(createdUser);
+  return createdUser;
 }
 
 /**
  * Updates editable user fields from the admin users table.
  */
 export async function updateUser(id: string, input: UpdateUserInput) {
-  const userModel = getModel<any>("user", "users", "accountUser", "accountUsers");
-
-  if (!userModel) {
-    throw new Error("User model is not available");
-  }
-
-  const existingUser = await userModel.findUnique({
-    where: { id },
-    include: { organization: true },
-  });
+  const users = await getUsersCollection();
+  const objectId = toObjectId(id);
+  const existingUser = await users.findOne({ _id: objectId });
 
   if (!existingUser) {
-    const error = new Error("User not found");
-    error.name = "NotFoundError";
-    throw error;
+    throw createAppError("NotFoundError", "User not found", 404);
   }
 
-  const updatedUser = await userModel.update({
-    where: { id },
-    data: {
-      ...(input.name !== undefined ? { name: input.name } : {}),
-      ...(input.email !== undefined ? { email: input.email } : {}),
-      ...(input.role !== undefined ? { role: input.role.toLowerCase() } : {}),
-      ...(input.organization !== undefined ? { organizationName: input.organization } : {}),
-      ...(input.studentId !== undefined ? { studentId: input.studentId } : {}),
-      ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
-    },
-    include: {
-      organization: true,
-    },
-  });
+  const updates: Record<string, unknown> = {
+    updatedAt: new Date(),
+  };
+
+  if (input.name !== undefined) updates.name = input.name;
+  if (input.email !== undefined) updates.email = input.email.trim().toLowerCase();
+  if (input.role !== undefined) updates.role = input.role.toLowerCase();
+  if (input.organization !== undefined) updates.organizationName = input.organization;
+  if (input.studentId !== undefined) updates.studentId = input.studentId;
+  if (input.rfid !== undefined) updates.rfid = input.rfid;
+  if (input.isActive !== undefined) updates.isActive = input.isActive;
+  if (input.registrationStatus !== undefined) updates.registrationStatus = input.registrationStatus;
+
+  await users.updateOne({ _id: objectId }, { $set: updates });
+  const updatedUser = await users.findOne({ _id: objectId });
 
   return mapUserRecord(updatedUser);
 }
@@ -249,25 +390,13 @@ export async function updateUser(id: string, input: UpdateUserInput) {
  * Deletes a user from the system.
  */
 export async function deleteUser(id: string) {
-  const userModel = getModel<any>("user", "users", "accountUser", "accountUsers");
+  const users = await getUsersCollection();
+  const objectId = toObjectId(id);
+  const result = await users.deleteOne({ _id: objectId });
 
-  if (!userModel) {
-    throw new Error("User model is not available");
+  if (result.deletedCount === 0) {
+    throw createAppError("NotFoundError", "User not found", 404);
   }
-
-  const existingUser = await userModel.findUnique({
-    where: { id },
-  });
-
-  if (!existingUser) {
-    const error = new Error("User not found");
-    error.name = "NotFoundError";
-    throw error;
-  }
-
-  await userModel.delete({
-    where: { id },
-  });
 
   return { id, deleted: true };
 }
@@ -276,33 +405,27 @@ export async function deleteUser(id: string) {
  * Toggles a user's active status, or sets it explicitly when provided.
  */
 export async function toggleUserStatus(id: string, nextStatus?: boolean) {
-  const userModel = getModel<any>("user", "users", "accountUser", "accountUsers");
-
-  if (!userModel) {
-    throw new Error("User model is not available");
-  }
-
-  const existingUser = await userModel.findUnique({
-    where: { id },
-    include: { organization: true },
-  });
+  const users = await getUsersCollection();
+  const objectId = toObjectId(id);
+  const existingUser = await users.findOne({ _id: objectId });
 
   if (!existingUser) {
-    const error = new Error("User not found");
-    error.name = "NotFoundError";
-    throw error;
+    throw createAppError("NotFoundError", "User not found", 404);
   }
 
-  const updatedUser = await userModel.update({
-    where: { id },
-    data: {
-      isActive: nextStatus ?? !(existingUser.isActive ?? true),
-    },
-    include: {
-      organization: true,
-    },
-  });
+  const isActive = nextStatus ?? !(existingUser.isActive ?? true);
 
+  await users.updateOne(
+    { _id: objectId },
+    {
+      $set: {
+        isActive,
+        updatedAt: new Date(),
+      },
+    },
+  );
+
+  const updatedUser = await users.findOne({ _id: objectId });
   return mapUserRecord(updatedUser);
 }
 
@@ -310,34 +433,72 @@ export async function toggleUserStatus(id: string, nextStatus?: boolean) {
  * Resets a user's password and returns the generated temporary password.
  */
 export async function resetUserPassword(id: string) {
-  const userModel = getModel<any>("user", "users", "accountUser", "accountUsers");
-
-  if (!userModel) {
-    throw new Error("User model is not available");
-  }
-
-  const existingUser = await userModel.findUnique({
-    where: { id },
-  });
+  const users = await getUsersCollection();
+  const objectId = toObjectId(id);
+  const existingUser = await users.findOne({ _id: objectId });
 
   if (!existingUser) {
-    const error = new Error("User not found");
-    error.name = "NotFoundError";
-    throw error;
+    throw createAppError("NotFoundError", "User not found", 404);
   }
 
   const temporaryPassword = randomBytes(6).toString("base64url");
 
-  await userModel.update({
-    where: { id },
-    data: {
-      passwordHash: hashPassword(temporaryPassword),
-      passwordResetAt: new Date(),
+  await users.updateOne(
+    { _id: objectId },
+    {
+      $set: {
+        passwordHash: hashPassword(temporaryPassword),
+        passwordResetAt: new Date(),
+        updatedAt: new Date(),
+      },
     },
-  });
+  );
 
   return {
     id,
     temporaryPassword,
+  };
+}
+
+/**
+ * Assigns a user to an event for the admin users action dropdown.
+ */
+export async function assignToEvent(id: string, input: AssignToEventInput) {
+  if (!input.eventId?.trim()) {
+    throw createAppError("ValidationError", "eventId is required", 400);
+  }
+
+  const users = await getUsersCollection();
+  const events = await getEventsCollection();
+  const objectId = toObjectId(id);
+  const existingUser = await users.findOne({ _id: objectId });
+
+  if (!existingUser) {
+    throw createAppError("NotFoundError", "User not found", 404);
+  }
+
+  await users.updateOne(
+    { _id: objectId },
+    {
+      $addToSet: { assignedEventIds: input.eventId },
+      $set: { updatedAt: new Date() },
+    },
+  );
+
+  if (ObjectId.isValid(input.eventId)) {
+    await events.updateOne(
+      { _id: new ObjectId(input.eventId) },
+      {
+        $addToSet: { participantIds: id },
+        $set: { updatedAt: new Date() },
+      },
+    );
+  }
+
+  const updatedUser = await users.findOne({ _id: objectId });
+
+  return {
+    user: mapUserRecord(updatedUser),
+    assignedEventId: input.eventId,
   };
 }

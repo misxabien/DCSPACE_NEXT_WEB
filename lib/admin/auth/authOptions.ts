@@ -1,10 +1,9 @@
-import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import type { AuthOptions } from "next-auth";
 import type { DefaultSession } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { PrismaClient } from "@prisma/client";
+import { findUserByEmail, loginUser } from "../db/users";
 
 declare module "next-auth" {
   interface Session {
@@ -32,50 +31,59 @@ declare module "next-auth/jwt" {
   }
 }
 
-const globalForPrisma = globalThis as unknown as {
-  adminAuthPrisma?: PrismaClient;
+export type SessionUserPayload = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  organization: string | null;
+  isActive: boolean;
 };
 
-const prisma = globalForPrisma.adminAuthPrisma ?? new PrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.adminAuthPrisma = prisma;
-}
-
-function getModel<T = any>(...names: string[]): T | null {
-  const prismaRecord = prisma as unknown as Record<string, T | undefined>;
-
-  for (const name of names) {
-    if (prismaRecord[name]) {
-      return prismaRecord[name] as T;
-    }
-  }
-
-  return null;
-}
-
-function hashPassword(password: string, salt = randomBytes(16).toString("hex")) {
-  const hash = scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${hash}`;
-}
-
-function verifyPassword(password: string, storedPassword: string) {
-  if (!storedPassword.includes(":")) {
-    return storedPassword === password;
-  }
-
-  const [salt, storedHash] = storedPassword.split(":");
-  const candidateHash = scryptSync(password, salt, 64);
-  const expectedHash = Buffer.from(storedHash, "hex");
-
-  if (candidateHash.length !== expectedHash.length) {
-    return false;
-  }
-
-  return timingSafeEqual(candidateHash, expectedHash);
-}
-
 const allowedGoogleDomain = process.env.ALLOWED_GOOGLE_DOMAIN ?? "sdca.edu.ph";
+
+/**
+ * Returns the Google SSO metadata needed by the admin login flow.
+ */
+export function getGoogleSsoConfig(callbackUrl?: string) {
+  const resolvedCallbackUrl = callbackUrl?.trim() ? callbackUrl : "/admin/dashboard";
+
+  return {
+    provider: "google" as const,
+    allowedDomain: allowedGoogleDomain,
+    callbackUrl: resolvedCallbackUrl,
+    signInPath: `/api/auth/signin/google?callbackUrl=${encodeURIComponent(resolvedCallbackUrl)}`,
+    registerPath: "/register",
+    sessionStrategy: "jwt" as const,
+  };
+}
+
+/**
+ * Builds the token and session payload returned by the admin auth routes.
+ */
+export function buildSessionPayload(user: SessionUserPayload, callbackUrl?: string) {
+  return {
+    callbackUrl: callbackUrl?.trim() ? callbackUrl : "/admin/dashboard",
+    user,
+    tokenClaims: {
+      sub: user.id,
+      role: user.role,
+      organization: user.organization,
+      isActive: user.isActive,
+    },
+    session: {
+      strategy: "jwt" as const,
+      user,
+    },
+  };
+}
+
+/**
+ * Returns true when the provided email belongs to the allowed Google Workspace domain.
+ */
+export function isAllowedGoogleEmail(email: string) {
+  return email.trim().toLowerCase().endsWith(`@${allowedGoogleDomain}`);
+}
 
 export const authOptions: AuthOptions = {
   session: {
@@ -93,41 +101,14 @@ export const authOptions: AuthOptions = {
           return null;
         }
 
-        const userModel =
-          getModel<any>("user", "users", "accountUser", "accountUsers");
-
-        if (!userModel) {
-          return null;
-        }
-
-        const user = await userModel.findFirst({
-          where: {
+        try {
+          return await loginUser({
             email: credentials.email,
-          },
-        });
-
-        if (!user || user.isActive === false) {
+            password: credentials.password,
+          });
+        } catch {
           return null;
         }
-
-        const storedPassword = user.passwordHash ?? user.password;
-
-        if (!storedPassword) {
-          return null;
-        }
-
-        if (!verifyPassword(credentials.password, storedPassword)) {
-          return null;
-        }
-
-        return {
-          id: String(user.id),
-          name: user.name ?? user.fullName ?? user.email,
-          email: user.email,
-          role: user.role ?? "student",
-          organization: user.organization?.name ?? user.organizationName ?? null,
-          isActive: user.isActive ?? true,
-        };
       },
     }),
     GoogleProvider({
@@ -142,13 +123,14 @@ export const authOptions: AuthOptions = {
         return true;
       }
 
-      const email = profile?.email ?? user.email;
+      const email = (profile?.email ?? user.email ?? "").toLowerCase();
 
-      if (!email) {
+      if (!email || !isAllowedGoogleEmail(email)) {
         return false;
       }
 
-      return email.toLowerCase().endsWith(`@${allowedGoogleDomain}`);
+      const registeredUser = await findUserByEmail(email);
+      return Boolean(registeredUser);
     },
     async jwt({ token, user }) {
       if (user) {

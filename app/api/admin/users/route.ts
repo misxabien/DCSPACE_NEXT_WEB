@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
       role: searchParams.get("role"),
       status: searchParams.get("status"),
       organization: searchParams.get("organization"),
+      page: Number(searchParams.get("page") ?? 1),
+      limit: Number(searchParams.get("limit") ?? 10),
     });
 
     return NextResponse.json(users, { status: 200 });
@@ -37,9 +39,9 @@ export async function POST(request: NextRequest) {
   try {
     await requireAdmin();
 
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, unknown>;
 
-    if (!body?.name || !body?.email || !body?.role) {
+    if (!body.name || !body.email || !body.role) {
       return NextResponse.json(
         { error: "name, email, and role are required" },
         { status: 400 },
@@ -50,10 +52,11 @@ export async function POST(request: NextRequest) {
       name: String(body.name),
       email: String(body.email),
       role: String(body.role),
-      organization: body.organization ? String(body.organization) : null,
-      studentId: body.studentId ? String(body.studentId) : null,
+      organization: typeof body.organization === "string" ? body.organization : null,
+      studentId: typeof body.studentId === "string" ? body.studentId : null,
+      rfid: typeof body.rfid === "string" ? body.rfid : null,
       isActive: body.isActive === undefined ? true : Boolean(body.isActive),
-      password: body.password ? String(body.password) : undefined,
+      password: typeof body.password === "string" ? body.password : undefined,
     });
 
     return NextResponse.json(user, { status: 201 });
