@@ -10,19 +10,9 @@ export function LoginForm() {
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<"student" | "faculty">("student");
-  const [emailError, setEmailError] = useState("");
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email") ?? "").trim().toLowerCase();
-
-    if (!email.endsWith("@sdca.edu.ph")) {
-      setEmailError("Please use your SDCA email ending in @sdca.edu.ph.");
-      return;
-    }
-
-    setEmailError("");
     router.push("/dashboard");
   };
 
@@ -102,13 +92,9 @@ export function LoginForm() {
                 name="email"
                 type="email"
                 placeholder="Email"
-                pattern="^[^@\s]+@sdca\.edu\.ph$"
-                title="Use your SDCA email ending in @sdca.edu.ph"
-                onChange={() => setEmailError("")}
                 required
               />
             </label>
-            {emailError && <p className="auth-field-error">{emailError}</p>}
 
             <label className="field">
               <span className="sr-only">Password</span>

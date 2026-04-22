@@ -42,7 +42,6 @@ export function RegisterAccountContent() {
     { label: "Contains a special character", valid: /[^A-Za-z0-9]/.test(password) },
     { label: "Passwords match", valid: password.length > 0 && password === confirmPassword },
   ];
-  const isSdcaEmail = /^[^@\s]+@sdca\.edu\.ph$/i.test(studentEmail.trim());
   const passwordIsValid = passwordChecks.every((check) => check.valid);
 
   const getValue = (formData: FormData, key: string) => {
@@ -52,11 +51,6 @@ export function RegisterAccountContent() {
 
   const handleReview = () => {
     if (!formRef.current) {
-      return;
-    }
-
-    if (!isSdcaEmail) {
-      setValidationError("Please use your SDCA email ending in @sdca.edu.ph.");
       return;
     }
 
@@ -80,12 +74,6 @@ export function RegisterAccountContent() {
 
   const handleSignUp = () => {
     if (!formRef.current) {
-      return;
-    }
-
-    if (!isSdcaEmail) {
-      setValidationError("Please use your SDCA email ending in @sdca.edu.ph.");
-      setShowReview(false);
       return;
     }
 
@@ -121,17 +109,12 @@ export function RegisterAccountContent() {
               type="email"
               placeholder="Student Email:"
               aria-label="Student Email"
-              pattern="^[^@\s]+@sdca\.edu\.ph$"
-              title="Use your SDCA email ending in @sdca.edu.ph"
               value={studentEmail}
               onChange={(event) => {
                 setStudentEmail(event.target.value);
                 setValidationError("");
               }}
             />
-            {studentEmail && !isSdcaEmail && (
-              <p className="auth-field-error">Please use your SDCA email ending in @sdca.edu.ph.</p>
-            )}
             <label className="register-password-wrap">
               <span className="register-sr-only">Password</span>
               <input
