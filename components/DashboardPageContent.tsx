@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 type RegisteredEvent = {
@@ -111,7 +111,7 @@ function sortRegisteredEventsByDate(events: RegisteredEvent[], direction: "ascen
 }
 
 export function DashboardPageContent() {
-  const [showPrivacyModal, setShowPrivacyModal] = useState(true);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [activeDashboardView, setActiveDashboardView] = useState<"registered" | "organized">("registered");
   const [consentChecked, setConsentChecked] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
@@ -130,6 +130,10 @@ export function DashboardPageContent() {
     [],
   );
 
+  useEffect(() => {
+    setShowPrivacyModal(window.sessionStorage.getItem("dcspacePrivacySeen") !== "true");
+  }, []);
+
   const handleAccept = () => {
     if (!consentChecked) {
       setShowValidation(true);
@@ -138,12 +142,14 @@ export function DashboardPageContent() {
 
     setShowPrivacyModal(false);
     setShowValidation(false);
+    window.sessionStorage.setItem("dcspacePrivacySeen", "true");
   };
 
   const handleCancel = () => {
     setConsentChecked(false);
     setShowValidation(false);
     setShowPrivacyModal(false);
+    window.sessionStorage.setItem("dcspacePrivacySeen", "true");
   };
 
   return (

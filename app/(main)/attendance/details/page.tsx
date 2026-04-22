@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AttendanceDetailsTable } from "@/components/AttendanceDetailsTable";
 import { SearchWithClear } from "@/components/SearchWithClear";
 import "@/styles/pages/attendance-details.css";
 
@@ -34,37 +35,7 @@ export default function AttendanceDetailsPage() {
         </div>
 
         <div className="details-table-wrap" aria-label="Attendance records">
-          <table className="detail-table">
-            <thead>
-              <tr>
-                <th scope="col">Date</th>
-                <th scope="col">Student No.</th>
-                <th scope="col">Tap IN</th>
-                <th scope="col">Tap OUT</th>
-                <th scope="col" className="col-status">
-                  Attendance<br />Requirement Status
-                </th>
-                <th scope="col" className="col-cert">
-                  E-Certificate<br />Status
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>MM/DD/YYYY</td>
-                <td>2025-0000</td>
-                <td>00-00 AM/PM</td>
-                <td>00-00 AM/PM</td>
-                <td className="col-status">Processing</td>
-                <td className="col-cert">Processing</td>
-              </tr>
-              {Array.from({ length: 5 }).map((_, index) => (
-                <tr className="detail-empty-row" key={index}>
-                  <td colSpan={6} aria-hidden="true" />
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <AttendanceDetailsTable />
         </div>
       </div>
     </>

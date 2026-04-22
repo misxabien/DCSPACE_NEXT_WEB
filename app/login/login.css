@@ -192,6 +192,15 @@
   margin-top: 10px;
 }
 
+.login-scope .auth-field-error {
+  margin: 8px 2px 0;
+  color: #e33e33;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .login-scope .link {
   font-size: 11px;
   font-weight: 600;
@@ -430,6 +439,44 @@
 .login-scope .register-eye-toggle svg {
   width: 21px;
   height: 21px;
+}
+
+.login-scope .password-requirements {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+  margin: -4px 0 2px;
+  padding: 0;
+  list-style: none;
+}
+
+.login-scope .password-requirements li {
+  position: relative;
+  color: rgba(42, 42, 42, 0.62);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  padding-left: 16px;
+}
+
+.login-scope .password-requirements li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.42em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c6c6c6;
+}
+
+.login-scope .password-requirements li.is-valid {
+  color: #2f9c57;
+}
+
+.login-scope .password-requirements li.is-valid::before {
+  background: #2f9c57;
 }
 
 .login-scope .register-sr-only {
@@ -773,6 +820,10 @@
   .login-scope .register-review-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .login-scope .password-requirements {
+    grid-template-columns: 1fr;
   }
 
   .login-scope .forgot-panel h1 {

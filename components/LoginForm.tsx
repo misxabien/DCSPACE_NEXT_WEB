@@ -3,12 +3,28 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { FormEvent } from "react";
 import { useState } from "react";
 
 export function LoginForm() {
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<"student" | "faculty">("student");
+  const [emailError, setEmailError] = useState("");
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
+
+    if (!email.endsWith("@sdca.edu.ph")) {
+      setEmailError("Please use your SDCA email ending in @sdca.edu.ph.");
+      return;
+    }
+
+    setEmailError("");
+    router.push("/dashboard");
+  };
 
   return (
     <main className="page">
@@ -59,10 +75,7 @@ export function LoginForm() {
           </div>
 
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              router.push("/dashboard");
-            }}
+            onSubmit={handleSubmit}
             autoComplete="on"
           >
             <label className="field field--password">
@@ -84,8 +97,18 @@ export function LoginForm() {
                   />
                 </svg>
               </span>
-              <input className="input" name="email" type="email" placeholder="Email" required />
+              <input
+                className="input"
+                name="email"
+                type="email"
+                placeholder="Email"
+                pattern="^[^@\s]+@sdca\.edu\.ph$"
+                title="Use your SDCA email ending in @sdca.edu.ph"
+                onChange={() => setEmailError("")}
+                required
+              />
             </label>
+            {emailError && <p className="auth-field-error">{emailError}</p>}
 
             <label className="field">
               <span className="sr-only">Password</span>

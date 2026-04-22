@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 type RegisterReview = {
@@ -22,11 +23,27 @@ const emptyReview: RegisterReview = {
 };
 
 export function RegisterAccountContent() {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [showReview, setShowReview] = useState(false);
   const [review, setReview] = useState<RegisterReview>(emptyReview);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [studentEmail, setStudentEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [validationError, setValidationError] = useState("");
+
+  const passwordChecks = [
+    { label: "At least 8 characters", valid: password.length >= 8 },
+    { label: "Contains an uppercase letter", valid: /[A-Z]/.test(password) },
+    { label: "Contains a lowercase letter", valid: /[a-z]/.test(password) },
+    { label: "Contains a number", valid: /\d/.test(password) },
+    { label: "Contains a special character", valid: /[^A-Za-z0-9]/.test(password) },
+    { label: "Passwords match", valid: password.length > 0 && password === confirmPassword },
+  ];
+  const isSdcaEmail = /^[^@\s]+@sdca\.edu\.ph$/i.test(studentEmail.trim());
+  const passwordIsValid = passwordChecks.every((check) => check.valid);
 
   const getValue = (formData: FormData, key: string) => {
     const value = formData.get(key);
@@ -35,6 +52,16 @@ export function RegisterAccountContent() {
 
   const handleReview = () => {
     if (!formRef.current) {
+      return;
+    }
+
+    if (!isSdcaEmail) {
+      setValidationError("Please use your SDCA email ending in @sdca.edu.ph.");
+      return;
+    }
+
+    if (!passwordIsValid) {
+      setValidationError("Please complete all password requirements before reviewing.");
       return;
     }
 
@@ -47,7 +74,33 @@ export function RegisterAccountContent() {
       password: getValue(formData, "password") === "Not provided" ? "Not provided" : "********",
       confirmPassword: getValue(formData, "confirm_password") === "Not provided" ? "Not provided" : "********",
     });
+    setValidationError("");
     setShowReview(true);
+  };
+
+  const handleSignUp = () => {
+    if (!formRef.current) {
+      return;
+    }
+
+    if (!isSdcaEmail) {
+      setValidationError("Please use your SDCA email ending in @sdca.edu.ph.");
+      setShowReview(false);
+      return;
+    }
+
+    if (!passwordIsValid) {
+      setValidationError("Please complete all password requirements before signing up.");
+      setShowReview(false);
+      return;
+    }
+
+    const formData = new FormData(formRef.current);
+    const studentNumber = getValue(formData, "student_number");
+    window.localStorage.setItem("dcspaceStudentNumber", studentNumber);
+    window.localStorage.setItem("dcspaceStudentEmail", studentEmail.trim());
+    window.sessionStorage.removeItem("dcspacePrivacySeen");
+    router.push("/login");
   };
 
   return (
@@ -63,7 +116,22 @@ export function RegisterAccountContent() {
             </div>
 
             <input name="student_number" type="text" placeholder="Student Number:" aria-label="Student Number" />
-            <input name="student_email" type="email" placeholder="Student Email:" aria-label="Student Email" />
+            <input
+              name="student_email"
+              type="email"
+              placeholder="Student Email:"
+              aria-label="Student Email"
+              pattern="^[^@\s]+@sdca\.edu\.ph$"
+              title="Use your SDCA email ending in @sdca.edu.ph"
+              value={studentEmail}
+              onChange={(event) => {
+                setStudentEmail(event.target.value);
+                setValidationError("");
+              }}
+            />
+            {studentEmail && !isSdcaEmail && (
+              <p className="auth-field-error">Please use your SDCA email ending in @sdca.edu.ph.</p>
+            )}
             <label className="register-password-wrap">
               <span className="register-sr-only">Password</span>
               <input
@@ -72,6 +140,11 @@ export function RegisterAccountContent() {
                 placeholder="Password:"
                 aria-label="Password"
                 autoComplete="new-password"
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setValidationError("");
+                }}
               />
               <button
                 className="register-eye-toggle"
@@ -90,6 +163,11 @@ export function RegisterAccountContent() {
                 placeholder="Re-enter password:"
                 aria-label="Re-enter password"
                 autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(event) => {
+                  setConfirmPassword(event.target.value);
+                  setValidationError("");
+                }}
               />
               <button
                 className="register-eye-toggle"
@@ -100,6 +178,14 @@ export function RegisterAccountContent() {
                 {showConfirmPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
               </button>
             </label>
+            <ul className="password-requirements" aria-label="Password requirements">
+              {passwordChecks.map((check) => (
+                <li className={check.valid ? "is-valid" : ""} key={check.label}>
+                  {check.label}
+                </li>
+              ))}
+            </ul>
+            {validationError && <p className="auth-field-error">{validationError}</p>}
           </form>
         </section>
 
@@ -107,7 +193,7 @@ export function RegisterAccountContent() {
           <button className="review-btn" type="button" onClick={handleReview}>
             Review
           </button>
-          <button className="signup-btn" type="button">
+          <button className="signup-btn" type="button" onClick={handleSignUp}>
             Sign Up
             <span aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
@@ -168,7 +254,7 @@ export function RegisterAccountContent() {
                 <button className="review-btn" type="button" onClick={() => setShowReview(false)}>
                   Edit
                 </button>
-                <button className="signup-btn" type="button">
+                <button className="signup-btn" type="button" onClick={handleSignUp}>
                   Sign Up
                   <span aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none">
