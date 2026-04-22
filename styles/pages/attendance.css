@@ -227,17 +227,21 @@
       }
 
       .open-btn {
+        min-width: 116px;
+        min-height: 26px;
         border: none;
         cursor: pointer;
         border-radius: 999px;
-        padding: 4px 12px;
+        padding: 4px 14px;
         font-size: 12px;
         font-weight: 800;
         letter-spacing: 0.02em;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 6px;
         font-family: inherit;
+        white-space: nowrap;
       }
 
       a.open-btn {
@@ -245,10 +249,10 @@
       }
 
       .open-btn--ghost {
-        background: #edcf72;
-        border: 1px solid transparent;
+        background: linear-gradient(180deg, #ffe680 0%, #f4cf55 55%, #e0b72d 100%);
+        border: 1px solid #b98c09;
         color: #604d18;
-        box-shadow: none;
+        box-shadow: 0 2px 5px rgba(157, 119, 5, 0.24);
       }
 
       .open-btn--primary {
@@ -271,10 +275,10 @@
 
       .open-btn:hover,
       .open-btn:focus-visible {
-        background: linear-gradient(180deg, #6ea8ff 0%, #2f78f0 100%);
-        border: 1px solid rgba(26, 80, 170, 0.35);
-        color: #fff;
-        box-shadow: 0 2px 0 rgba(28, 55, 110, 0.22);
+        background: linear-gradient(180deg, #ffeb9b 0%, #eebe35 55%, #d8a91c 100%);
+        border: 1px solid #b98c09;
+        color: #604d18;
+        box-shadow: 0 4px 10px rgba(157, 119, 5, 0.3);
       }
 
       .col-open {

@@ -130,9 +130,9 @@
   min-width: 142px;
   height: 30px;
   margin-right: 2px;
-  border: 1.5px solid #8c6d24;
+  border: 1.5px solid #b98c09;
   border-radius: 999px;
-  background: #f2dc87;
+  background: linear-gradient(180deg, #ffe680 0%, #f4cf55 55%, #e0b72d 100%);
   color: #604d18;
   display: inline-flex;
   align-items: center;
@@ -141,6 +141,25 @@
   font-size: 22px;
   font-weight: 800;
   text-decoration: none;
+  box-shadow:
+    0 4px 14px rgba(157, 119, 5, 0.28),
+    0 2px 0 #b98c09;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.details-back:hover,
+.details-back:focus-visible {
+  background: linear-gradient(180deg, #ffeb9b 0%, #eebe35 55%, #d8a91c 100%);
+  box-shadow:
+    0 6px 18px rgba(157, 119, 5, 0.34),
+    0 2px 0 #b98c09;
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.details-back:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(157, 119, 5, 0.34);
 }
 
 .details-back svg {
