@@ -1,11 +1,42 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+type ReviewDetails = {
+  eventName: string;
+  eventDate: string;
+  venue: string;
+  courseOrganizer: string;
+  school: string;
+  department: string;
+  startTime: string;
+  endTime: string;
+  eventType: string;
+  duration: string;
+  minAttendance: string;
+};
+
+const emptyReviewDetails: ReviewDetails = {
+  eventName: "",
+  eventDate: "",
+  venue: "",
+  courseOrganizer: "",
+  school: "",
+  department: "",
+  startTime: "",
+  endTime: "",
+  eventType: "",
+  duration: "",
+  minAttendance: "",
+};
 
 export function OrganizeForm() {
+  const formRef = useRef<HTMLFormElement>(null);
   const courseRef = useRef<HTMLSelectElement>(null);
   const orgRef = useRef<HTMLInputElement>(null);
   const combinedRef = useRef<HTMLInputElement>(null);
+  const [showReview, setShowReview] = useState(false);
+  const [reviewDetails, setReviewDetails] = useState<ReviewDetails>(emptyReviewDetails);
 
   useEffect(() => {
     function syncCombined() {
@@ -31,8 +62,41 @@ export function OrganizeForm() {
     };
   }, []);
 
+  const getFormValue = (formData: FormData, key: string) => {
+    const value = formData.get(key);
+    return typeof value === "string" && value.trim() ? value.trim() : "Not provided";
+  };
+
+  const handleReview = () => {
+    if (combinedRef.current && courseRef.current && orgRef.current) {
+      const course = (courseRef.current.value || "").trim();
+      const org = (orgRef.current.value || "").trim().replace(/^[\s—-]+|[\s—-]+$/g, "");
+      combinedRef.current.value = course && org ? `${course}-${org}` : course || org || "";
+    }
+
+    if (!formRef.current) {
+      return;
+    }
+
+    const formData = new FormData(formRef.current);
+    setReviewDetails({
+      eventName: getFormValue(formData, "event_name"),
+      eventDate: getFormValue(formData, "event_date"),
+      venue: getFormValue(formData, "venue"),
+      courseOrganizer: getFormValue(formData, "course_organizer_combined"),
+      school: getFormValue(formData, "school"),
+      department: getFormValue(formData, "department"),
+      startTime: getFormValue(formData, "start_time"),
+      endTime: getFormValue(formData, "end_time"),
+      eventType: getFormValue(formData, "event_type"),
+      duration: getFormValue(formData, "duration"),
+      minAttendance: getFormValue(formData, "min_attendance"),
+    });
+    setShowReview(true);
+  };
+
   return (
-    <form className="organize-form-shell" action="#" method="post" aria-label="Create new event">
+    <form ref={formRef} className="organize-form-shell" action="#" method="post" aria-label="Create new event">
       <label className="form-section-label" htmlFor="event-name">
         Event Name
       </label>
@@ -267,6 +331,9 @@ export function OrganizeForm() {
         </div>
 
         <div className="form-actions">
+          <button type="button" className="btn-review" onClick={handleReview}>
+            Review
+          </button>
           <button type="submit" className="btn-submit">
             Submit
             <svg viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -281,6 +348,85 @@ export function OrganizeForm() {
             </svg>
           </button>
         </div>
+
+        {showReview && (
+          <div className="review-overlay">
+            <section className="review-modal" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
+              <div className="review-modal__header">
+                <h2 id="review-modal-title">Review Event Details</h2>
+                <button className="review-modal__close" type="button" aria-label="Close review" onClick={() => setShowReview(false)}>
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+
+              <dl className="review-list">
+                <div>
+                  <dt>Event Name</dt>
+                  <dd>{reviewDetails.eventName}</dd>
+                </div>
+                <div>
+                  <dt>Date</dt>
+                  <dd>{reviewDetails.eventDate}</dd>
+                </div>
+                <div>
+                  <dt>Venue</dt>
+                  <dd>{reviewDetails.venue}</dd>
+                </div>
+                <div>
+                  <dt>Course &amp; Organizer</dt>
+                  <dd>{reviewDetails.courseOrganizer}</dd>
+                </div>
+                <div>
+                  <dt>School</dt>
+                  <dd>{reviewDetails.school}</dd>
+                </div>
+                <div>
+                  <dt>Department</dt>
+                  <dd>{reviewDetails.department}</dd>
+                </div>
+                <div>
+                  <dt>Time</dt>
+                  <dd>
+                    {reviewDetails.startTime} to {reviewDetails.endTime}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Type of Event</dt>
+                  <dd>{reviewDetails.eventType}</dd>
+                </div>
+                <div>
+                  <dt>Total Duration</dt>
+                  <dd>{reviewDetails.duration}</dd>
+                </div>
+                <div>
+                  <dt>Minimum Attendance</dt>
+                  <dd>{reviewDetails.minAttendance}</dd>
+                </div>
+              </dl>
+
+              <div className="review-modal__actions">
+                <button className="btn-review" type="button" onClick={() => setShowReview(false)}>
+                  Edit
+                </button>
+                <button className="btn-submit" type="submit">
+                  Submit
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <circle cx="12" cy="12" r="9" stroke="#fff" strokeWidth="2" />
+                    <path
+                      d="M8 12l2.5 3L16 10"
+                      stroke="#fff"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
       </div>
     </form>
   );

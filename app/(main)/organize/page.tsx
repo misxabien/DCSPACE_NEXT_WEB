@@ -13,7 +13,10 @@ export default function OrganizePage() {
         <div className="organize-header__row">
           <div className="organize-header__titles">
             <h1>Organize an Event!</h1>
-            <p>Create New Event</p>
+            <p>
+              Before creating an event, please complete all required details in the form. Make sure the information is
+              accurate to ensure proper scheduling and participant registration.
+            </p>
           </div>
           <div className="main__tools">
             <button type="button" className="main__tool" aria-label="Copy template">
