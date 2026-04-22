@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { EmptyState } from "@/components/EmptyState";
 
 const eventCards = [
   {
@@ -112,22 +113,7 @@ export function EventsPageContent() {
           </aside>
         </section>
       ) : (
-        <section className="events-empty">
-          <svg className="events-empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M8.293 16.293L9.707 17.707L12 15.414L14.293 17.707L15.707 16.293L13.414 14L15.707 11.707L14.293 10.293L12 12.586L9.707 10.293L8.293 11.707L10.586 14L8.293 16.293Z"
-              fill="currentColor"
-            />
-            <path
-              d="M19 4H17V2H15V4H9V2H7V4H5C3.897 4 3 4.897 3 6V20C3 21.103 3.897 22 5 22H19C20.103 22 21 21.103 21 20V6C21 4.897 20.103 4 19 4ZM19.002 20H5V8H19L19.002 20Z"
-              fill="currentColor"
-            />
-          </svg>
-          <p>
-            There are currently no events available to browse since no events are ongoing yet.
-            If you would like to create or organize an event, click the plus button.
-          </p>
-        </section>
+        <EmptyState message="There are currently no events available to browse since no events are ongoing yet. If you would like to create or organize an event, click the plus button." />
       )}
     </section>
   );

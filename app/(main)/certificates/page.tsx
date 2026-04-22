@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { EmptyState } from "@/components/EmptyState";
 import { SearchWithClear } from "@/components/SearchWithClear";
 import "@/styles/pages/certificates.css";
 
@@ -31,6 +32,8 @@ function CertificateIcon() {
 }
 
 export default function CertificatesPage() {
+  const hasCertificates = CERTIFICATE_GROUPS.some((group) => group.certificates.length > 0);
+
   return (
     <>
       <header className="certificates-header">
@@ -45,29 +48,36 @@ export default function CertificatesPage() {
       </header>
 
       <main className="certificates-content" aria-label="Certificates by event date">
-        {CERTIFICATE_GROUPS.map((group) => (
-          <section className="certificate-month" key={group.month} aria-labelledby={`${group.month.toLowerCase()}-certificates`}>
-            <h2 id={`${group.month.toLowerCase()}-certificates`}>{group.month}</h2>
-            <div className="cert-grid">
-              {group.certificates.map((date) => (
-                <article className="cert-card" key={date}>
-                  <div className="cert-card__preview">
-                    <CertificateIcon />
-                  </div>
-                  <div className="cert-card__footer">
-                    <div>
-                      <p className="cert-card__title">Event Name Certificate</p>
-                      <p className="cert-card__date">Issued Date: {date}</p>
+        {hasCertificates ? (
+          CERTIFICATE_GROUPS.map((group) => (
+            <section className="certificate-month" key={group.month} aria-labelledby={`${group.month.toLowerCase()}-certificates`}>
+              <h2 id={`${group.month.toLowerCase()}-certificates`}>{group.month}</h2>
+              <div className="cert-grid">
+                {group.certificates.map((date) => (
+                  <article className="cert-card" key={date}>
+                    <div className="cert-card__preview">
+                      <CertificateIcon />
                     </div>
-                    <button type="button" className="cert-card__view">
-                      View
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        ))}
+                    <div className="cert-card__footer">
+                      <div>
+                        <p className="cert-card__title">Event Name Certificate</p>
+                        <p className="cert-card__date">Issued Date: {date}</p>
+                      </div>
+                      <button type="button" className="cert-card__view">
+                        View
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ))
+        ) : (
+          <EmptyState
+            icon="certificate"
+            message="No certificates received yet. Once you join an event and complete the required attendance, your certificates will appear here."
+          />
+        )}
       </main>
     </>
   );

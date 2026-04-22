@@ -101,6 +101,28 @@
   padding: 24px 38px 56px;
 }
 
+.certificates-content .site-empty--certificate {
+  min-height: 390px;
+  padding-top: 78px;
+  justify-content: flex-start;
+}
+
+.certificates-content .site-empty--certificate .site-empty__icon {
+  width: 82px;
+  height: 85px;
+  margin-bottom: 18px;
+  color: #604d18;
+}
+
+.certificates-content .site-empty--certificate .site-empty__text {
+  max-width: 430px;
+  color: #5f584f;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+}
+
 .certificate-month {
   display: grid;
   gap: 24px;

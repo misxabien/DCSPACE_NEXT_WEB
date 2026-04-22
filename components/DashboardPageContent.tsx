@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { EmptyState } from "@/components/EmptyState";
 
 type RegisteredEvent = {
   month: string;
@@ -204,7 +205,7 @@ export function DashboardPageContent() {
                 ))}
               </section>
             ) : (
-              <DashboardEmptyState message="No registered events found. Browse the Events tab and select an event to register." />
+              <EmptyState message="No registered events found. Browse the Events tab and select an event to register." />
             )
           ) : (
             organizedEvents.length > 0 ? (
@@ -240,7 +241,7 @@ export function DashboardPageContent() {
                 ))}
               </section>
             ) : (
-              <DashboardEmptyState message="No organized events yet. If you would like to create or manage an event, click the plus button." />
+              <EmptyState message="No organized events yet. If you would like to create or manage an event, click the plus button." />
             )
           )}
         </section>
@@ -305,19 +306,5 @@ export function DashboardPageContent() {
         </div>
       )}
     </section>
-  );
-}
-
-function DashboardEmptyState({ message }: { message: string }) {
-  return (
-    <div className="dashboard-empty">
-      <svg className="dashboard-empty-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M19 4H17V2H15V4H9V2H7V4H5C3.897 4 3 4.897 3 6V20C3 21.103 3.897 22 5 22H19C20.103 22 21 21.103 21 20V6C21 4.897 20.103 4 19 4ZM14.412 19L11.963 17.712L9.514 19L9.982 16.272L8 14.342L10.738 13.944L11.963 11.464L13.188 13.944L15.926 14.342L13.945 16.273L14.412 19ZM19 9H5V7H19V9Z"
-          fill="currentColor"
-        />
-      </svg>
-      <p>{message}</p>
-    </div>
   );
 }

@@ -142,8 +142,36 @@ a:active {
 .profile-panel,
 .privacy-card,
 .review-modal,
-.register-review-modal {
+.register-review-modal,
+.site-empty {
   animation: dcspace-rise-in 0.22s cubic-bezier(0.2, 0.85, 0.22, 1) both;
+}
+
+.site-empty {
+  min-height: calc(100vh - 260px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  color: #6b5d4a;
+}
+
+.site-empty__icon {
+  width: 80px;
+  height: 80px;
+  color: #6b5d4a;
+  margin-bottom: 20px;
+}
+
+.site-empty__text {
+  max-width: 520px;
+  margin: 0;
+  color: #6b5d4a;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 @keyframes dcspace-rise-in {
