@@ -1,13 +1,7 @@
 /* Browse Events: DC Space frontend UI layout */
 
 .main {
-  background: linear-gradient(
-    to bottom,
-    #f5edd8 0%,
-    #e5d097 35%,
-    #e0c79f 71%,
-    #f5edd8 100%
-  );
+  background: var(--page-gradient);
 }
 
 .events-page {
