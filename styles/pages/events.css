@@ -1,502 +1,316 @@
-/* Events page — ported from 04-events.html */
-:root {
-  --cream-bg: #fdf5e6;
-  --gold-text: #c5a059;
-  --gold-border: #c9a84a;
-  --brown-icon: #5c4033;
-  --brown-shadow: rgba(60, 40, 28, 0.55);
-  --hamburger: #2a4d8f;
-  --main-pad-x: 48px;
-  --main-pad-y: 36px;
-  --card-radius: 14px;
-  --card-cream: #faf6ec;
-  --grid-gap: 30px;
-  --pubmat-bg: #eed9b1;
-  --pubmat-bg-deep: #e5cf9e;
-  --pubmat-text: #8a6a2a;
-  --card-body-panel: #fff9f0;
-  --btn-gold: #e8c86a;
-  --btn-gold-border: #c9a84a;
+/* Browse Events: DC Space frontend UI layout */
+
+.main {
+  background: linear-gradient(
+    to bottom,
+    #f5edd8 0%,
+    #e5d097 35%,
+    #e0c79f 71%,
+    #f5edd8 100%
+  );
 }
-      .main {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        background: var(--cream-bg);
-      }
 
-      .main__header {
-        padding: var(--main-pad-y) var(--main-pad-x) 16px;
-        flex-shrink: 0;
-      }
+.events-page {
+  min-height: calc(100vh - 88px);
+}
 
-      .main__header-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-      }
+.events-header {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(280px, 470px);
+  align-items: center;
+  gap: 32px;
+  padding: 24px 38px 0;
+}
 
-      .main__title {
-        font-size: clamp(2rem, 4.2vw, 2.75rem);
-        font-weight: 800;
-        color: #fffef8;
-        letter-spacing: 0.02em;
-        line-height: 1.1;
-        text-shadow:
-          3px 3px 0 var(--brown-shadow),
-          2px 2px 0 var(--brown-shadow),
-          1px 1px 0 rgba(60, 40, 28, 0.35);
-      }
+.events-title {
+  margin: 0;
+  color: #604d18;
+  font-size: clamp(34px, 4vw, 46px);
+  font-weight: 900;
+  letter-spacing: 0;
+}
 
-      .main__tools {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-        flex-shrink: 0;
-      }
+.events-search {
+  height: 42px;
+  border: 1.5px solid #8c6d24;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  background: transparent;
+}
 
-      .main__tool {
-        width: 40px;
-        height: 40px;
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        color: var(--brown-icon);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-      }
+.events-search-icon {
+  width: 23px;
+  height: 23px;
+  flex: 0 0 auto;
+  color: #6b5923;
+}
 
-      .main__tool:hover {
-        background: rgba(92, 64, 51, 0.08);
-      }
+.events-search-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #604d18;
+  font-family: inherit;
+  font-size: 16px;
+}
 
-      .main__tool svg {
-        width: 26px;
-        height: 26px;
-      }
+.events-content {
+  display: grid;
+  grid-template-columns: minmax(560px, 1fr) 280px;
+  gap: 40px;
+  align-items: start;
+  padding: 30px 38px 56px 32px;
+  width: 100%;
+}
 
-      .main__divider {
-        height: 1px;
-        background: var(--brown-icon);
-        opacity: 0.55;
-        margin-top: 20px;
-        max-width: 100%;
-      }
+.event-list {
+  max-width: 960px;
+  display: grid;
+  gap: 32px;
+}
 
-      .main__detail-wrap {
-        padding: 18px var(--main-pad-x) 48px;
-        overflow-y: auto;
-        overflow-x: hidden;
-        scrollbar-width: thin;
-        scrollbar-color: #3d3530 #e8dcc8;
-        flex: 1;
-        min-width: 0;
-        width: 100%;
-        container-type: inline-size;
-        container-name: events-main;
-      }
+.browse-event-card {
+  min-height: 160px;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 18px;
+  border: 1.5px solid #634b05;
+  border-radius: 4px;
+  background: rgba(255, 254, 244, 0.45);
+  box-shadow: 0 3px 4px rgba(99, 75, 5, 0.35);
+  padding: 10px 24px 10px 16px;
+}
 
-      .main__detail-wrap::-webkit-scrollbar {
-        width: 6px;
-      }
+.event-image {
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ead8a6;
+  color: #604d18;
+}
 
-      .main__detail-wrap::-webkit-scrollbar-track {
-        background: #e8dcc8;
-      }
+.folder-icon {
+  width: 34px;
+  height: 34px;
+  color: rgba(99, 75, 5, 0.65);
+}
 
-      .main__detail-wrap::-webkit-scrollbar-thumb {
-        background: #3d3530;
-        border-radius: 3px;
-      }
+.event-card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 4px 0;
+}
 
-      .search {
-        height: 40px;
-        max-width: 100%;
-        border: 1px solid rgba(180, 155, 115, 0.55);
-        border-radius: 999px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 0 12px;
-        color: #8a7348;
-        background: rgba(255, 253, 246, 0.85);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
-      }
+.event-card-body h2 {
+  margin: 0 0 10px;
+  color: #634b05;
+  font-size: 30px;
+  font-weight: 900;
+}
 
-      .search svg {
-        width: 18px;
-        height: 18px;
-        flex-shrink: 0;
-        opacity: 0.85;
-      }
+.event-card-body p {
+  margin: 0 0 4px;
+  color: #c49d4d;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
 
-      .search input {
-        border: none;
-        outline: none;
-        background: transparent;
-        font-family: inherit;
-        color: #4a4036;
-        font-size: 0.9375rem;
-        font-weight: 600;
-        letter-spacing: 0.02em;
-        width: 100%;
-        min-width: 0;
-      }
+.event-details-button {
+  align-self: flex-end;
+  min-width: 128px;
+  height: 26px;
+  margin-top: 10px;
+  border: 1.5px solid #634b05;
+  border-radius: 13px;
+  background: #edcf72;
+  color: #634b05;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-decoration: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
 
-      .search input::placeholder {
-        color: #a89472;
-        font-weight: 600;
-      }
+.event-details-button svg {
+  width: 14px;
+  height: 13px;
+}
 
-      .clear-btn {
-        width: 26px;
-        height: 26px;
-        border: 1px solid rgba(180, 155, 115, 0.55);
-        border-radius: 50%;
-        background: rgba(255, 253, 246, 0.75);
-        color: #8a7348;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.05rem;
-        line-height: 1;
-        cursor: pointer;
-        flex-shrink: 0;
-      }
+.event-details-button:hover,
+.event-details-button:active {
+  border-color: #448aff;
+  background: #448aff;
+  color: white;
+}
 
-      .list {
-        margin-top: 28px;
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--grid-gap);
-        max-width: 1120px;
-        width: 100%;
-        min-width: 0;
-      }
+.calendar-panel {
+  width: 100%;
+  justify-self: end;
+  display: grid;
+  gap: 14px;
+}
 
-      .event-card {
-        position: relative;
-        border-radius: var(--card-radius);
-        border: none;
-        box-shadow: 4px 6px 0 rgba(60, 40, 28, 0.08), 8px 12px 24px rgba(60, 40, 28, 0.06);
-        display: flex;
-        flex-direction: row;
-        align-items: stretch;
-        min-height: 168px;
-        min-width: 0;
-        width: 100%;
-        max-width: 100%;
-        overflow: hidden;
-        background: var(--card-cream);
-      }
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
 
-      .event-card--cream {
-        background: var(--card-cream);
-      }
+.calendar-header h2 {
+  margin: 0;
+  color: #634b05;
+  font-size: 26px;
+  font-weight: 600;
+}
 
-      .event-card--cream .event-card__media {
-        background: linear-gradient(180deg, var(--pubmat-bg) 0%, var(--pubmat-bg-deep) 100%);
-        color: var(--pubmat-text);
-      }
+.year-select select {
+  min-width: 104px;
+  height: 34px;
+  border: 1.5px solid #634b05;
+  border-radius: 12px;
+  background: transparent;
+  color: #634b05;
+  font-family: inherit;
+  font-size: 18px;
+  padding: 0 36px 0 12px;
+  outline: none;
+  appearance: none;
+}
 
-      .event-card--cream .event-name {
-        color: #3e2723;
-      }
+.mini-calendar {
+  border: 1.5px solid rgba(99, 75, 5, 0.65);
+  border-radius: 16px;
+  background: rgba(255, 254, 244, 0.38);
+  box-shadow: 0 3px 4px rgba(99, 75, 5, 0.18);
+  padding: 14px;
+}
 
-      .event-card--cream .event-meta {
-        color: #4a4036;
-      }
+.month-label {
+  margin: 0 0 12px;
+  color: #634b05;
+  font-size: 18px;
+  font-weight: 900;
+  text-align: center;
+}
 
-      .event-card--white {
-        background: var(--card-cream);
-        box-shadow: 4px 6px 0 rgba(60, 40, 28, 0.08), 8px 12px 24px rgba(60, 40, 28, 0.06);
-      }
+.weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
 
-      .event-card--white .event-card__media {
-        background: linear-gradient(180deg, #f3e2bc 0%, #e8d4a8 100%);
-        color: #9a7328;
-      }
+.weekdays {
+  margin-bottom: 8px;
+}
 
-      .event-card--white .event-name {
-        color: #3e2723;
-      }
+.weekdays span {
+  color: rgba(99, 75, 5, 0.7);
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
 
-      .event-card--white .event-meta {
-        color: #4a4036;
-      }
+.calendar-day,
+.empty-day {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #634b05;
+  font-size: 13px;
+  font-weight: 800;
+}
 
-      .event-card__media {
-        flex: 0 1 38%;
-        min-width: 0;
-        max-width: min(200px, 40%);
-        min-height: 168px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.8125rem;
-        font-weight: 800;
-        letter-spacing: 0.04em;
-        text-transform: lowercase;
-      }
+.empty-day {
+  color: transparent;
+}
 
-      .event-card__body {
-        flex: 1;
-        min-width: 0;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        position: relative;
-        padding: clamp(12px, 2.8vw, 1.375rem) clamp(12px, 2.8vw, 1.25rem) clamp(12px, 2.5vw, 1.125rem);
-        /* Reserve space for the bookmark on the top-right. */
-        padding-right: clamp(2.25rem, 7vw, 2.75rem);
-        background: var(--card-body-panel);
-        overflow-wrap: anywhere;
-        word-wrap: break-word;
-      }
+.calendar-day.is-upcoming {
+  background: rgba(237, 207, 114, 0.45);
+}
 
-      .event-name {
-        margin: 0 0 0.5rem;
-        padding-right: 0.25rem;
-        font-size: clamp(1.05rem, 2.5vw, 1.28rem);
-        font-weight: 800;
-        line-height: 1.25;
-        letter-spacing: 0.01em;
-        color: #3e2723;
-      }
+.calendar-day.is-today {
+  background: #448aff;
+  color: white;
+  box-shadow: 0 0 0 3px rgba(68, 138, 255, 0.16);
+}
 
-      .event-meta {
-        margin: 0;
-        font-size: clamp(0.875rem, 1.9vw, 1rem);
-        font-weight: 500;
-        line-height: 1.5;
-        letter-spacing: 0.01em;
-        color: #4a4036;
-      }
+.events-empty {
+  min-height: calc(100vh - 260px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  color: #6b5d4a;
+}
 
-      .event-meta + .event-meta {
-        margin-top: 0.28rem;
-      }
+.events-empty-icon {
+  width: 80px;
+  height: 80px;
+  color: #6b5d4a;
+  margin-bottom: 20px;
+}
 
-      /* Narrow main column (e.g. sidebar open): stack cards instead of cramped two-column grid */
-      @container events-main (max-width: 680px) {
-        .list {
-          grid-template-columns: 1fr;
-        }
+.events-empty p {
+  max-width: 420px;
+  margin: 0;
+  color: #6b5d4a;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
+}
 
-        .event-card {
-          flex-direction: column;
-        }
+@media (max-width: 900px) {
+  .events-header {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 24px 22px 0;
+  }
 
-        .event-card__media {
-          flex: none;
-          width: 100%;
-          max-width: none;
-          min-height: 130px;
-        }
+  .events-content {
+    grid-template-columns: 1fr;
+    padding: 28px 22px 44px;
+  }
 
-        .event-card__body {
-          padding-right: clamp(2.1rem, 6vw, 2.5rem);
-        }
-      }
+  .browse-event-card {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
 
-      .bookmark {
-        position: absolute;
-        top: clamp(10px, 2.2vw, 1.125rem);
-        right: clamp(10px, 2.2vw, 1.125rem);
-        width: clamp(16px, 4.25vw, 26px);
-        height: auto;
-        aspect-ratio: 16 / 20;
-        flex-shrink: 0;
-        display: block;
-        overflow: visible;
-        border: none;
-        padding: 0;
-        margin: 0;
-        background: transparent;
-        font: inherit;
-        cursor: pointer;
-        z-index: 2;
-        line-height: 0;
-        transition: transform 0.18s ease, opacity 0.18s ease;
-      }
+  .event-image {
+    min-height: 160px;
+  }
 
-      .bookmark svg {
-        width: 100%;
-        height: auto;
-        display: block;
-      }
+  .calendar-panel {
+    order: -1;
+  }
 
-      .bookmark:hover {
-        transform: scale(1.08);
-      }
+  .calendar-header h2 {
+    font-size: 24px;
+  }
 
-      .bookmark:active {
-        transform: scale(0.98);
-      }
+  .events-empty {
+    min-height: calc(100vh - 330px);
+  }
 
-      .bookmark:focus-visible {
-        outline: 2px solid #5c88e5;
-        outline-offset: 3px;
-        border-radius: 4px;
-      }
-
-      .bookmark--outline svg path {
-        fill: none;
-        stroke: #b8964e;
-        stroke-width: 1.5;
-      }
-
-      .bookmark--solid svg path {
-        fill: #ebc971;
-        stroke: #b8964e;
-        stroke-width: 0.75;
-      }
-
-      .event-card__cta {
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-        gap: clamp(6px, 1.5vw, 8px);
-        border-radius: 999px;
-        padding: clamp(8px, 2vw, 10px) clamp(16px, 4vw, 22px) clamp(8px, 2vw, 10px) clamp(18px, 4vw, 22px);
-        font-family: inherit;
-        font-size: clamp(0.75rem, 1.85vw, 0.8125rem);
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        cursor: pointer;
-        border: 1px solid transparent;
-        transition:
-          transform 0.18s ease,
-          box-shadow 0.18s ease,
-          border-color 0.18s ease,
-          background 0.18s ease,
-          color 0.18s ease;
-        flex-shrink: 0;
-        max-width: 100%;
-      }
-
-      .event-card__actions {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        width: 100%;
-        margin-top: auto;
-        padding-top: clamp(0.65rem, 2vw, 0.85rem);
-        flex-shrink: 0;
-      }
-
-      .event-card__cta svg {
-        width: clamp(14px, 3.5vw, 18px);
-        height: clamp(14px, 3.5vw, 18px);
-        flex-shrink: 0;
-      }
-
-      .event-card--cream .event-card__cta,
-      .event-card--white .event-card__cta,
-      .app.is-sidebar-collapsed .event-card--cream .event-card__cta {
-        color: #2a2118;
-        background: linear-gradient(180deg, #f0d578 0%, var(--btn-gold) 100%);
-        border: 1px solid var(--btn-gold-border);
-        box-shadow: 0 2px 0 rgba(160, 120, 50, 0.2);
-      }
-
-      .event-card--cream .event-card__cta svg,
-      .event-card--white .event-card__cta svg,
-      .app.is-sidebar-collapsed .event-card--cream .event-card__cta svg {
-        stroke: #3d3020;
-      }
-
-      /* Hover / focus: Figma â€œstickerâ€ â€” black hairline, warm gold, cream halo */
-      .event-card--cream .event-card__cta:hover,
-      .event-card--cream .event-card__cta:focus-visible,
-      .event-card--white .event-card__cta:hover,
-      .event-card--white .event-card__cta:focus-visible,
-      .app.is-sidebar-collapsed .event-card--cream .event-card__cta:hover,
-      .app.is-sidebar-collapsed .event-card--cream .event-card__cta:focus-visible {
-        color: #141008;
-        background: linear-gradient(180deg, #f8dc8a 0%, #ebc971 52%, #e3b44a 100%);
-        border: 1px solid #141414;
-        box-shadow:
-          0 0 0 1px rgba(255, 250, 240, 0.98),
-          0 2px 0 rgba(20, 14, 6, 0.22),
-          0 4px 12px rgba(0, 0, 0, 0.08);
-        outline: none;
-        transform: translateY(-1px);
-      }
-
-      .event-card--cream .event-card__cta:hover svg,
-      .event-card--cream .event-card__cta:focus-visible svg,
-      .event-card--white .event-card__cta:hover svg,
-      .event-card--white .event-card__cta:focus-visible svg,
-      .app.is-sidebar-collapsed .event-card--cream .event-card__cta:hover svg,
-      .app.is-sidebar-collapsed .event-card--cream .event-card__cta:focus-visible svg {
-        stroke: #141008;
-      }
-
-      .event-card--cream .event-card__cta:active,
-      .event-card--white .event-card__cta:active,
-      .app.is-sidebar-collapsed .event-card--cream .event-card__cta:active {
-        transform: translateY(0);
-        box-shadow:
-          0 0 0 1px rgba(255, 250, 240, 0.95),
-          0 1px 0 rgba(20, 14, 6, 0.28);
-      }
-
-      @container events-main (max-width: 680px) {
-        .bookmark {
-          top: clamp(10px, 2.2vw, 1rem);
-          right: clamp(10px, 2.2vw, 1rem);
-        }
-      }
-
-      .cta__label--join {
-        display: none;
-      }
-
-      .app.is-sidebar-collapsed .cta__label--details {
-        display: none;
-      }
-
-      .app.is-sidebar-collapsed .cta__label--join {
-        display: inline;
-      }
-
-      @media (max-width: 900px) {
-        .list {
-          grid-template-columns: 1fr;
-        }
-
-        .event-card {
-          flex-direction: column;
-        }
-
-        .event-card__media {
-          flex: none;
-          max-width: none;
-          width: 100%;
-          min-height: 140px;
-        }
-
-        .event-card__body {
-          padding: clamp(12px, 2.5vw, 1.125rem) clamp(12px, 2.5vw, 1.125rem);
-          padding-right: clamp(2.5rem, 9vw, 3rem);
-        }
-      }
-
-      @media (max-width: 640px) {
-        :root {
-          --main-pad-x: 22px;
-          --main-pad-y: 24px;
-        }
-      }
-
-      /* When the sidebar is collapsed, the card body becomes wider.
-         Reduce the right inset so the CTA (Join/View Details) shifts right. */
-      .app.is-sidebar-collapsed .event-card__body {
-        padding-right: clamp(2.05rem, 6vw, 2.35rem);
-      }
+  .events-empty p {
+    font-size: 16px;
+  }
+}

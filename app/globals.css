@@ -20,8 +20,10 @@
   --main-pad-y: 36px;
   --grid-gap: 26px;
   --card-radius: 14px;
-  /* --font-montserrat is set on <html> by next/font; keep named stack for page CSS */
-  --font: var(--font-montserrat), "Montserrat", system-ui, -apple-system, sans-serif;
+  --font: var(--font-lato), "Lato", system-ui, -apple-system, sans-serif;
+  --font-dm: var(--font-dm-sans), "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-montserrat), "Montserrat", system-ui, -apple-system, sans-serif;
+  --font-ui: var(--font-poppins), "Poppins", system-ui, -apple-system, sans-serif;
   --main-accent: linear-gradient(180deg, #fdf5e6 0%, #f4ead4 55%, #eee2c4 100%);
   --profile-blue: #89b4ff;
   --profile-blue-ink: #2a4d8f;

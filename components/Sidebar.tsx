@@ -23,9 +23,7 @@ export function Sidebar() {
       <nav className="topbar__nav" aria-label="Main navigation">
         <ul className="topbar__links">
           {NAV_ITEMS.map((item) => {
-            const active =
-              pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const isCreate = "kind" in item && item.kind === "create";
 
             return (

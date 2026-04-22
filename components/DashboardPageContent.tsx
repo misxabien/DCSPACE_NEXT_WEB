@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
 type RegisteredEvent = {
   month: string;
@@ -89,6 +90,17 @@ function getRegisteredEventSection(event: RegisteredEvent): RegisteredEventSecti
   return eventDate > today ? "upcoming" : "passed";
 }
 
+function getRegisteredEventDetailsHref(event: RegisteredEvent) {
+  return {
+    pathname: "/dashboard/registered-event",
+    query: {
+      month: event.month,
+      day: event.day,
+      year: event.year,
+    },
+  };
+}
+
 function sortRegisteredEventsByDate(events: RegisteredEvent[], direction: "ascending" | "descending") {
   return [...events].sort((firstEvent, secondEvent) => {
     const firstDate = getRegisteredEventDate(firstEvent)?.getTime() ?? 0;
@@ -166,7 +178,7 @@ export function DashboardPageContent() {
                       </h2>
                       <div className="registered-grid">
                         {section.events.map((event, index) => (
-                          <button className="registered-card" type="button" key={`${section.key}-${event.name}-${index}`}>
+                          <Link className="registered-card" href={getRegisteredEventDetailsHref(event)} key={`${section.key}-${event.name}-${index}`}>
                             <span className="registered-date">
                               <span>{event.month}</span>
                               <strong>{event.day}</strong>
@@ -178,7 +190,7 @@ export function DashboardPageContent() {
                               <span>{event.venue}</span>
                               <span>{event.organizer}</span>
                             </span>
-                          </button>
+                          </Link>
                         ))}
                       </div>
                     </section>

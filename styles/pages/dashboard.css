@@ -104,6 +104,7 @@
   box-shadow: 4px 5px 5px rgba(67, 57, 28, 0.38);
   color: #705615;
   cursor: pointer;
+  text-decoration: none;
   text-align: left;
   padding: 18px 22px;
   transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, color 0.2s ease;

@@ -1,86 +1,134 @@
 "use client";
 
-import { EventBookmarkButton, EventsBookmarks } from "@/components/EventsBookmarks";
-import { SearchWithClear } from "@/components/SearchWithClear";
+import Link from "next/link";
 
-const EVENTS = [
-  { id: "evt-1", variant: "event-card--cream" as const },
-  { id: "evt-2", variant: "event-card--white" as const },
-  { id: "evt-3", variant: "event-card--cream" as const },
-  { id: "evt-4", variant: "event-card--white" as const },
+const eventCards = [
+  {
+    title: "Event Name",
+    date: "JAN 24",
+    time: "Event Date and Time",
+    venue: "Event Venue",
+    department: "Event Representative or Organizer",
+  },
+  {
+    title: "Event Name",
+    date: "FEB 08",
+    time: "Event Date and Time",
+    venue: "Event Venue",
+    department: "Event Representative or Organizer",
+  },
 ];
 
-function EventCta() {
-  return (
-    <button className="event-card__cta" type="button">
-      <span className="cta__label--details">View Details</span>
-      <span className="cta__label--join">Join</span>
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M9 6l6 6-6 6"
-        />
-      </svg>
-    </button>
-  );
-}
+const today = new Date();
+const calendarYear = today.getFullYear();
+const calendarMonth = today.getMonth();
+const monthName = today.toLocaleString("en-US", { month: "long" });
+const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+const calendarDays = [
+  ...Array.from({ length: firstDay }, () => null),
+  ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
+];
+const weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"];
 
 export function EventsPageContent() {
   return (
-    <EventsBookmarks>
-      <header className="main__header">
-        <div className="main__header-row">
-          <h1 className="main__title">Browse Events</h1>
-          <div className="main__tools">
-            <button type="button" className="main__tool" aria-label="Layout">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <rect x="4" y="4" width="7" height="7" rx="1.5" />
-                <rect x="13" y="4" width="7" height="7" rx="1.5" />
-                <rect x="4" y="13" width="7" height="7" rx="1.5" />
-                <rect x="13" y="13" width="7" height="7" rx="1.5" />
-              </svg>
-            </button>
-            <button type="button" className="main__tool" aria-label="Refresh">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-2.64-6.36" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 3v6h-6" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div className="main__divider" role="presentation" />
-      </header>
-
-      <section className="main__detail-wrap">
-        <SearchWithClear />
-
-        <div className="list">
-          {EVENTS.map(({ id, variant }) => (
-            <article key={id} className={`event-card ${variant}`} data-event-id={id}>
-              <div
-                className="event-card__media"
-                role="img"
-                aria-label="Event publication material placeholder"
-              >
-                or pubmat
-              </div>
-              <div className="event-card__body">
-                <EventBookmarkButton eventId={id} />
-                <h2 className="event-name">Event Name</h2>
-                <p className="event-meta">Event Date and Time</p>
-                <p className="event-meta">Event Venue</p>
-                <p className="event-meta">Event Representative or Organizer</p>
-                <div className="event-card__actions">
-                  <EventCta />
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
+    <section className="events-page">
+      <section className="events-header">
+        <h1 className="events-title">Browse Events</h1>
+        <label className="events-search">
+          <svg className="events-search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M10 18C11.775 17.9996 13.4988 17.4054 14.897 16.312L19.293 20.708L20.707 19.294L16.311 14.898C17.405 13.4997 17.9996 11.7754 18 10C18 5.589 14.411 2 10 2C5.589 2 2 5.589 2 10C2 14.411 5.589 18 10 18ZM10 4C13.309 4 16 6.691 16 10C16 13.309 13.309 16 10 16C6.691 16 4 13.309 4 10C4 6.691 6.691 4 10 4Z"
+              fill="currentColor"
+            />
+          </svg>
+          <input className="events-search-input" type="search" aria-label="Search events" />
+        </label>
       </section>
-    </EventsBookmarks>
+
+      {eventCards.length > 0 ? (
+        <section className="events-content" aria-label="Available events">
+          <div className="event-list">
+            {eventCards.map((event, index) => (
+              <article className="browse-event-card" key={`${event.title}-${event.date}-${index}`}>
+                <div className="event-image">
+                  <svg className="folder-icon" viewBox="0 0 7 7" fill="none" aria-hidden="true">
+                    <path d="M1.38831 4.72105L2.63783 3.05502L3.60967 4.30454L4.30385 3.47153L5.2757 4.72105H1.38831ZM5.55337 1.66667H3.332L2.77666 1.11133H1.11064C0.963353 1.11133 0.8221 1.16984 0.717954 1.27398C0.613807 1.37813 0.555298 1.51938 0.555298 1.66667V4.99872C0.555298 5.146 0.613807 5.28726 0.717954 5.3914C0.8221 5.49555 0.963353 5.55406 1.11064 5.55406H5.55337C5.70066 5.55406 5.84191 5.49555 5.94605 5.3914C6.0502 5.28726 6.10871 5.146 6.10871 4.99872V2.22201C6.10871 2.07473 6.0502 1.93347 5.94605 1.82933C5.84191 1.72518 5.70066 1.66667 5.55337 1.66667Z" fill="currentColor" />
+                  </svg>
+                </div>
+                <div className="event-card-body">
+                  <h2>{event.title}</h2>
+                  <p>{event.time}</p>
+                  <p>{event.venue}</p>
+                  <p>{event.department}</p>
+                  <Link className="event-details-button" href="/events/details">
+                    <span>View Details</span>
+                    <svg viewBox="0 0 14 13" fill="none" aria-hidden="true">
+                      <path d="M0.262209 11.7641C-0.0942397 12.0519 -0.0861691 12.5132 0.281041 12.7935C0.646905 13.0739 1.23336 13.0675 1.58981 12.7787L8.73493 6.98223L8.0718 6.47548L8.73762 6.98329C9.09407 6.69341 9.086 6.23109 8.71745 5.95074C8.70669 5.94227 8.69593 5.93487 8.68516 5.92746L1.58847 0.220919C1.23202 -0.0678991 0.646905 -0.0742467 0.279695 0.206108C-0.0861691 0.486463 -0.0942397 0.946668 0.262209 1.23549L6.78052 6.47759L0.262209 11.7641Z" fill="currentColor" />
+                      <path d="M5.26221 11.7641C4.90576 12.0519 4.91383 12.5132 5.28104 12.7935C5.64691 13.0739 6.23336 13.0675 6.58981 12.7787L13.7349 6.98223L13.0718 6.47548L13.7376 6.98329C14.0941 6.69341 14.086 6.23109 13.7174 5.95074C13.7067 5.94227 13.6959 5.93487 13.6852 5.92746L6.58847 0.220919C6.23202 -0.0678991 5.64691 -0.0742467 5.2797 0.206108C4.91383 0.486463 4.90576 0.946668 5.26221 1.23549L11.7805 6.47759L5.26221 11.7641Z" fill="currentColor" />
+                    </svg>
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <aside className="calendar-panel">
+            <div className="calendar-header">
+              <h2>Calendar</h2>
+              <label className="year-select">
+                <select defaultValue={String(calendarYear)} aria-label="Filter events by year">
+                  <option>{calendarYear}</option>
+                  <option>{calendarYear + 1}</option>
+                  <option>{calendarYear + 2}</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="mini-calendar" aria-label={`${monthName} ${calendarYear} calendar`}>
+              <p className="month-label">{monthName}</p>
+              <div className="weekdays">
+                {weekdayLabels.map((label, index) => (
+                  <span key={`${label}-${index}`}>{label}</span>
+                ))}
+              </div>
+              <div className="calendar-grid">
+                {calendarDays.map((day, index) => {
+                  const isToday = day === today.getDate();
+                  const isUpcoming = day !== null && day > today.getDate();
+
+                  return (
+                    <span
+                      className={`${day ? "calendar-day" : "empty-day"}${isToday ? " is-today" : ""}${isUpcoming ? " is-upcoming" : ""}`}
+                      key={`${day ?? "blank"}-${index}`}
+                    >
+                      {day}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          </aside>
+        </section>
+      ) : (
+        <section className="events-empty">
+          <svg className="events-empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M8.293 16.293L9.707 17.707L12 15.414L14.293 17.707L15.707 16.293L13.414 14L15.707 11.707L14.293 10.293L12 12.586L9.707 10.293L8.293 11.707L10.586 14L8.293 16.293Z"
+              fill="currentColor"
+            />
+            <path
+              d="M19 4H17V2H15V4H9V2H7V4H5C3.897 4 3 4.897 3 6V20C3 21.103 3.897 22 5 22H19C20.103 22 21 21.103 21 20V6C21 4.897 20.103 4 19 4ZM19.002 20H5V8H19L19.002 20Z"
+              fill="currentColor"
+            />
+          </svg>
+          <p>
+            There are currently no events available to browse since no events are ongoing yet.
+            If you would like to create or organize an event, click the plus button.
+          </p>
+        </section>
+      )}
+    </section>
   );
 }
