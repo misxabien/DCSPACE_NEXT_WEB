@@ -523,7 +523,7 @@
         margin-top: 26px;
       }
 
-      /* Only collapse the main form to one column on narrow phones â€” keeps
+      /* Only collapse the main form to one column on narrow phones - keeps
          School | Department and paired times side-by-side on tablets/laptops. */
       @media (max-width: 640px) {
         .form-flow {
@@ -610,3 +610,4 @@
           grid-template-columns: 1fr;
         }
       }
+

@@ -1,4 +1,4 @@
-      /* â€”â€” My Profile main (same cream gradient as other DC Space pages) â€”â€” */
+/* My Profile main (same cream gradient as other DC Space pages) */
 /* One scroll region: inner column scrolls */
 .main:has(> .main--profile) {
   overflow: hidden;
@@ -360,3 +360,4 @@
           max-width: 280px;
         }
       }
+
