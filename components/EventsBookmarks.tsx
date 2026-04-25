@@ -20,6 +20,14 @@ function writeIds(ids: string[]) {
 
 type Ctx = { saved: Set<string>; toggle: (id: string) => void };
 
+interface EventsBookmarksProps {
+  children: React.ReactNode;
+}
+
+interface EventBookmarkButtonProps {
+  eventId: string;
+}
+
 const EventsBookmarkContext = createContext<Ctx | null>(null);
 
 export function useEventBookmark() {
@@ -28,7 +36,7 @@ export function useEventBookmark() {
   return v;
 }
 
-export function EventsBookmarks({ children }: { children: React.ReactNode }) {
+export function EventsBookmarks({ children }: Readonly<EventsBookmarksProps>) {
   const [saved, setSaved] = useState<Set<string>>(new Set());
 
   const sync = useCallback(() => setSaved(new Set(readIds())), []);
@@ -51,7 +59,7 @@ export function EventsBookmarks({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function EventBookmarkButton({ eventId }: { eventId: string }) {
+export function EventBookmarkButton({ eventId }: Readonly<EventBookmarkButtonProps>) {
   const { saved, toggle } = useEventBookmark();
   const isSaved = saved.has(eventId);
 
