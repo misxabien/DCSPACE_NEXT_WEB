@@ -46,7 +46,8 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 },
     );
-  } catch {
+  } catch (error) {
+    console.error("Admin Google auth pre-check failed", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

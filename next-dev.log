@@ -1,0 +1,23 @@
+
+> dc-space-next@0.1.0 dev
+> next dev --turbopack
+
+ ⚠ Port 3000 is in use, trying 3001 instead.
+   ▲ Next.js 15.1.0 (Turbopack)
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.1.4:3001
+   - Environments: .env.local
+
+ ✓ Starting...
+Slow filesystem detected. If D:\Download\dcspace\.next is a network drive, consider moving it to a local folder. If you have an antivirus enabled, consider excluding your project directory.
+ ✓ Compiled in 3.4s
+ ✓ Ready in 11.8s
+ ○ Compiling /api/auth/[...nextauth] ...
+ ✓ Compiled /api/auth/[...nextauth] in 7.5s
+ GET /api/auth/providers 200 in 18536ms
+ GET /api/auth/csrf 200 in 342ms
+ POST /api/auth/signin/google 200 in 1300ms
+ ○ Compiling /api/admin/auth/google ...
+ ✓ Compiled /api/admin/auth/google in 1073ms
+ POST /api/admin/auth/google 200 in 30300ms
+ POST /api/admin/auth/google 403 in 1756ms

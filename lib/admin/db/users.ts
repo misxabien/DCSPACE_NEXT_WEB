@@ -10,6 +10,14 @@ const globalForMongo = globalThis as unknown as {
   adminMongoClientPromise?: Promise<MongoClient>;
 };
 
+const mongoClientOptions = {
+  autoSelectFamily: true,
+  autoSelectFamilyAttemptTimeout: 5000,
+  family: 4 as const,
+  connectTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 10000,
+};
+
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
   error.name = name;
@@ -23,8 +31,16 @@ async function getMongoClient() {
   }
 
   if (!globalForMongo.adminMongoClientPromise) {
-    const client = new MongoClient(mongoUri);
-    globalForMongo.adminMongoClientPromise = client.connect();
+    const client = new MongoClient(mongoUri, mongoClientOptions);
+    globalForMongo.adminMongoClientPromise = client.connect().catch((error: unknown) => {
+      globalForMongo.adminMongoClient = undefined;
+      globalForMongo.adminMongoClientPromise = undefined;
+      throw createAppError(
+        "DatabaseConnectionError",
+        error instanceof Error ? error.message : "Failed to connect to MongoDB",
+        500,
+      );
+    });
   }
 
   globalForMongo.adminMongoClient = await globalForMongo.adminMongoClientPromise;
@@ -561,3 +577,4 @@ export async function assignToEvent(id: string, input: AssignToEventInput) {
     assignedEvent: mapAssignedEvent(eventRecord),
   };
 }
+
