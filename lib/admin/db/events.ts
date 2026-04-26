@@ -1,13 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MongoClient, ObjectId } from "mongodb";
-
-const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
-const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
-
-const globalForMongo = globalThis as unknown as {
-  adminEventsMongoClient?: MongoClient;
-  adminEventsMongoPromise?: Promise<MongoClient>;
-};
+import { ObjectId } from "mongodb";
+import { getAdminCollection } from "./mongo";
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -16,30 +9,9 @@ function createAppError(name: string, message: string, status: number) {
   return error;
 }
 
-async function getMongoClient() {
-  if (globalForMongo.adminEventsMongoClient) {
-    return globalForMongo.adminEventsMongoClient;
-  }
-
-  if (!globalForMongo.adminEventsMongoPromise) {
-    const client = new MongoClient(mongoUri);
-    globalForMongo.adminEventsMongoPromise = client.connect();
-  }
-
-  globalForMongo.adminEventsMongoClient = await globalForMongo.adminEventsMongoPromise;
-  return globalForMongo.adminEventsMongoClient;
-}
-
-async function getDatabase() {
-  const client = await getMongoClient();
-  return client.db(mongoDbName);
-}
-
 async function getEventsCollection() {
-  const db = await getDatabase();
-  return db.collection<any>("events");
+  return getAdminCollection<any>("events");
 }
-
 function toObjectId(id: string) {
   if (!ObjectId.isValid(id)) {
     throw createAppError("ValidationError", "Invalid event id", 400);
@@ -358,4 +330,6 @@ export async function postAdminComment(id: string, comment: string) {
   const updatedEvent = await events.findOne({ _id: objectId });
   return mapEventDetail(updatedEvent);
 }
+
+
 
