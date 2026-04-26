@@ -130,7 +130,11 @@ export const authOptions: AuthOptions = {
       }
 
       const registeredUser = await findUserByEmail(email);
-      return Boolean(registeredUser);
+      return Boolean(
+        registeredUser &&
+          registeredUser.role === "admin" &&
+          registeredUser.isActive !== false,
+      );
     },
     async jwt({ token, user }) {
       if (user) {
@@ -156,3 +160,5 @@ export const authOptions: AuthOptions = {
     signIn: "/login",
   },
 };
+
+

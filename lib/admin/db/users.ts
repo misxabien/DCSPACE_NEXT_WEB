@@ -1,22 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
-import { MongoClient, ObjectId } from "mongodb";
-
-const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
-const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
-
-const globalForMongo = globalThis as unknown as {
-  adminMongoClient?: MongoClient;
-  adminMongoClientPromise?: Promise<MongoClient>;
-};
-
-const mongoClientOptions = {
-  autoSelectFamily: true,
-  autoSelectFamilyAttemptTimeout: 5000,
-  family: 4 as const,
-  connectTimeoutMS: 10000,
-  serverSelectionTimeoutMS: 10000,
-};
+import { ObjectId } from "mongodb";
+import { getAdminCollection } from "./mongo";
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -25,43 +10,13 @@ function createAppError(name: string, message: string, status: number) {
   return error;
 }
 
-async function getMongoClient() {
-  if (globalForMongo.adminMongoClient) {
-    return globalForMongo.adminMongoClient;
-  }
-
-  if (!globalForMongo.adminMongoClientPromise) {
-    const client = new MongoClient(mongoUri, mongoClientOptions);
-    globalForMongo.adminMongoClientPromise = client.connect().catch((error: unknown) => {
-      globalForMongo.adminMongoClient = undefined;
-      globalForMongo.adminMongoClientPromise = undefined;
-      throw createAppError(
-        "DatabaseConnectionError",
-        error instanceof Error ? error.message : "Failed to connect to MongoDB",
-        500,
-      );
-    });
-  }
-
-  globalForMongo.adminMongoClient = await globalForMongo.adminMongoClientPromise;
-  return globalForMongo.adminMongoClient;
-}
-
-async function getDatabase() {
-  const client = await getMongoClient();
-  return client.db(mongoDbName);
-}
-
 async function getUsersCollection() {
-  const db = await getDatabase();
-  return db.collection<any>("users");
+  return getAdminCollection<any>("users");
 }
 
 async function getEventsCollection() {
-  const db = await getDatabase();
-  return db.collection<any>("events");
+  return getAdminCollection<any>("events");
 }
-
 function hashPassword(password: string, salt = randomBytes(16).toString("hex")) {
   const hash = scryptSync(password, salt, 64).toString("hex");
   return `${salt}:${hash}`;
@@ -577,4 +532,6 @@ export async function assignToEvent(id: string, input: AssignToEventInput) {
     assignedEvent: mapAssignedEvent(eventRecord),
   };
 }
+
+
 

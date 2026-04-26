@@ -1,37 +1,50 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "../../../../lib/admin/auth/roleGuard";
-import { sendToGemini } from "../../../../lib/admin/ai/gemini";
+import { getAIRecommendations, sendToGemini } from "../../../../lib/admin/ai/gemini";
 import {
   getDashboardAttendanceData,
   getDashboardCharts,
+  getDashboardEventData,
   getDashboardStats,
+  getKeyEventInsights,
+  getMostUsedFacilities,
+  getTopEngagedCourses,
 } from "../../../../lib/admin/db/dashboard";
-
-function toErrorResponse(error: unknown) {
-  if (error instanceof Error && error.name === "AdminAuthorizationError") {
-    return NextResponse.json({ error: error.message }, { status: 403 });
-  }
-
-  return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-}
+import { toErrorResponse } from "../../../../lib/admin/errors";
 
 export async function GET() {
   try {
     await requireAdmin();
 
-    const [stats, attendanceData] = await Promise.all([
+    const [stats, attendanceData, eventData] = await Promise.all([
       getDashboardStats(),
       getDashboardAttendanceData(),
+      getDashboardEventData(),
     ]);
 
-    const [aiAnalytics, charts] = await Promise.all([
+    const [
+      aiAnalytics,
+      charts,
+      keyEventInsights,
+      topEngagedCourse,
+      mostUsedFacilities,
+      aiRecommendations,
+    ] = await Promise.all([
       sendToGemini(attendanceData),
       Promise.resolve(getDashboardCharts(attendanceData)),
+      getKeyEventInsights(),
+      getTopEngagedCourses(),
+      getMostUsedFacilities(),
+      getAIRecommendations(attendanceData, eventData),
     ]);
 
     return NextResponse.json(
       {
-        ...stats,
+        stats,
+        keyEventInsights,
+        topEngagedCourse,
+        mostUsedFacilities,
+        aiRecommendations,
         aiAnalytics,
         charts,
       },
