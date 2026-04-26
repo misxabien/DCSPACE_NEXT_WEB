@@ -1,33 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MongoClient } from "mongodb";
+import { getAdminCollection } from "./mongo";
 
-const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
-const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
-
-const globalForMongo = globalThis as unknown as {
-  adminDashboardMongoClient?: MongoClient;
-  adminDashboardMongoPromise?: Promise<MongoClient>;
-};
-
-async function getMongoClient() {
-  if (globalForMongo.adminDashboardMongoClient) {
-    return globalForMongo.adminDashboardMongoClient;
-  }
-
-  if (!globalForMongo.adminDashboardMongoPromise) {
-    const client = new MongoClient(mongoUri);
-    globalForMongo.adminDashboardMongoPromise = client.connect();
-  }
-
-  globalForMongo.adminDashboardMongoClient = await globalForMongo.adminDashboardMongoPromise;
-  return globalForMongo.adminDashboardMongoClient;
+async function getEventsCollection() {
+  return getAdminCollection<any>("events");
 }
 
-async function getDatabase() {
-  const client = await getMongoClient();
-  return client.db(mongoDbName);
+async function getAttendanceCollection() {
+  return getAdminCollection<any>("attendance");
 }
-
 function toDateKey(value: Date | string | null | undefined) {
   if (!value) {
     return "Unknown";
@@ -50,9 +30,10 @@ function toHourLabel(value: Date | string | null | undefined) {
  * Returns the dashboard headline statistics from MongoDB.
  */
 export async function getDashboardStats() {
-  const db = await getDatabase();
-  const events = db.collection<any>("events");
-  const attendance = db.collection<any>("attendance");
+  const [events, attendance] = await Promise.all([
+    getEventsCollection(),
+    getAttendanceCollection(),
+  ]);
 
   const [totalEvents, totalAttendees] = await Promise.all([
     events.countDocuments({}),
@@ -69,8 +50,7 @@ export async function getDashboardStats() {
  * Returns the attendance records used for Gemini analytics generation.
  */
 export async function getDashboardAttendanceData() {
-  const db = await getDatabase();
-  const attendance = db.collection<any>("attendance");
+  const attendance = await getAttendanceCollection();
   const records = await attendance.find({}).sort({ createdAt: -1 }).limit(500).toArray();
 
   return records.map((record) => ({
@@ -124,3 +104,6 @@ export function getDashboardCharts(attendanceData: Array<Record<string, unknown>
     },
   };
 }
+
+
+

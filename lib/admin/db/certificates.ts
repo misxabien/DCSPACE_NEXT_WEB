@@ -1,13 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MongoClient, ObjectId } from "mongodb";
-
-const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
-const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
-
-const globalForMongo = globalThis as unknown as {
-  adminCertificatesMongoClient?: MongoClient;
-  adminCertificatesMongoPromise?: Promise<MongoClient>;
-};
+import { ObjectId } from "mongodb";
+import { getAdminCollection } from "./mongo";
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -16,40 +9,17 @@ function createAppError(name: string, message: string, status: number) {
   return error;
 }
 
-async function getMongoClient() {
-  if (globalForMongo.adminCertificatesMongoClient) {
-    return globalForMongo.adminCertificatesMongoClient;
-  }
-
-  if (!globalForMongo.adminCertificatesMongoPromise) {
-    const client = new MongoClient(mongoUri);
-    globalForMongo.adminCertificatesMongoPromise = client.connect();
-  }
-
-  globalForMongo.adminCertificatesMongoClient = await globalForMongo.adminCertificatesMongoPromise;
-  return globalForMongo.adminCertificatesMongoClient;
-}
-
-async function getDatabase() {
-  const client = await getMongoClient();
-  return client.db(mongoDbName);
-}
-
 async function getEventsCollection() {
-  const db = await getDatabase();
-  return db.collection<any>("events");
+  return getAdminCollection<any>("events");
 }
 
 async function getUsersCollection() {
-  const db = await getDatabase();
-  return db.collection<any>("users");
+  return getAdminCollection<any>("users");
 }
 
 async function getAttendanceCollection() {
-  const db = await getDatabase();
-  return db.collection<any>("attendance");
+  return getAdminCollection<any>("attendance");
 }
-
 function toObjectId(id: string, label: string) {
   if (!ObjectId.isValid(id)) {
     throw createAppError("ValidationError", `Invalid ${label} id`, 400);
@@ -375,4 +345,6 @@ export async function toggleAttendeeStatus(id: string, eventId: string, nextStat
     ),
   };
 }
+
+
 

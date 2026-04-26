@@ -1,33 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MongoClient } from "mongodb";
+import { getAdminCollection } from "./mongo";
 
-const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
-const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
-
-const globalForMongo = globalThis as unknown as {
-  adminFeedbackMongoClient?: MongoClient;
-  adminFeedbackMongoPromise?: Promise<MongoClient>;
-};
-
-async function getMongoClient() {
-  if (globalForMongo.adminFeedbackMongoClient) {
-    return globalForMongo.adminFeedbackMongoClient;
-  }
-
-  if (!globalForMongo.adminFeedbackMongoPromise) {
-    const client = new MongoClient(mongoUri);
-    globalForMongo.adminFeedbackMongoPromise = client.connect();
-  }
-
-  globalForMongo.adminFeedbackMongoClient = await globalForMongo.adminFeedbackMongoPromise;
-  return globalForMongo.adminFeedbackMongoClient;
+async function getFeedbackCollection() {
+  return getAdminCollection<any>("feedback");
 }
-
-async function getDatabase() {
-  const client = await getMongoClient();
-  return client.db(mongoDbName);
-}
-
 function toNumericRating(value: unknown) {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : null;
@@ -135,8 +111,7 @@ function mapFeedbackRow(record: any) {
  * Returns the feedback overview stats and table rows for the admin feedback screen.
  */
 export async function getFeedbackOverview() {
-  const db = await getDatabase();
-  const feedback = db.collection<any>("feedback");
+  const feedback = await getFeedbackCollection();
   const records = await feedback.find({}).sort({ createdAt: -1, updatedAt: -1 }).limit(500).toArray();
 
   const eventRatings: number[] = [];
@@ -172,4 +147,6 @@ export async function getFeedbackOverview() {
     feedbackList: records.map(mapFeedbackRow),
   };
 }
+
+
 
