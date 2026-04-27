@@ -155,7 +155,7 @@ export function RegisterAccountContent() {
                   Position:
                 </option>
                 <option value="Organization Member">Organization Member</option>
-                <option value="Officer">Officer</option>
+                <option value="Officer">Organization Officer</option>
               </select>
             </div>
 
