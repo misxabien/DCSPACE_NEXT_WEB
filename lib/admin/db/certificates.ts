@@ -1,13 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MongoClient, ObjectId } from "mongodb";
-
-const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
-const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
-
-const globalForMongo = globalThis as unknown as {
-  adminCertificatesMongoClient?: MongoClient;
-  adminCertificatesMongoPromise?: Promise<MongoClient>;
-};
+import { ObjectId } from "mongodb";
+import { getAdminCollection } from "./mongo";
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -16,40 +9,17 @@ function createAppError(name: string, message: string, status: number) {
   return error;
 }
 
-async function getMongoClient() {
-  if (globalForMongo.adminCertificatesMongoClient) {
-    return globalForMongo.adminCertificatesMongoClient;
-  }
-
-  if (!globalForMongo.adminCertificatesMongoPromise) {
-    const client = new MongoClient(mongoUri);
-    globalForMongo.adminCertificatesMongoPromise = client.connect();
-  }
-
-  globalForMongo.adminCertificatesMongoClient = await globalForMongo.adminCertificatesMongoPromise;
-  return globalForMongo.adminCertificatesMongoClient;
-}
-
-async function getDatabase() {
-  const client = await getMongoClient();
-  return client.db(mongoDbName);
-}
-
 async function getEventsCollection() {
-  const db = await getDatabase();
-  return db.collection<any>("events");
+  return getAdminCollection<any>("events");
 }
 
 async function getUsersCollection() {
-  const db = await getDatabase();
-  return db.collection<any>("users");
+  return getAdminCollection<any>("users");
 }
 
 async function getAttendanceCollection() {
-  const db = await getDatabase();
-  return db.collection<any>("attendance");
+  return getAdminCollection<any>("attendance");
 }
-
 function toObjectId(id: string, label: string) {
   if (!ObjectId.isValid(id)) {
     throw createAppError("ValidationError", `Invalid ${label} id`, 400);
@@ -243,7 +213,7 @@ export async function getAttendeesByEvent(eventId: string, search?: string | nul
       : { _id: { $in: [] } };
 
   const userRows = await users.find(userQuery).toArray();
-  const usersById = new Map(userRows.map((user) => [String(user._id), user]));
+  const usersById = new Map(userRows.map((user: any) => [String(user._id), user]));
 
   const rows: ReturnType<typeof mapAttendeeRow>[] = [];
 
@@ -258,7 +228,7 @@ export async function getAttendeesByEvent(eventId: string, search?: string | nul
   }
 
   for (const user of userRows) {
-    if (attendanceRows.some((attendanceRow) => String(attendanceRow.userId) === String(user._id))) {
+    if (attendanceRows.some((attendanceRow: any) => String(attendanceRow.userId) === String(user._id))) {
       continue;
     }
 
@@ -376,3 +346,153 @@ export async function toggleAttendeeStatus(id: string, eventId: string, nextStat
   };
 }
 
+/* ------------------------------------------------------------------ */
+/*  V2 — Cert-Attendance mapping for /api/admin/cert-attendance       */
+/* ------------------------------------------------------------------ */
+
+function formatTapTime(value: Date | string | null | undefined) {
+  if (!value) return "00:00";
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "00:00";
+
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+function deriveAttendanceStatus(record: any) {
+  const tapIn = record.tapIn ?? record.attendance?.tapIn ?? null;
+  const tapOut = record.tapOut ?? record.attendance?.tapOut ?? null;
+
+  if (!tapIn && !tapOut) return "Pending";
+
+  const normalized = (
+    record.attendanceStatus ??
+    record.attendance?.status ??
+    ""
+  ).toString().trim().toLowerCase();
+
+  if (["completed", "complete", "present", "attended"].includes(normalized)) {
+    return "Completed";
+  }
+
+  if (tapIn && tapOut) return "Completed";
+  if (tapIn && !tapOut) return "Incomplete";
+
+  return "Pending";
+}
+
+function mapCertAttendanceRecord(user: any, attendance: any) {
+  const attendanceStatus = deriveAttendanceStatus(attendance);
+
+  return {
+    studentNumber: String(user.studentId ?? user.idNumber ?? user._id),
+    date: attendance.createdAt
+      ? new Intl.DateTimeFormat("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        }).format(
+          attendance.createdAt instanceof Date
+            ? attendance.createdAt
+            : new Date(attendance.createdAt),
+        )
+      : "N/A",
+    registration: user.rfid ? "Registered" : "Not Registered",
+    tapIn: formatTapTime(attendance.tapIn ?? attendance.attendance?.tapIn),
+    tapOut: formatTapTime(attendance.tapOut ?? attendance.attendance?.tapOut),
+    attendance: attendanceStatus,
+    certificateStatus: attendanceStatus === "Completed" ? "available" : "pending",
+    certificateUrl:
+      attendanceStatus === "Completed"
+        ? attendance.certificateUrl ?? null
+        : null,
+  };
+}
+
+/**
+ * Returns per-student attendance and certificate records in the v2 response
+ * shape for the cert-attendance screen.
+ */
+export async function getCertAttendanceByEvent(
+  eventId: string,
+  search?: string | null,
+) {
+  const trimmedEventId = eventId?.trim();
+
+  if (!trimmedEventId) {
+    throw createAppError("ValidationError", "eventId is required", 400);
+  }
+
+  const [event, attendance, users] = await Promise.all([
+    findEventById(trimmedEventId),
+    getAttendanceCollection(),
+    getUsersCollection(),
+  ]);
+
+  const eventObjectId = toObjectId(trimmedEventId, "event");
+  const attendanceRows = await attendance
+    .find({
+      $or: [{ eventId: trimmedEventId }, { eventId: eventObjectId }],
+    })
+    .sort({ updatedAt: -1, createdAt: -1 })
+    .toArray();
+
+  const participantIds = new Set<string>();
+
+  for (const row of attendanceRows) {
+    if (row.userId) participantIds.add(String(row.userId));
+  }
+
+  if (Array.isArray(event.participantIds)) {
+    for (const pid of event.participantIds) {
+      if (pid) participantIds.add(String(pid));
+    }
+  }
+
+  const validIds = Array.from(participantIds)
+    .filter((id) => ObjectId.isValid(id))
+    .map((id) => new ObjectId(id));
+
+  const userRows = await users
+    .find(validIds.length > 0 ? { _id: { $in: validIds } } : { _id: { $in: [] } })
+    .toArray();
+
+  const usersById = new Map(userRows.map((u: any) => [String(u._id), u]));
+
+  const records: ReturnType<typeof mapCertAttendanceRecord>[] = [];
+
+  for (const row of attendanceRows) {
+    const user = usersById.get(String(row.userId));
+    if (!user) continue;
+
+    if (
+      search &&
+      !String(user.studentId ?? user.idNumber ?? "")
+        .toLowerCase()
+        .includes(search.trim().toLowerCase())
+    ) {
+      continue;
+    }
+
+    records.push(mapCertAttendanceRecord(user, row));
+  }
+
+  const start = event.startTime ?? event.startDate ?? event.eventDate ?? null;
+  const end = event.endTime ?? event.endDate ?? null;
+
+  return {
+    event: {
+      id: String(event._id),
+      name: event.title ?? event.name ?? "Untitled event",
+      date: formatDateLabel(start),
+      venue: event.venue ?? event.location ?? "TBA",
+      startTime: formatTimeLabel(start),
+      endTime: formatTimeLabel(end),
+      organizer: event.organizerName ?? event.organizer?.name ?? "Unknown organizer",
+      course: event.course ?? "N/A",
+      organization: event.organizationName ?? event.organization?.name ?? "N/A",
+      sheetsUrl: event.sheetsUrl ?? event.googleSheetsUrl ?? null,
+    },
+    records,
+  };
+}
