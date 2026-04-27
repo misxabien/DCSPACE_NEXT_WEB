@@ -1,15 +1,40 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { SearchWithClear } from "@/components/SearchWithClear";
 
-const attendanceEvents: {
+type AttendanceEvent = {
   name: string;
   date: string;
   status: string;
   certificate: string;
-}[] = [];
+};
+
+type RegisteredEvent = {
+  month: string;
+  day: string;
+  year: string;
+  name: string;
+  status: string;
+  certificate: string;
+};
 
 export function AttendancePageContent() {
+  const [attendanceEvents, setAttendanceEvents] = useState<AttendanceEvent[]>([]);
+
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem("dcspaceRegisteredEvents") || "[]") as RegisteredEvent[];
+
+    const formatted = saved.map((event) => ({
+      name: event.name,
+      date: `${event.month} ${event.day}, ${event.year}`,
+      status: event.status,
+      certificate: event.certificate,
+    }));
+
+    setAttendanceEvents(formatted);
+  }, []);
+
   return (
     <>
       <header className="main__header">
@@ -37,6 +62,7 @@ export function AttendancePageContent() {
                     <th scope="col" className="col-open" />
                   </tr>
                 </thead>
+
                 <tbody>
                   {attendanceEvents.map((event) => (
                     <tr key={`${event.name}-${event.date}`}>
@@ -72,6 +98,7 @@ export function AttendancePageContent() {
                   </svg>
                   Ascending
                 </button>
+
                 <button type="button">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden>
                     <path d="M8 10l4-4 4 4M16 14l-4 4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

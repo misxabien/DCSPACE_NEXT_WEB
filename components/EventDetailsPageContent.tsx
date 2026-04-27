@@ -56,11 +56,33 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleConfirm = () => {
-    if (!fileAdded) {
-      return;
+    if (!fileAdded) return;
+
+    const newEvent = {
+      month: "March",
+      day: "15",
+      year: "2026",
+      name: eventDetails.name,
+      dateTime: eventDetails.dateTime,
+      venue: eventDetails.venue,
+      organizer: eventDetails.organizer,
+      status: "Registered",
+      certificate: "Pending",
+    };
+
+    const existing = JSON.parse(localStorage.getItem("dcspaceRegisteredEvents") || "[]");
+
+    const alreadyExists = existing.some(
+      (event: typeof newEvent) =>
+        event.name === newEvent.name && event.dateTime === newEvent.dateTime,
+    );
+
+    if (!alreadyExists) {
+      localStorage.setItem("dcspaceRegisteredEvents", JSON.stringify([...existing, newEvent]));
     }
 
     setIsRedirecting(true);
+
     window.setTimeout(() => {
       startTransition(() => {
         router.push("/dashboard");

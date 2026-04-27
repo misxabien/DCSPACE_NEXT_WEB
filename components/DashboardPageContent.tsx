@@ -21,36 +21,6 @@ type OrganizedEvent = {
   certificate: string;
 };
 
-const registeredEvents: RegisteredEvent[] = [
-  {
-    month: "March",
-    day: "15",
-    year: "2026",
-    name: "Name of Event",
-    dateTime: "Event Time Start and End",
-    venue: "Event Venue",
-    organizer: "Event Organizer",
-  },
-  {
-    month: "April",
-    day: "23",
-    year: "2026",
-    name: "Name of Event",
-    dateTime: "Event Time Start and End",
-    venue: "Event Venue",
-    organizer: "Event Organizer",
-  },
-  {
-    month: "March",
-    day: "15",
-    year: "2026",
-    name: "Name of Event",
-    dateTime: "Event Time Start and End",
-    venue: "Event Venue",
-    organizer: "Event Organizer",
-  },
-];
-
 const organizedEvents: OrganizedEvent[] = [
   {
     name: "Event Name",
@@ -112,12 +82,14 @@ function sortRegisteredEventsByDate(events: RegisteredEvent[], direction: "ascen
 }
 
 export function DashboardPageContent() {
+  const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [activeDashboardView, setActiveDashboardView] = useState<"registered" | "organized">("registered");
   const [consentChecked, setConsentChecked] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
 
   const isRegisteredView = activeDashboardView === "registered";
+
   const registeredEventsBySection = useMemo(
     () =>
       registeredEventSections.map((section) => {
@@ -128,8 +100,13 @@ export function DashboardPageContent() {
           events: sortRegisteredEventsByDate(sectionEvents, section.key === "passed" ? "descending" : "ascending"),
         };
       }),
-    [],
+    [registeredEvents],
   );
+
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem("dcspaceRegisteredEvents") || "[]");
+    setRegisteredEvents(saved);
+  }, []);
 
   useEffect(() => {
     setShowPrivacyModal(window.sessionStorage.getItem("dcspacePrivacySeen") !== "true");
@@ -177,72 +154,78 @@ export function DashboardPageContent() {
           {isRegisteredView ? (
             registeredEvents.length > 0 ? (
               <section className="registered-sections" aria-label="Registered events">
-                {registeredEventsBySection.map((section) => (
-                  section.events.length > 0 && (
-                    <section className="registered-group" key={section.key} aria-labelledby={`${section.key}-events-title`}>
-                      <h2 className="registered-group-title" id={`${section.key}-events-title`}>
-                        {section.title}
-                      </h2>
-                      <div className="registered-grid">
-                        {section.events.map((event, index) => (
-                          <Link className="registered-card" href={getRegisteredEventDetailsHref(event)} key={`${section.key}-${event.name}-${index}`}>
-                            <span className="registered-date">
-                              <span>{event.month}</span>
-                              <strong>{event.day}</strong>
-                              <span>{event.year}</span>
-                            </span>
-                            <span className="registered-details">
-                              <strong>{event.name}</strong>
-                              <span>{event.dateTime}</span>
-                              <span>{event.venue}</span>
-                              <span>{event.organizer}</span>
-                            </span>
-                          </Link>
-                        ))}
-                      </div>
-                    </section>
-                  )
-                ))}
+                {registeredEventsBySection.map(
+                  (section) =>
+                    section.events.length > 0 && (
+                      <section className="registered-group" key={section.key} aria-labelledby={`${section.key}-events-title`}>
+                        <h2 className="registered-group-title" id={`${section.key}-events-title`}>
+                          {section.title}
+                        </h2>
+
+                        <div className="registered-grid">
+                          {section.events.map((event, index) => (
+                            <Link
+                              className="registered-card"
+                              href={getRegisteredEventDetailsHref(event)}
+                              key={`${section.key}-${event.name}-${index}`}
+                            >
+                              <span className="registered-date">
+                                <span>{event.month}</span>
+                                <strong>{event.day}</strong>
+                                <span>{event.year}</span>
+                              </span>
+
+                              <span className="registered-details">
+                                <strong>{event.name}</strong>
+                                <span>{event.dateTime}</span>
+                                <span>{event.venue}</span>
+                                <span>{event.organizer}</span>
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                      </section>
+                    ),
+                )}
               </section>
             ) : (
               <EmptyState message="No registered events found. Browse the Events tab and select an event to register." />
             )
-          ) : (
-            organizedEvents.length > 0 ? (
-              <section className="organized-table" aria-label="Organized events">
-                <div className="organized-row organized-header">
-                  <span>Event Name</span>
-                  <span>Date</span>
-                  <span>Event Status</span>
-                  <span>E-Certificate</span>
-                  <span aria-hidden="true" />
-                </div>
+          ) : organizedEvents.length > 0 ? (
+            <section className="organized-table" aria-label="Organized events">
+              <div className="organized-row organized-header">
+                <span>Event Name</span>
+                <span>Date</span>
+                <span>Event Status</span>
+                <span>E-Certificate</span>
+                <span aria-hidden="true" />
+              </div>
 
-                {organizedEvents.map((event, index) => (
-                  <div className="organized-row" key={`${event.name}-${index}`}>
-                    <span>{event.name}</span>
-                    <span>{event.date}</span>
-                    <span>{event.status}</span>
-                    <span>{event.certificate}</span>
-                    <button className="details-button" type="button">
-                      View Details
-                      <svg viewBox="0 0 14 13" fill="none" aria-hidden="true">
-                        <path
-                          d="M0.262209 11.7641C-0.0942397 12.0519 -0.0861691 12.5132 0.281041 12.7935C0.646905 13.0739 1.23336 13.0675 1.58981 12.7787L8.73493 6.98223L8.0718 6.47548L8.73762 6.98329C9.09407 6.69341 9.086 6.23109 8.71745 5.95074C8.70669 5.94227 8.69593 5.93487 8.68516 5.92746L1.58847 0.220919C1.23202 -0.0678991 0.646905 -0.0742467 0.279695 0.206108C-0.0861691 0.486463 -0.0942397 0.946668 0.262209 1.23549L6.78052 6.47759L0.262209 11.7641Z"
-                          fill="currentColor"
-                        />
-                        <path
-                          d="M5.26221 11.7641C4.90576 12.0519 4.91383 12.5132 5.28104 12.7935C5.64691 13.0739 6.23336 13.0675 6.58981 12.7787L13.7349 6.98223L13.0718 6.47548L13.7376 6.98329C14.0941 6.69341 14.086 6.23109 13.7174 5.95074C13.7067 5.94227 13.6959 5.93487 13.6852 5.92746L6.58847 0.220919C6.23202 -0.0678991 5.64691 -0.0742467 5.2797 0.206108C4.91383 0.486463 4.90576 0.946668 5.26221 1.23549L11.7805 6.47759L5.26221 11.7641Z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </section>
-            ) : (
-              <EmptyState message="No organized events yet. If you would like to create or manage an event, click the plus button." />
-            )
+              {organizedEvents.map((event, index) => (
+                <div className="organized-row" key={`${event.name}-${index}`}>
+                  <span>{event.name}</span>
+                  <span>{event.date}</span>
+                  <span>{event.status}</span>
+                  <span>{event.certificate}</span>
+
+                  <button className="details-button" type="button">
+                    View Details
+                    <svg viewBox="0 0 14 13" fill="none" aria-hidden="true">
+                      <path
+                        d="M0.262209 11.7641C-0.0942397 12.0519 -0.0861691 12.5132 0.281041 12.7935C0.646905 13.0739 1.23336 13.0675 1.58981 12.7787L8.73493 6.98223L8.0718 6.47548L8.73762 6.98329C9.09407 6.69341 9.086 6.23109 8.71745 5.95074C8.70669 5.94227 8.69593 5.93487 8.68516 5.92746L1.58847 0.220919C1.23202 -0.0678991 0.646905 -0.0742467 0.279695 0.206108C-0.0861691 0.486463 -0.0942397 0.946668 0.262209 1.23549L6.78052 6.47759L0.262209 11.7641Z"
+                        fill="currentColor"
+                      />
+                      <path
+                        d="M5.26221 11.7641C4.90576 12.0519 4.91383 12.5132 5.28104 12.7935C5.64691 13.0739 6.23336 13.0675 6.58981 12.7787L13.7349 6.98223L13.0718 6.47548L13.7376 6.98329C14.0941 6.69341 14.086 6.23109 13.7174 5.95074C13.7067 5.94227 13.6959 5.93487 13.6852 5.92746L6.58847 0.220919C6.23202 -0.0678991 5.64691 -0.0742467 5.2797 0.206108C4.91383 0.486463 4.90576 0.946668 5.26221 1.23549L11.7805 6.47759L5.26221 11.7641Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </section>
+          ) : (
+            <EmptyState message="No organized events yet. If you would like to create or manage an event, click the plus button." />
           )}
         </section>
       </div>
@@ -287,11 +270,7 @@ export function DashboardPageContent() {
                 </span>
               </label>
 
-              {showValidation && (
-                <p className="validation-text">
-                  Please check the consent box before continuing.
-                </p>
-              )}
+              {showValidation && <p className="validation-text">Please check the consent box before continuing.</p>}
 
               <div className="privacy-actions">
                 <button type="button" className="accept-button" onClick={handleAccept}>
