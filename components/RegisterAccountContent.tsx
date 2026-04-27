@@ -9,6 +9,11 @@ type RegisterReview = {
   lastName: string;
   studentNumber: string;
   studentEmail: string;
+  rfidNumber: string;
+  organizationPart: string;
+  organizationRole: string;
+  course: string;
+  school: string;
   password: string;
   confirmPassword: string;
 };
@@ -18,6 +23,11 @@ const emptyReview: RegisterReview = {
   lastName: "",
   studentNumber: "",
   studentEmail: "",
+  rfidNumber: "",
+  organizationPart: "",
+  organizationRole: "",
+  course: "",
+  school: "",
   password: "",
   confirmPassword: "",
 };
@@ -25,6 +35,7 @@ const emptyReview: RegisterReview = {
 export function RegisterAccountContent() {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+
   const [showReview, setShowReview] = useState(false);
   const [review, setReview] = useState<RegisterReview>(emptyReview);
   const [showPassword, setShowPassword] = useState(false);
@@ -42,6 +53,7 @@ export function RegisterAccountContent() {
     { label: "Contains a special character", valid: /[^A-Za-z0-9]/.test(password) },
     { label: "Passwords match", valid: password.length > 0 && password === confirmPassword },
   ];
+
   const passwordIsValid = passwordChecks.every((check) => check.valid);
 
   const getValue = (formData: FormData, key: string) => {
@@ -50,9 +62,7 @@ export function RegisterAccountContent() {
   };
 
   const handleReview = () => {
-    if (!formRef.current) {
-      return;
-    }
+    if (!formRef.current) return;
 
     if (!passwordIsValid) {
       setValidationError("Please complete all password requirements before reviewing.");
@@ -60,22 +70,27 @@ export function RegisterAccountContent() {
     }
 
     const formData = new FormData(formRef.current);
+
     setReview({
       firstName: getValue(formData, "first_name"),
       lastName: getValue(formData, "last_name"),
       studentNumber: getValue(formData, "student_number"),
       studentEmail: getValue(formData, "student_email"),
+      rfidNumber: getValue(formData, "rfid_number"),
+      organizationPart: getValue(formData, "organization_part"),
+      organizationRole: getValue(formData, "organization_role"),
+      course: getValue(formData, "course"),
+      school: getValue(formData, "school"),
       password: getValue(formData, "password") === "Not provided" ? "Not provided" : "********",
       confirmPassword: getValue(formData, "confirm_password") === "Not provided" ? "Not provided" : "********",
     });
+
     setValidationError("");
     setShowReview(true);
   };
 
   const handleSignUp = () => {
-    if (!formRef.current) {
-      return;
-    }
+    if (!formRef.current) return;
 
     if (!passwordIsValid) {
       setValidationError("Please complete all password requirements before signing up.");
@@ -84,10 +99,16 @@ export function RegisterAccountContent() {
     }
 
     const formData = new FormData(formRef.current);
-    const studentNumber = getValue(formData, "student_number");
-    window.localStorage.setItem("dcspaceStudentNumber", studentNumber);
+
+    window.localStorage.setItem("dcspaceStudentNumber", getValue(formData, "student_number"));
     window.localStorage.setItem("dcspaceStudentEmail", studentEmail.trim());
+    window.localStorage.setItem("dcspaceRfidNumber", getValue(formData, "rfid_number"));
+    window.localStorage.setItem("dcspaceCourse", getValue(formData, "course"));
+    window.localStorage.setItem("dcspaceSchool", getValue(formData, "school"));
+    window.localStorage.setItem("dcspaceOrganizationPart", getValue(formData, "organization_part"));
+    window.localStorage.setItem("dcspaceOrganizationRole", getValue(formData, "organization_role"));
     window.sessionStorage.removeItem("dcspacePrivacySeen");
+
     router.push("/login");
   };
 
@@ -98,12 +119,86 @@ export function RegisterAccountContent() {
           <h1>Register your Account!</h1>
 
           <form ref={formRef} className="register-form">
-            <div className="register-name-row">
+            <div className="register-two-col">
               <input name="first_name" type="text" placeholder="First Name:" aria-label="First Name" />
               <input name="last_name" type="text" placeholder="Last Name:" aria-label="Last Name" />
             </div>
 
-            <input name="student_number" type="text" placeholder="Student Number:" aria-label="Student Number" />
+            <div className="register-two-col">
+              <input name="student_number" type="text" placeholder="Student Number:" aria-label="Student Number" />
+
+              <input
+                name="rfid_number"
+                type="text"
+                placeholder="RFID Tag No.:"
+                aria-label="RFID Number"
+                autoFocus
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleReview();
+                  }
+                }}
+              />
+            </div>
+
+            <div className="register-two-col">
+              <input
+                name="organization_part"
+                type="text"
+                placeholder="Organization:"
+                aria-label="Organization or Part of Organization"
+              />
+
+              <select name="organization_role" aria-label="Organization Role" defaultValue="">
+                <option value="" disabled>
+                  Position:
+                </option>
+                <option value="Organization Member">Organization Member</option>
+                <option value="Officer">Officer</option>
+              </select>
+            </div>
+
+            <div className="register-two-col">
+              <select name="course" aria-label="Course" defaultValue="">
+                <option value="" disabled>
+                  Course:
+                </option>
+                <option value="BSN">BSN – Bachelor of Science in Nursing</option>
+                <option value="BSRT">BSRT – Bachelor of Science in Radiologic Technology</option>
+                <option value="BSPT">BSPT – Bachelor of Science in Physical Therapy</option>
+                <option value="BS Bio">BS Bio – Bachelor of Science in Biology</option>
+                <option value="BS Pharm">BS Pharm – Bachelor of Science in Pharmacy</option>
+                <option value="BS MLS">BS MLS – Bachelor of Science in Medical Laboratory Science</option>
+                <option value="BSA">BSA – Bachelor of Science in Accountancy</option>
+                <option value="BSAT">BSAT – Bachelor of Science in Accounting Technology</option>
+                <option value="BS Psych">BS Psych – Bachelor of Science in Psychology</option>
+                <option value="BEEd">BEEd – Bachelor of Elementary Education</option>
+                <option value="BSEd">BSEd – Bachelor of Secondary Education</option>
+                <option value="BSBA-FM">BSBA-FM – Bachelor of Science in Business Administration (Financial Management)</option>
+                <option value="BSBA-MM">BSBA-MM – Bachelor of Science in Business Administration (Marketing Management)</option>
+                <option value="BSBA-HRDM">BSBA-HRDM – Bachelor of Science in Business Administration (Human Resource Development Management)</option>
+                <option value="BSBA-OM">BSBA-OM – Bachelor of Science in Business Administration (Operations Management)</option>
+                <option value="BSTM">BSTM – Bachelor of Science in Tourism Management</option>
+                <option value="BSHM (CAKO)">BSHM (CAKO) – Bachelor of Science in Hospitality Management (Culinary Arts & Kitchen Operations)</option>
+                <option value="BSHM (CO)">BSHM (CO) – Bachelor of Science in Hospitality Management (Cruiseline Operations)</option>
+                <option value="BA Comm">BA Comm – Bachelor of Arts in Communication</option>
+                <option value="BMA">BMA – Bachelor of Multimedia Arts</option>
+                <option value="BSIT">BSIT – Bachelor of Science in Information Technology</option>
+              </select>
+
+              <select name="school" aria-label="School" defaultValue="">
+                <option value="" disabled>
+                  School:
+                </option>
+                <option value="SNAHS">SNAHS – School of Nursing and Allied Health Studies</option>
+                <option value="SMLS">SMLS – School of Medical Laboratory Sciences</option>
+                <option value="SASE">SASE – School of Accountancy, Science, and Education</option>
+                <option value="SIHTM">SIHTM – School of International Hospitality, Tourism, and Management</option>
+                <option value="SCMCS">SCMCS – School of Communication, Multimedia, and Computer Studies</option>
+              </select>
+            </div>
+
             <input
               name="student_email"
               type="email"
@@ -115,6 +210,7 @@ export function RegisterAccountContent() {
                 setValidationError("");
               }}
             />
+
             <label className="register-password-wrap">
               <span className="register-sr-only">Password</span>
               <input
@@ -138,6 +234,7 @@ export function RegisterAccountContent() {
                 {showPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
               </button>
             </label>
+
             <label className="register-password-wrap">
               <span className="register-sr-only">Re-enter password</span>
               <input
@@ -161,6 +258,7 @@ export function RegisterAccountContent() {
                 {showConfirmPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
               </button>
             </label>
+
             <ul className="password-requirements" aria-label="Password requirements">
               {passwordChecks.map((check) => (
                 <li className={check.valid ? "is-valid" : ""} key={check.label}>
@@ -168,6 +266,7 @@ export function RegisterAccountContent() {
                 </li>
               ))}
             </ul>
+
             {validationError && <p className="auth-field-error">{validationError}</p>}
           </form>
         </section>
@@ -176,6 +275,7 @@ export function RegisterAccountContent() {
           <button className="review-btn" type="button" onClick={handleReview}>
             Review
           </button>
+
           <button className="signup-btn" type="button" onClick={handleSignUp}>
             Sign Up
             <span aria-hidden="true">
@@ -199,6 +299,7 @@ export function RegisterAccountContent() {
             <section className="register-review-modal" role="dialog" aria-modal="true" aria-labelledby="register-review-title">
               <div className="register-review-header">
                 <h2 id="register-review-title">Review Account Info</h2>
+
                 <button type="button" className="register-review-close" aria-label="Close review" onClick={() => setShowReview(false)}>
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
@@ -220,6 +321,26 @@ export function RegisterAccountContent() {
                   <dd>{review.studentNumber}</dd>
                 </div>
                 <div>
+                  <dt>RFID Tag No.</dt>
+                  <dd>{review.rfidNumber}</dd>
+                </div>
+                <div>
+                  <dt>Organization</dt>
+                  <dd>{review.organizationPart}</dd>
+                </div>
+                <div>
+                  <dt>Position</dt>
+                  <dd>{review.organizationRole}</dd>
+                </div>
+                <div>
+                  <dt>Course</dt>
+                  <dd>{review.course}</dd>
+                </div>
+                <div>
+                  <dt>School</dt>
+                  <dd>{review.school}</dd>
+                </div>
+                <div>
                   <dt>Student Email</dt>
                   <dd>{review.studentEmail}</dd>
                 </div>
@@ -237,6 +358,7 @@ export function RegisterAccountContent() {
                 <button className="review-btn" type="button" onClick={() => setShowReview(false)}>
                   Edit
                 </button>
+
                 <button className="signup-btn" type="button" onClick={handleSignUp}>
                   Sign Up
                   <span aria-hidden="true">
