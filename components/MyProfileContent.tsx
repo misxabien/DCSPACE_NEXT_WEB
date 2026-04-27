@@ -1,11 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { clearAuthSession, fetchEvents, fetchProfile, readAuthSession, type UserEvent, type UserProfile } from "@/lib/user-api";
 
 export function MyProfileContent() {
   const [tab, setTab] = useState<"attended" | "organized" | "certs">("organized");
   const [sortAsc, setSortAsc] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(() => readAuthSession()?.user || null);
+  const [profileError, setProfileError] = useState("");
+  const [organizedEvents, setOrganizedEvents] = useState<UserEvent[]>([]);
+
+  useEffect(() => {
+    const session = readAuthSession();
+    if (!session?.token) {
+      setProfileError("No active session found. Please login again.");
+      return;
+    }
+    fetchProfile(session.token)
+      .then((response) => {
+        setProfile(response.profile);
+        setProfileError("");
+        window.localStorage.setItem("dcspace_auth", JSON.stringify({ token: session.token, user: response.profile }));
+        return fetchEvents(undefined, { status: "all", submittedByEmail: response.profile.email });
+      })
+      .then((response) => {
+        if (response) {
+          setOrganizedEvents(response.events);
+        }
+      })
+      .catch((error) => {
+        setProfileError(error instanceof Error ? error.message : "Failed to load profile details.");
+      });
+  }, []);
+
+  const initials = `${profile?.firstName?.[0] || ""}${profile?.lastName?.[0] || ""}`.toUpperCase() || "U";
 
   return (
     <div className="main--profile">
@@ -16,6 +45,7 @@ export function MyProfileContent() {
             className="profile-logout"
             href="/login"
             onClick={() => {
+              clearAuthSession();
               window.sessionStorage.removeItem("dcspacePrivacySeen");
             }}
           >
@@ -38,12 +68,15 @@ export function MyProfileContent() {
             Profile summary
           </h2>
           <div className="profile-summary__photo" aria-hidden>
-            <span className="profile-summary__initials">FN</span>
+            <span className="profile-summary__initials">{initials}</span>
           </div>
           <div className="profile-summary__fields">
-            <p className="profile-summary__name">Full Name</p>
+            <p className="profile-summary__name">{profile?.fullName || "Full Name"}</p>
             <p className="profile-summary__line">
-              <span>Student Number:</span> 2024-01452
+              <span>Student Number:</span> {profile?.studentNumber || "2024-01452"}
+            </p>
+            <p className="profile-summary__line">
+              <span>Email:</span> {profile?.email || "No email on file"}
             </p>
             <p className="profile-summary__line">
               <span>Course &amp; Section:</span> BSIT 4A
@@ -52,8 +85,9 @@ export function MyProfileContent() {
               <span>School:</span> SNAHS
             </p>
             <p className="profile-summary__line">
-              <span>Organization/Club:</span> DC Space Guild
+              <span>Organization/Club:</span> {profile?.role ? `${profile.role} account` : "DC Space Guild"}
             </p>
+            {profileError && <p className="auth-field-error">{profileError}</p>}
           </div>
         </section>
 
@@ -74,7 +108,7 @@ export function MyProfileContent() {
             aria-selected={tab === "organized"}
             onClick={() => setTab("organized")}
           >
-            Events Organized (5)
+            Events Organized ({organizedEvents.length})
           </button>
           <button
             type="button"
@@ -98,27 +132,31 @@ export function MyProfileContent() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Event Name</td>
-                  <td>MM/DD/YYYY</td>
-                  <td>
-                    <span className="profile-table__status">Upcoming</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Event Name</td>
-                  <td>MM/DD/YYYY</td>
-                  <td>
-                    <span className="profile-table__status profile-table__status--ongoing">Ongoing</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Event Name</td>
-                  <td>MM/DD/YYYY</td>
-                  <td>
-                    <span className="profile-table__status profile-table__status--past">Past</span>
-                  </td>
-                </tr>
+                {tab === "organized" ? (
+                  organizedEvents.length > 0 ? (
+                    organizedEvents.map((event) => (
+                      <tr key={event.id}>
+                        <td>{event.title}</td>
+                        <td>{event.date || "N/A"}</td>
+                        <td>
+                          <span className="profile-table__status">{event.status || "pending"}</span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={3}>No organized events yet.</td>
+                    </tr>
+                  )
+                ) : (
+                  <tr>
+                    <td>Event Name</td>
+                    <td>MM/DD/YYYY</td>
+                    <td>
+                      <span className="profile-table__status">Upcoming</span>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

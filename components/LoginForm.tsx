@@ -2,18 +2,38 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
+import { loginUser, saveAuthSession } from "@/lib/user-api";
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<"student" | "faculty">("student");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const isRegistered = searchParams.get("registered") === "1";
+  const prefilledEmail = searchParams.get("email") || "";
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    router.push("/dashboard");
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") || "").trim();
+    const password = String(formData.get("password") || "");
+
+    try {
+      setError("");
+      setIsLoading(true);
+      const result = await loginUser(email, password);
+      saveAuthSession(result.token, result.user);
+      router.push("/dashboard");
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : "Failed to login.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,6 +83,11 @@ export function LoginForm() {
           <div className="divider" aria-hidden>
             OR
           </div>
+          {isRegistered && (
+            <p style={{ color: "#2d8a4a", marginBottom: "12px" }}>
+              Account created successfully. Please sign in to continue.
+            </p>
+          )}
 
           <form
             onSubmit={handleSubmit}
@@ -92,6 +117,7 @@ export function LoginForm() {
                 name="email"
                 type="email"
                 placeholder="Email"
+                defaultValue={prefilledEmail}
                 required
               />
             </label>
@@ -141,9 +167,10 @@ export function LoginForm() {
               </Link>
             </div>
 
-            <button className="btn primary" type="submit">
-              SIGN IN
+            <button className="btn primary" type="submit" disabled={isLoading}>
+              {isLoading ? "SIGNING IN..." : "SIGN IN"}
             </button>
+            {error && <p className="auth-field-error">{error}</p>}
           </form>
 
           <div className="below">

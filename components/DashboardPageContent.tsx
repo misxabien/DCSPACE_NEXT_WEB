@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
+import { fetchEvents, readAuthSession, type UserEvent } from "@/lib/user-api";
 
 type RegisteredEvent = {
+  id?: string;
   month: string;
   day: string;
   year: string;
@@ -14,51 +16,7 @@ type RegisteredEvent = {
   organizer: string;
 };
 
-type OrganizedEvent = {
-  name: string;
-  date: string;
-  status: string;
-  certificate: string;
-};
-
-const registeredEvents: RegisteredEvent[] = [
-  {
-    month: "March",
-    day: "15",
-    year: "2026",
-    name: "Name of Event",
-    dateTime: "Event Time Start and End",
-    venue: "Event Venue",
-    organizer: "Event Organizer",
-  },
-  {
-    month: "April",
-    day: "23",
-    year: "2026",
-    name: "Name of Event",
-    dateTime: "Event Time Start and End",
-    venue: "Event Venue",
-    organizer: "Event Organizer",
-  },
-  {
-    month: "March",
-    day: "15",
-    year: "2026",
-    name: "Name of Event",
-    dateTime: "Event Time Start and End",
-    venue: "Event Venue",
-    organizer: "Event Organizer",
-  },
-];
-
-const organizedEvents: OrganizedEvent[] = [
-  {
-    name: "Event Name",
-    date: "Date",
-    status: "Reviewed/Ongoing/Passed",
-    certificate: "Processing/Reviewing/Issued",
-  },
-];
+const registeredEventsStorageKey = "dcspace_registered_events";
 
 const registeredEventSections = [
   { key: "today", title: "Today's Event" },
@@ -95,9 +53,14 @@ function getRegisteredEventDetailsHref(event: RegisteredEvent) {
   return {
     pathname: "/dashboard/registered-event",
     query: {
+      eventId: event.id || "",
       month: event.month,
       day: event.day,
       year: event.year,
+      title: event.name,
+      date: event.dateTime,
+      venue: event.venue,
+      organizer: event.organizer,
     },
   };
 }
@@ -111,11 +74,31 @@ function sortRegisteredEventsByDate(events: RegisteredEvent[], direction: "ascen
   });
 }
 
+function toDateQueryFromIso(dateText: string) {
+  const parsedDate = new Date(dateText);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return {
+      month: "",
+      day: "",
+      year: "",
+    };
+  }
+
+  return {
+    month: parsedDate.toLocaleString("en-US", { month: "long" }),
+    day: String(parsedDate.getDate()),
+    year: String(parsedDate.getFullYear()),
+  };
+}
+
 export function DashboardPageContent() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [activeDashboardView, setActiveDashboardView] = useState<"registered" | "organized">("registered");
   const [consentChecked, setConsentChecked] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
+  const [organizedEvents, setOrganizedEvents] = useState<UserEvent[]>([]);
+  const [organizedError, setOrganizedError] = useState("");
+  const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
 
   const isRegisteredView = activeDashboardView === "registered";
   const registeredEventsBySection = useMemo(
@@ -128,11 +111,61 @@ export function DashboardPageContent() {
           events: sortRegisteredEventsByDate(sectionEvents, section.key === "passed" ? "descending" : "ascending"),
         };
       }),
-    [],
+    [registeredEvents],
   );
 
   useEffect(() => {
     setShowPrivacyModal(window.sessionStorage.getItem("dcspacePrivacySeen") !== "true");
+  }, []);
+
+  useEffect(() => {
+    const readRegisteredEvents = () => {
+      try {
+        const raw = window.localStorage.getItem(registeredEventsStorageKey);
+        if (!raw) {
+          setRegisteredEvents([]);
+          return;
+        }
+        const parsed = JSON.parse(raw) as RegisteredEvent[];
+        const normalized = Array.isArray(parsed)
+          ? parsed.filter((event) => {
+              const name = String(event?.name || "").trim().toLowerCase();
+              return name.length > 0 && name !== "event name";
+            })
+          : [];
+        setRegisteredEvents(normalized);
+      } catch {
+        setRegisteredEvents([]);
+      }
+    };
+
+    readRegisteredEvents();
+    const onFocus = () => readRegisteredEvents();
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("pageshow", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("pageshow", onFocus);
+    };
+  }, []);
+
+  useEffect(() => {
+    const session = readAuthSession();
+    const email = session?.user?.email;
+    if (!email) {
+      setOrganizedEvents([]);
+      return;
+    }
+
+    fetchEvents(undefined, { status: "all", submittedByEmail: email })
+      .then((response) => {
+        setOrganizedEvents(response.events);
+        setOrganizedError("");
+      })
+      .catch((error) => {
+        setOrganizedEvents([]);
+        setOrganizedError(error instanceof Error ? error.message : "Failed to load organized events.");
+      });
   }, []);
 
   const handleAccept = () => {
@@ -205,7 +238,7 @@ export function DashboardPageContent() {
                 ))}
               </section>
             ) : (
-              <EmptyState message="No registered events found. Browse the Events tab and select an event to register." />
+              <EmptyState message="No registered events found. Browse the Events tab and select an event to register. Once joined, your upcoming sessions will appear here." />
             )
           ) : (
             organizedEvents.length > 0 ? (
@@ -219,12 +252,25 @@ export function DashboardPageContent() {
                 </div>
 
                 {organizedEvents.map((event, index) => (
-                  <div className="organized-row" key={`${event.name}-${index}`}>
-                    <span>{event.name}</span>
+                  <div className="organized-row" key={`${event.id}-${index}`}>
+                    <span>{event.title}</span>
                     <span>{event.date}</span>
-                    <span>{event.status}</span>
-                    <span>{event.certificate}</span>
-                    <button className="details-button" type="button">
+                    <span>{event.status || "pending"}</span>
+                    <span>{event.certificate || "Processing"}</span>
+                    <Link
+                      className="details-button"
+                      href={{
+                        pathname: "/dashboard/registered-event",
+                        query: {
+                          eventId: event.id,
+                          ...toDateQueryFromIso(event.date),
+                          title: event.title,
+                          date: `${event.date}${event.startTime && event.endTime ? ` | ${event.startTime} - ${event.endTime}` : ""}`,
+                          venue: event.venue,
+                          organizer: event.requester || event.department || "DC Space",
+                        },
+                      }}
+                    >
                       View Details
                       <svg viewBox="0 0 14 13" fill="none" aria-hidden="true">
                         <path
@@ -236,7 +282,7 @@ export function DashboardPageContent() {
                           fill="currentColor"
                         />
                       </svg>
-                    </button>
+                    </Link>
                   </div>
                 ))}
               </section>
@@ -244,6 +290,7 @@ export function DashboardPageContent() {
               <EmptyState message="No organized events yet. If you would like to create or manage an event, click the plus button." />
             )
           )}
+          {organizedError && <p className="auth-field-error">{organizedError}</p>}
         </section>
       </div>
 

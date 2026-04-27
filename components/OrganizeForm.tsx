@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { readAuthSession, submitOrganizedEvent } from "@/lib/user-api";
 
 type ReviewDetails = {
   eventName: string;
@@ -14,6 +15,10 @@ type ReviewDetails = {
   eventType: string;
   duration: string;
   minAttendance: string;
+  posterFile: string;
+  registrationFile: string;
+  surveyFile: string;
+  certificateTemplateFile: string;
 };
 
 const emptyReviewDetails: ReviewDetails = {
@@ -28,6 +33,10 @@ const emptyReviewDetails: ReviewDetails = {
   eventType: "",
   duration: "",
   minAttendance: "",
+  posterFile: "Not provided",
+  registrationFile: "Not provided",
+  surveyFile: "Not provided",
+  certificateTemplateFile: "Not provided",
 };
 
 export function OrganizeForm() {
@@ -37,6 +46,10 @@ export function OrganizeForm() {
   const combinedRef = useRef<HTMLInputElement>(null);
   const [showReview, setShowReview] = useState(false);
   const [reviewDetails, setReviewDetails] = useState<ReviewDetails>(emptyReviewDetails);
+  const [liveDetails, setLiveDetails] = useState<ReviewDetails>(emptyReviewDetails);
+  const [submitError, setSubmitError] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     function syncCombined() {
@@ -67,6 +80,53 @@ export function OrganizeForm() {
     return typeof value === "string" && value.trim() ? value.trim() : "Not provided";
   };
 
+  const getFileName = (formData: FormData, key: string) => {
+    const value = formData.get(key);
+    if (value instanceof File && value.name) {
+      return value.name;
+    }
+    return "Not provided";
+  };
+
+  const buildDetailsFromFormData = (formData: FormData): ReviewDetails => ({
+    eventName: getFormValue(formData, "event_name"),
+    eventDate: getFormValue(formData, "event_date"),
+    venue: getFormValue(formData, "venue"),
+    courseOrganizer: getFormValue(formData, "course_organizer_combined"),
+    school: getFormValue(formData, "school"),
+    department: getFormValue(formData, "department"),
+    startTime: getFormValue(formData, "start_time"),
+    endTime: getFormValue(formData, "end_time"),
+    eventType: getFormValue(formData, "event_type"),
+    duration: getFormValue(formData, "duration"),
+    minAttendance: getFormValue(formData, "min_attendance"),
+    posterFile: getFileName(formData, "poster"),
+    registrationFile: getFileName(formData, "registration"),
+    surveyFile: getFileName(formData, "survey"),
+    certificateTemplateFile: getFileName(formData, "certificate_template"),
+  });
+
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) {
+      return;
+    }
+
+    const syncLiveDetails = () => {
+      const formData = new FormData(form);
+      setLiveDetails(buildDetailsFromFormData(formData));
+    };
+
+    form.addEventListener("input", syncLiveDetails);
+    form.addEventListener("change", syncLiveDetails);
+    syncLiveDetails();
+
+    return () => {
+      form.removeEventListener("input", syncLiveDetails);
+      form.removeEventListener("change", syncLiveDetails);
+    };
+  }, []);
+
   const handleReview = () => {
     if (combinedRef.current && courseRef.current && orgRef.current) {
       const course = (courseRef.current.value || "").trim();
@@ -79,24 +139,53 @@ export function OrganizeForm() {
     }
 
     const formData = new FormData(formRef.current);
-    setReviewDetails({
-      eventName: getFormValue(formData, "event_name"),
-      eventDate: getFormValue(formData, "event_date"),
-      venue: getFormValue(formData, "venue"),
-      courseOrganizer: getFormValue(formData, "course_organizer_combined"),
-      school: getFormValue(formData, "school"),
-      department: getFormValue(formData, "department"),
-      startTime: getFormValue(formData, "start_time"),
-      endTime: getFormValue(formData, "end_time"),
-      eventType: getFormValue(formData, "event_type"),
-      duration: getFormValue(formData, "duration"),
-      minAttendance: getFormValue(formData, "min_attendance"),
-    });
+    setReviewDetails(buildDetailsFromFormData(formData));
     setShowReview(true);
   };
 
   return (
-    <form ref={formRef} className="organize-form-shell" action="#" method="post" aria-label="Create new event">
+    <form
+      ref={formRef}
+      className="organize-form-shell"
+      action="#"
+      method="post"
+      aria-label="Create new event"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        if (!formRef.current) {
+          return;
+        }
+        try {
+          setSubmitError("");
+          setSubmitSuccess("");
+          setIsSubmitting(true);
+          const formData = new FormData(formRef.current);
+          await submitOrganizedEvent({
+            eventName: getFormValue(formData, "event_name"),
+            date: getFormValue(formData, "event_date"),
+            venue: getFormValue(formData, "venue"),
+            description: getFormValue(formData, "event_type"),
+            requester: getFormValue(formData, "organizer_name"),
+            department: getFormValue(formData, "department"),
+            school: getFormValue(formData, "school"),
+            courseCode: getFormValue(formData, "course_code"),
+            courseOrganizer: getFormValue(formData, "course_organizer_combined"),
+            submittedByEmail: readAuthSession()?.user?.email || "",
+            startTime: getFormValue(formData, "start_time"),
+            endTime: getFormValue(formData, "end_time"),
+            duration: getFormValue(formData, "duration"),
+            minAttendance: getFormValue(formData, "min_attendance"),
+          });
+          setSubmitSuccess("Event submitted to admin for review. It will appear in Events after approval.");
+          formRef.current.reset();
+          setLiveDetails(emptyReviewDetails);
+        } catch (submitErrorValue) {
+          setSubmitError(submitErrorValue instanceof Error ? submitErrorValue.message : "Failed to submit event.");
+        } finally {
+          setIsSubmitting(false);
+        }
+      }}
+    >
       <label className="form-section-label" htmlFor="event-name">
         Event Name
       </label>
@@ -299,12 +388,14 @@ export function OrganizeForm() {
           </div>
         </div>
 
+
         <div className="upload-grid">
           <label className="upload-tile">
             <svg className="upload-tile__plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
               <path strokeLinecap="round" d="M12 5v14M5 12h14" />
             </svg>
             <span className="upload-tile__text">Add Poster/Pubmat</span>
+            <span className="upload-tile__file-name">{liveDetails.posterFile}</span>
             <input type="file" name="poster" accept="image/*,.pdf" />
           </label>
           <label className="upload-tile">
@@ -312,6 +403,7 @@ export function OrganizeForm() {
               <path strokeLinecap="round" d="M12 5v14M5 12h14" />
             </svg>
             <span className="upload-tile__text">Add Registration Form</span>
+            <span className="upload-tile__file-name">{liveDetails.registrationFile}</span>
             <input type="file" name="registration" accept=".pdf,.doc,.docx" />
           </label>
           <label className="upload-tile">
@@ -319,6 +411,7 @@ export function OrganizeForm() {
               <path strokeLinecap="round" d="M12 5v14M5 12h14" />
             </svg>
             <span className="upload-tile__text">Add Survey Form</span>
+            <span className="upload-tile__file-name">{liveDetails.surveyFile}</span>
             <input type="file" name="survey" accept=".pdf,.doc,.docx" />
           </label>
           <label className="upload-tile">
@@ -326,6 +419,7 @@ export function OrganizeForm() {
               <path strokeLinecap="round" d="M12 5v14M5 12h14" />
             </svg>
             <span className="upload-tile__text">Add E-Certificate Template</span>
+            <span className="upload-tile__file-name">{liveDetails.certificateTemplateFile}</span>
             <input type="file" name="certificate_template" accept=".pdf,.doc,.docx" />
           </label>
         </div>
@@ -334,8 +428,8 @@ export function OrganizeForm() {
           <button type="button" className="btn-review" onClick={handleReview}>
             Review
           </button>
-          <button type="submit" className="btn-submit">
-            Submit
+          <button type="submit" className="btn-submit" disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit"}
             <svg viewBox="0 0 24 24" fill="none" aria-hidden>
               <circle cx="12" cy="12" r="9" stroke="#fff" strokeWidth="2" />
               <path
@@ -348,6 +442,8 @@ export function OrganizeForm() {
             </svg>
           </button>
         </div>
+        {submitError && <p className="auth-field-error">{submitError}</p>}
+        {submitSuccess && <p style={{ color: "#2d8a4a", marginTop: "10px" }}>{submitSuccess}</p>}
 
         {showReview && (
           <div className="review-overlay">
@@ -403,6 +499,22 @@ export function OrganizeForm() {
                 <div>
                   <dt>Minimum Attendance</dt>
                   <dd>{reviewDetails.minAttendance}</dd>
+                </div>
+                <div>
+                  <dt>Poster File</dt>
+                  <dd>{reviewDetails.posterFile}</dd>
+                </div>
+                <div>
+                  <dt>Registration Form File</dt>
+                  <dd>{reviewDetails.registrationFile}</dd>
+                </div>
+                <div>
+                  <dt>Survey Form File</dt>
+                  <dd>{reviewDetails.surveyFile}</dd>
+                </div>
+                <div>
+                  <dt>E-Certificate Template File</dt>
+                  <dd>{reviewDetails.certificateTemplateFile}</dd>
                 </div>
               </dl>
 

@@ -7,16 +7,7 @@ export const metadata: Metadata = {
   title: "Certificates - DC Space",
 };
 
-const CERTIFICATE_GROUPS = [
-  {
-    month: "March",
-    certificates: ["March 15, 2026", "March 20, 2026", "March 28, 2026"],
-  },
-  {
-    month: "April",
-    certificates: ["April 2, 2026", "April 10, 2026", "April 22, 2026"],
-  },
-];
+const CERTIFICATE_GROUPS: Array<{ month: string; certificates: string[] }> = [];
 
 function CertificateIcon() {
   return (
@@ -75,7 +66,7 @@ export default function CertificatesPage() {
         ) : (
           <EmptyState
             icon="certificate"
-            message="No certificates received yet. Once you join an event and complete the required attendance, your certificates will appear here."
+            message="No certificates received yet. Once you join an event and complete the required attendance, your certificates will appear here for you to view and track."
           />
         )}
       </main>

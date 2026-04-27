@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { startTransition, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
+import { fetchEventById, type UserEvent } from "@/lib/user-api";
+
+const registeredEventsStorageKey = "dcspace_registered_events";
 
 const eventDetails = {
   name: "Event Name",
@@ -47,17 +50,122 @@ function getRegisteredEventStatusLabel(eventDate?: EventDetailsPageContentProps[
   return parsedDate > today ? "Upcoming Event" : "Passed Event";
 }
 
+function toDateParts(input: string | undefined) {
+  const parsed = new Date(String(input || ""));
+  if (Number.isNaN(parsed.getTime())) {
+    return {
+      month: "",
+      day: "",
+      year: "",
+    };
+  }
+
+  return {
+    month: parsed.toLocaleString("en-US", { month: "long" }),
+    day: String(parsed.getDate()),
+    year: String(parsed.getFullYear()),
+  };
+}
+
 export function EventDetailsPageContent({ source = "events", eventDate }: EventDetailsPageContentProps) {
   const router = useRouter();
+  const [eventId, setEventId] = useState("");
+  const [fallbackFromQuery, setFallbackFromQuery] = useState({
+    title: "",
+    date: "",
+    venue: "",
+    organizer: "",
+  });
   const isDashboardSource = source === "dashboard";
   const registeredEventStatus = getRegisteredEventStatusLabel(eventDate);
   const [showRequirements, setShowRequirements] = useState(false);
   const [fileAdded, setFileAdded] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [apiEvent, setApiEvent] = useState<UserEvent | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const syncEventId = () => {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("eventId") || "";
+      setEventId(id);
+      setFallbackFromQuery({
+        title: params.get("title") || "",
+        date: params.get("date") || "",
+        venue: params.get("venue") || "",
+        organizer: params.get("organizer") || "",
+      });
+    };
+    syncEventId();
+    window.addEventListener("popstate", syncEventId);
+    return () => {
+      window.removeEventListener("popstate", syncEventId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!eventId) {
+      setApiEvent(null);
+      return;
+    }
+    fetchEventById(eventId).then((response) => setApiEvent(response.event)).catch(() => setApiEvent(null));
+  }, [eventId]);
+
+  const details = apiEvent
+    ? {
+        name: apiEvent.title,
+        dateTime: `${apiEvent.date}${apiEvent.startTime && apiEvent.endTime ? ` | ${apiEvent.startTime} - ${apiEvent.endTime}` : ""}`,
+        venue: apiEvent.venue,
+        organizer: apiEvent.requester || "DC Space",
+        overview: apiEvent.description || eventDetails.overview,
+        requirements: eventDetails.requirements,
+      }
+    : {
+        name: fallbackFromQuery.title || eventDetails.name,
+        dateTime: fallbackFromQuery.date || eventDetails.dateTime,
+        venue: fallbackFromQuery.venue || eventDetails.venue,
+        organizer: fallbackFromQuery.organizer || eventDetails.organizer,
+        overview: eventDetails.overview,
+        requirements: eventDetails.requirements,
+      };
 
   const handleConfirm = () => {
     if (!fileAdded) {
       return;
+    }
+
+    if (typeof window !== "undefined") {
+      const existingRaw = window.localStorage.getItem(registeredEventsStorageKey);
+      const existingEvents = (() => {
+        try {
+          const parsed = JSON.parse(existingRaw || "[]") as Array<Record<string, unknown>>;
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      })();
+
+      const resolvedDate = apiEvent?.date || fallbackFromQuery.date;
+      const dateParts = toDateParts(resolvedDate);
+      const eventIdForStorage = apiEvent?.id || eventId || `${details.name}-${details.dateTime}`.replace(/\s+/g, "-").toLowerCase();
+      const newEvent = {
+        id: eventIdForStorage,
+        month: dateParts.month,
+        day: dateParts.day,
+        year: dateParts.year,
+        name: details.name,
+        dateTime: details.dateTime,
+        venue: details.venue || "Event Venue",
+        organizer: details.organizer || "Event Organizer",
+      };
+
+      const dedupedEvents = [
+        newEvent,
+        ...existingEvents.filter((event) => String(event.id || "") !== newEvent.id),
+      ];
+      window.localStorage.setItem(registeredEventsStorageKey, JSON.stringify(dedupedEvents));
     }
 
     setIsRedirecting(true);
@@ -99,29 +207,29 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
         </div>
 
         <div className="event-summary">
-          <h2>{eventDetails.name}</h2>
+          <h2>{details.name}</h2>
           <p>
             <CalendarIcon />
-            {eventDetails.dateTime}
+            {details.dateTime}
           </p>
           <p>
             <VenueIcon />
-            {eventDetails.venue}
+            {details.venue}
           </p>
           <p>
             <OrganizerIcon />
-            {eventDetails.organizer}
+            {details.organizer}
           </p>
         </div>
       </section>
 
       <section className="event-info">
         <h3>Overview</h3>
-        <p>{eventDetails.overview}</p>
+        <p>{details.overview}</p>
 
         <h3>Requirements</h3>
         <ul>
-          {eventDetails.requirements.map((requirement) => (
+          {details.requirements.map((requirement) => (
             <li key={requirement}>{requirement}</li>
           ))}
         </ul>

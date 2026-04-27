@@ -1,24 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
-
-const eventCards = [
-  {
-    title: "Event Name",
-    date: "JAN 24",
-    time: "Event Date and Time",
-    venue: "Event Venue",
-    department: "Event Representative or Organizer",
-  },
-  {
-    title: "Event Name",
-    date: "FEB 08",
-    time: "Event Date and Time",
-    venue: "Event Venue",
-    department: "Event Representative or Organizer",
-  },
-];
+import { fetchEvents, type UserEvent } from "@/lib/user-api";
 
 const today = new Date();
 const calendarYear = today.getFullYear();
@@ -31,8 +16,41 @@ const calendarDays = [
   ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
 ];
 const weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"];
+type EventCard = {
+  id?: string;
+  title: string;
+  date: string;
+  time: string;
+  venue: string;
+  department: string;
+};
 
 export function EventsPageContent() {
+  const [search, setSearch] = useState("");
+  const [apiEvents, setApiEvents] = useState<UserEvent[]>([]);
+
+  useEffect(() => {
+    fetchEvents(undefined, { status: "all" }).then((response) => setApiEvents(response.events)).catch(() => setApiEvents([]));
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      fetchEvents(search, { status: "all" }).then((response) => setApiEvents(response.events)).catch(() => setApiEvents([]));
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  const displayedEvents = useMemo<EventCard[]>(() => {
+    return apiEvents.map((event) => ({
+      id: event.id,
+      title: event.title,
+      date: event.date,
+      time: `${event.date} ${event.startTime && event.endTime ? `| ${event.startTime} - ${event.endTime}` : ""}`.trim(),
+      venue: event.venue,
+      department: event.department || event.requester || "Organizer TBA",
+    }));
+  }, [apiEvents]);
+
   return (
     <section className="events-page">
       <section className="events-header">
@@ -44,14 +62,14 @@ export function EventsPageContent() {
               fill="currentColor"
             />
           </svg>
-          <input className="events-search-input" type="search" aria-label="Search events" />
+          <input className="events-search-input" type="search" aria-label="Search events" value={search} onChange={(event) => setSearch(event.target.value)} />
         </label>
       </section>
 
-      {eventCards.length > 0 ? (
+      {displayedEvents.length > 0 ? (
         <section className="events-content" aria-label="Available events">
           <div className="event-list">
-            {eventCards.map((event, index) => (
+            {displayedEvents.map((event, index) => (
               <article className="browse-event-card" key={`${event.title}-${event.date}-${index}`}>
                 <div className="event-image">
                   <svg className="folder-icon" viewBox="0 0 7 7" fill="none" aria-hidden="true">
@@ -63,7 +81,14 @@ export function EventsPageContent() {
                   <p>{event.time}</p>
                   <p>{event.venue}</p>
                   <p>{event.department}</p>
-                  <Link className="event-details-button" href="/events/details">
+                  <Link
+                    className="event-details-button"
+                    href={
+                      event.id
+                        ? `/events/details?eventId=${encodeURIComponent(event.id)}&title=${encodeURIComponent(event.title)}&date=${encodeURIComponent(event.date)}&venue=${encodeURIComponent(event.venue)}&organizer=${encodeURIComponent(event.department)}`
+                        : "/events/details"
+                    }
+                  >
                     <span>View Details</span>
                     <svg viewBox="0 0 14 13" fill="none" aria-hidden="true">
                       <path d="M0.262209 11.7641C-0.0942397 12.0519 -0.0861691 12.5132 0.281041 12.7935C0.646905 13.0739 1.23336 13.0675 1.58981 12.7787L8.73493 6.98223L8.0718 6.47548L8.73762 6.98329C9.09407 6.69341 9.086 6.23109 8.71745 5.95074C8.70669 5.94227 8.69593 5.93487 8.68516 5.92746L1.58847 0.220919C1.23202 -0.0678991 0.646905 -0.0742467 0.279695 0.206108C-0.0861691 0.486463 -0.0942397 0.946668 0.262209 1.23549L6.78052 6.47759L0.262209 11.7641Z" fill="currentColor" />
@@ -113,7 +138,7 @@ export function EventsPageContent() {
           </aside>
         </section>
       ) : (
-        <EmptyState message="There are currently no events available to browse since no events are ongoing yet. If you would like to create or organize an event, click the plus button." />
+        <EmptyState message="There are currently no events available to browse since no events are ongoing yet. If you would like to create or organize an event, simply click the “+” button." />
       )}
     </section>
   );

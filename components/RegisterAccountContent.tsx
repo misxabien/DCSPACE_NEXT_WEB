@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { registerUser } from "@/lib/user-api";
 
 type RegisterReview = {
   firstName: string;
@@ -33,6 +34,7 @@ export function RegisterAccountContent() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [validationError, setValidationError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const passwordChecks = [
     { label: "At least 8 characters", valid: password.length >= 8 },
@@ -72,7 +74,7 @@ export function RegisterAccountContent() {
     setShowReview(true);
   };
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     if (!formRef.current) {
       return;
     }
@@ -84,11 +86,32 @@ export function RegisterAccountContent() {
     }
 
     const formData = new FormData(formRef.current);
+    const firstName = getValue(formData, "first_name");
+    const lastName = getValue(formData, "last_name");
     const studentNumber = getValue(formData, "student_number");
-    window.localStorage.setItem("dcspaceStudentNumber", studentNumber);
-    window.localStorage.setItem("dcspaceStudentEmail", studentEmail.trim());
-    window.sessionStorage.removeItem("dcspacePrivacySeen");
-    router.push("/login");
+
+    try {
+      setIsSubmitting(true);
+      await registerUser({
+        firstName,
+        lastName,
+        studentNumber,
+        email: studentEmail.trim(),
+        password,
+        confirmPassword,
+        role: "student",
+        dataPrivacyAccepted: true,
+      });
+
+      window.localStorage.setItem("dcspaceStudentNumber", studentNumber);
+      window.localStorage.setItem("dcspaceStudentEmail", studentEmail.trim());
+      window.sessionStorage.removeItem("dcspacePrivacySeen");
+      router.push(`/login?registered=1&email=${encodeURIComponent(studentEmail.trim())}`);
+    } catch (registerError) {
+      setValidationError(registerError instanceof Error ? registerError.message : "Failed to create account.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -176,8 +199,8 @@ export function RegisterAccountContent() {
           <button className="review-btn" type="button" onClick={handleReview}>
             Review
           </button>
-          <button className="signup-btn" type="button" onClick={handleSignUp}>
-            Sign Up
+          <button className="signup-btn" type="button" onClick={handleSignUp} disabled={isSubmitting}>
+            {isSubmitting ? "Signing Up..." : "Sign Up"}
             <span aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
@@ -237,8 +260,8 @@ export function RegisterAccountContent() {
                 <button className="review-btn" type="button" onClick={() => setShowReview(false)}>
                   Edit
                 </button>
-                <button className="signup-btn" type="button" onClick={handleSignUp}>
-                  Sign Up
+                <button className="signup-btn" type="button" onClick={handleSignUp} disabled={isSubmitting}>
+                  {isSubmitting ? "Signing Up..." : "Sign Up"}
                   <span aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />

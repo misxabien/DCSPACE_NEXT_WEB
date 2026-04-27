@@ -348,6 +348,17 @@
         max-width: 100%;
       }
 
+      .upload-tile__file-name {
+        max-width: 100%;
+        font-size: 0.65rem;
+        color: #604d18;
+        font-weight: 700;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
       .upload-tile input[type="file"] {
         position: absolute;
         inset: 0;
@@ -521,6 +532,40 @@
         justify-content: space-between;
         gap: 18px;
         margin-top: 26px;
+      }
+
+      .organize-live-inline {
+        margin-top: 12px;
+        margin-bottom: 6px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px dashed rgba(42, 63, 92, 0.35);
+        color: #2a2118;
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+
+      .organize-live-preview {
+        margin-top: 16px;
+        border: 1px solid rgba(42, 63, 92, 0.28);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.85);
+        padding: 12px 14px;
+      }
+
+      .organize-live-preview h3 {
+        margin: 0 0 8px;
+        color: #604d18;
+        font-size: 0.95rem;
+        font-weight: 800;
+      }
+
+      .organize-live-preview p {
+        margin: 4px 0;
+        color: #2a2118;
+        font-size: 0.82rem;
+        font-weight: 600;
       }
 
       /* Only collapse the main form to one column on narrow phones - keeps
