@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (user.isActive === false || user.role !== "admin") {
+    if (user.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -46,9 +46,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 },
     );
-  } catch (error) {
-    console.error("Admin Google auth pre-check failed", error);
+  } catch {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
