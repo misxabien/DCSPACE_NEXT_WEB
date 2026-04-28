@@ -22,6 +22,8 @@ export type RegisteredEvent = {
   organizer?: string;
   status?: string;
   certificate?: string;
+  minAttendance?: string;
+  duration?: string;
 };
 
 export type AttendanceUser = {
