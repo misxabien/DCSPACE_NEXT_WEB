@@ -92,15 +92,16 @@ function toDateQueryFromIso(dateText: string) {
 }
 
 export function DashboardPageContent() {
+  const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [activeDashboardView, setActiveDashboardView] = useState<"registered" | "organized">("registered");
   const [consentChecked, setConsentChecked] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
   const [organizedEvents, setOrganizedEvents] = useState<UserEvent[]>([]);
   const [organizedError, setOrganizedError] = useState("");
-  const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
 
   const isRegisteredView = activeDashboardView === "registered";
+
   const registeredEventsBySection = useMemo(
     () =>
       registeredEventSections.map((section) => {
@@ -121,19 +122,46 @@ export function DashboardPageContent() {
   useEffect(() => {
     const readRegisteredEvents = () => {
       try {
-        const raw = window.localStorage.getItem(registeredEventsStorageKey);
-        if (!raw) {
-          setRegisteredEvents([]);
-          return;
-        }
-        const parsed = JSON.parse(raw) as RegisteredEvent[];
-        const normalized = Array.isArray(parsed)
-          ? parsed.filter((event) => {
+        const byKey = new Map<string, RegisteredEvent>();
+
+        const rawReg = window.localStorage.getItem(registeredEventsStorageKey);
+        if (rawReg) {
+          const parsed = JSON.parse(rawReg) as RegisteredEvent[];
+          if (Array.isArray(parsed)) {
+            for (const event of parsed) {
               const name = String(event?.name || "").trim().toLowerCase();
-              return name.length > 0 && name !== "event name";
-            })
-          : [];
-        setRegisteredEvents(normalized);
+              if (!name.length || name === "event name") continue;
+              const key = `${String(event.name)}|${String(event.dateTime)}`;
+              byKey.set(key, event);
+            }
+          }
+        }
+
+        const rawBridge = window.localStorage.getItem("dcspaceRegisteredEvents");
+        if (rawBridge) {
+          const parsed = JSON.parse(rawBridge) as Array<Record<string, unknown>>;
+          if (Array.isArray(parsed)) {
+            for (const ev of parsed) {
+              const name = String(ev.name || "").trim();
+              if (!name || name.toLowerCase() === "event name") continue;
+              const dateTime = String(ev.dateTime || "");
+              const key = `${name}|${dateTime}`;
+              if (byKey.has(key)) continue;
+              byKey.set(key, {
+                id: typeof ev.id === "string" ? ev.id : undefined,
+                month: String(ev.month || ""),
+                day: String(ev.day || ""),
+                year: String(ev.year || ""),
+                name,
+                dateTime,
+                venue: String(ev.venue || ""),
+                organizer: String(ev.organizer || ""),
+              });
+            }
+          }
+        }
+
+        setRegisteredEvents(Array.from(byKey.values()));
       } catch {
         setRegisteredEvents([]);
       }
@@ -210,46 +238,52 @@ export function DashboardPageContent() {
           {isRegisteredView ? (
             registeredEvents.length > 0 ? (
               <section className="registered-sections" aria-label="Registered events">
-                {registeredEventsBySection.map((section) => (
-                  section.events.length > 0 && (
-                    <section className="registered-group" key={section.key} aria-labelledby={`${section.key}-events-title`}>
-                      <h2 className="registered-group-title" id={`${section.key}-events-title`}>
-                        {section.title}
-                      </h2>
-                      <div className="registered-grid">
-                        {section.events.map((event, index) => (
-                          <Link className="registered-card" href={getRegisteredEventDetailsHref(event)} key={`${section.key}-${event.name}-${index}`}>
-                            <span className="registered-date">
-                              <span>{event.month}</span>
-                              <strong>{event.day}</strong>
-                              <span>{event.year}</span>
-                            </span>
-                            <span className="registered-details">
-                              <strong>{event.name}</strong>
-                              <span>{event.dateTime}</span>
-                              <span>{event.venue}</span>
-                              <span>{event.organizer}</span>
-                            </span>
-                          </Link>
-                        ))}
-                      </div>
-                    </section>
-                  )
-                ))}
+                {registeredEventsBySection.map(
+                  (section) =>
+                    section.events.length > 0 && (
+                      <section className="registered-group" key={section.key} aria-labelledby={`${section.key}-events-title`}>
+                        <h2 className="registered-group-title" id={`${section.key}-events-title`}>
+                          {section.title}
+                        </h2>
+
+                        <div className="registered-grid">
+                          {section.events.map((event, index) => (
+                            <Link
+                              className="registered-card"
+                              href={getRegisteredEventDetailsHref(event)}
+                              key={`${section.key}-${event.name}-${index}`}
+                            >
+                              <span className="registered-date">
+                                <span>{event.month}</span>
+                                <strong>{event.day}</strong>
+                                <span>{event.year}</span>
+                              </span>
+
+                              <span className="registered-details">
+                                <strong>{event.name}</strong>
+                                <span>{event.dateTime}</span>
+                                <span>{event.venue}</span>
+                                <span>{event.organizer}</span>
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                      </section>
+                    ),
+                )}
               </section>
             ) : (
               <EmptyState message="No registered events found. Browse the Events tab and select an event to register. Once joined, your upcoming sessions will appear here." />
             )
-          ) : (
-            organizedEvents.length > 0 ? (
-              <section className="organized-table" aria-label="Organized events">
-                <div className="organized-row organized-header">
-                  <span>Event Name</span>
-                  <span>Date</span>
-                  <span>Event Status</span>
-                  <span>E-Certificate</span>
-                  <span aria-hidden="true" />
-                </div>
+          ) : organizedEvents.length > 0 ? (
+            <section className="organized-table" aria-label="Organized events">
+              <div className="organized-row organized-header">
+                <span>Event Name</span>
+                <span>Date</span>
+                <span>Event Status</span>
+                <span>E-Certificate</span>
+                <span aria-hidden="true" />
+              </div>
 
                 {organizedEvents.map((event, index) => (
                   <div className="organized-row" key={`${event.id}-${index}`}>
@@ -289,7 +323,7 @@ export function DashboardPageContent() {
             ) : (
               <EmptyState message="No organized events yet. If you would like to create or manage an event, click the plus button." />
             )
-          )}
+          }
           {organizedError && <p className="auth-field-error">{organizedError}</p>}
         </section>
       </div>
@@ -334,11 +368,7 @@ export function DashboardPageContent() {
                 </span>
               </label>
 
-              {showValidation && (
-                <p className="validation-text">
-                  Please check the consent box before continuing.
-                </p>
-              )}
+              {showValidation && <p className="validation-text">Please check the consent box before continuing.</p>}
 
               <div className="privacy-actions">
                 <button type="button" className="accept-button" onClick={handleAccept}>

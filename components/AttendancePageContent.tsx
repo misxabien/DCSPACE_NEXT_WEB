@@ -1,10 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { SearchWithClear } from "@/components/SearchWithClear";
 import { readAuthSession } from "@/lib/user-api";
+
+type DisplayRow = {
+  name: string;
+  date: string;
+  status: string;
+  certificate: string;
+};
 
 export function AttendancePageContent() {
   const [records, setRecords] = useState<Array<Record<string, unknown>>>([]);
@@ -15,7 +21,9 @@ export function AttendancePageContent() {
     if (!session?.token) {
       return;
     }
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_USER_API_URL || "http://127.0.0.1:4001"}/api/attendance`, {
+    const base =
+      process.env.NEXT_PUBLIC_BACKEND_USER_API_URL?.replace(/\/$/, "") || "http://127.0.0.1:4101";
+    fetch(`${base}/api/attendance`, {
       headers: { Authorization: `Bearer ${session.token}` },
     })
       .then(async (response) => {
@@ -28,7 +36,7 @@ export function AttendancePageContent() {
       .catch((error) => setLoadingError(error instanceof Error ? error.message : "Failed to load attendance records."));
   }, []);
 
-  const displayedRecords = useMemo(() => {
+  const displayedRecords = useMemo<DisplayRow[]>(() => {
     if (records.length === 0) {
       return [];
     }
@@ -50,12 +58,12 @@ export function AttendancePageContent() {
       </header>
 
       <div className="main__grid-wrap">
-        <section className="attendance-shell" aria-label="My events attendance">
-          <div className="attendance-top">
-            <h2 className="attendance-subtitle">My Events</h2>
-          </div>
+        {displayedRecords.length > 0 ? (
+          <section className="attendance-shell" aria-label="My events attendance">
+            <div className="attendance-top">
+              <h2 className="attendance-subtitle">My Events</h2>
+            </div>
 
-          {displayedRecords.length > 0 ? (
             <div className="table-wrap" aria-label="Attendance list">
               <table className="attendance-table">
                 <thead>
@@ -67,6 +75,7 @@ export function AttendancePageContent() {
                     <th scope="col" className="col-open" />
                   </tr>
                 </thead>
+
                 <tbody>
                   {displayedRecords.map((event) => (
                     <tr key={`${event.name}-${event.date}`}>
@@ -75,7 +84,7 @@ export function AttendancePageContent() {
                       <td className="cell-muted">{event.status}</td>
                       <td className="cert">{event.certificate}</td>
                       <td className="col-open">
-                        <Link href="/attendance/details" className="open-btn open-btn--ghost">
+                        <a href="/attendance/details" className="open-btn open-btn--ghost">
                           View Details
                           <svg viewBox="0 0 24 24" fill="none" aria-hidden>
                             <path
@@ -86,51 +95,42 @@ export function AttendancePageContent() {
                               strokeLinejoin="round"
                             />
                           </svg>
-                        </Link>
+                        </a>
                       </td>
-                    </tr>
-                  ))}
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <tr className="attendance-empty-row" key={index}>
-                      <td colSpan={5} aria-hidden="true" />
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          ) : (
-            <EmptyState message="No attendance records found yet. Once you join an event, you can track your attendance here." />
-          )}
-          {loadingError && <p className="auth-field-error">{loadingError}</p>}
 
-          <div className="footer-controls" aria-label="Attendance filters">
-            <div className="segmented" role="group" aria-label="Attendance controls">
-              <button type="button">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path
-                    d="M4 7h16M6 12h12M8 17h8"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                Ascending
-              </button>
-              <button type="button">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path
-                    d="M8 10l4-4 4 4M16 14l-4 4-4-4"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                Descending
-              </button>
+            <div className="footer-controls" aria-label="Attendance filters">
+              <div className="segmented" role="group" aria-label="Attendance controls">
+                <button type="button">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M4 7h16M6 12h12M8 17h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  Ascending
+                </button>
+
+                <button type="button">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path
+                      d="M8 10l4-4 4 4M16 14l-4 4-4-4"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Descending
+                </button>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : (
+          <EmptyState message="No attendance records found yet. Once you join an event, you can track your attendance here." />
+        )}
+        {loadingError && <p className="auth-field-error">{loadingError}</p>}
       </div>
     </>
   );

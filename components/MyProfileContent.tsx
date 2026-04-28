@@ -76,16 +76,25 @@ export function MyProfileContent() {
               <span>Student Number:</span> {profile?.studentNumber || "2024-01452"}
             </p>
             <p className="profile-summary__line">
+              <span>RFID Tag No.:</span> {profile?.rfidNumber || "Not provided"}
+            </p>
+            <p className="profile-summary__line">
               <span>Email:</span> {profile?.email || "No email on file"}
             </p>
             <p className="profile-summary__line">
-              <span>Course &amp; Section:</span> BSIT 4A
+              <span>Course:</span> {profile?.course || "Not provided"}
             </p>
             <p className="profile-summary__line">
-              <span>School:</span> SNAHS
+              <span>School:</span> {profile?.school || "Not provided"}
             </p>
             <p className="profile-summary__line">
-              <span>Organization/Club:</span> {profile?.role ? `${profile.role} account` : "DC Space Guild"}
+              <span>Organization/Club:</span> {profile?.organizationPart || "Not provided"}
+            </p>
+            <p className="profile-summary__line">
+              <span>Position:</span> {profile?.organizationRole || "Not provided"}
+            </p>
+            <p className="profile-summary__line">
+              <span>Account Type:</span> {profile?.role ? `${profile.role} account` : "student account"}
             </p>
             {profileError && <p className="auth-field-error">{profileError}</p>}
           </div>
