@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
+import { type FrontendEvent, readOrganizedEvents, setSelectedBrowseEventId } from "@/lib/dc-events";
 
 type RegisteredEvent = {
+  id?: string;
   month: string;
   day: string;
   year: string;
@@ -13,22 +15,6 @@ type RegisteredEvent = {
   venue: string;
   organizer: string;
 };
-
-type OrganizedEvent = {
-  name: string;
-  date: string;
-  status: string;
-  certificate: string;
-};
-
-const organizedEvents: OrganizedEvent[] = [
-  {
-    name: "Event Name",
-    date: "Date",
-    status: "Reviewed/Ongoing/Passed",
-    certificate: "Processing/Reviewing/Issued",
-  },
-];
 
 const registeredEventSections = [
   { key: "today", title: "Today's Event" },
@@ -83,6 +69,7 @@ function sortRegisteredEventsByDate(events: RegisteredEvent[], direction: "ascen
 
 export function DashboardPageContent() {
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
+  const [organizedEvents, setOrganizedEvents] = useState<FrontendEvent[]>([]);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [activeDashboardView, setActiveDashboardView] = useState<"registered" | "organized">("registered");
   const [consentChecked, setConsentChecked] = useState(false);
@@ -104,8 +91,24 @@ export function DashboardPageContent() {
   );
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("dcspaceRegisteredEvents") || "[]");
-    setRegisteredEvents(saved);
+    const refreshDashboardEvents = () => {
+      const saved = JSON.parse(localStorage.getItem("dcspaceRegisteredEvents") || "[]");
+      setRegisteredEvents(saved);
+      setOrganizedEvents(readOrganizedEvents());
+    };
+
+    refreshDashboardEvents();
+    window.addEventListener("pageshow", refreshDashboardEvents);
+    window.addEventListener("storage", refreshDashboardEvents);
+    window.addEventListener("dcspace-events-updated", refreshDashboardEvents);
+    window.addEventListener("dcspace-registered-events-updated", refreshDashboardEvents);
+
+    return () => {
+      window.removeEventListener("pageshow", refreshDashboardEvents);
+      window.removeEventListener("storage", refreshDashboardEvents);
+      window.removeEventListener("dcspace-events-updated", refreshDashboardEvents);
+      window.removeEventListener("dcspace-registered-events-updated", refreshDashboardEvents);
+    };
   }, []);
 
   useEffect(() => {
@@ -167,6 +170,7 @@ export function DashboardPageContent() {
                             <Link
                               className="registered-card"
                               href={getRegisteredEventDetailsHref(event)}
+                              onClick={() => event.id && setSelectedBrowseEventId(event.id)}
                               key={`${section.key}-${event.name}-${index}`}
                             >
                               <span className="registered-date">
@@ -202,13 +206,13 @@ export function DashboardPageContent() {
               </div>
 
               {organizedEvents.map((event, index) => (
-                <div className="organized-row" key={`${event.name}-${index}`}>
+                <div className="organized-row" key={`${event.id}-${index}`}>
                   <span>{event.name}</span>
-                  <span>{event.date}</span>
-                  <span>{event.status}</span>
-                  <span>{event.certificate}</span>
+                  <span>{`${event.month} ${event.day}, ${event.year}`}</span>
+                  <span>{getRegisteredEventSection(event) === "today" ? "Ongoing" : getRegisteredEventSection(event) === "passed" ? "Passed" : "Upcoming"}</span>
+                  <span>{event.certificate || "Processing"}</span>
 
-                  <button className="details-button" type="button">
+                  <Link className="details-button" href="/events/details" onClick={() => setSelectedBrowseEventId(event.id)}>
                     View Details
                     <svg viewBox="0 0 14 13" fill="none" aria-hidden="true">
                       <path
@@ -220,7 +224,7 @@ export function DashboardPageContent() {
                         fill="currentColor"
                       />
                     </svg>
-                  </button>
+                  </Link>
                 </div>
               ))}
             </section>

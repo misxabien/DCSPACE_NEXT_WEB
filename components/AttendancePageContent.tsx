@@ -1,39 +1,155 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SearchWithClear } from "@/components/SearchWithClear";
+import {
+  ATTENDANCE_UPDATED_EVENT,
+  REGISTERED_EVENTS_KEY,
+  type AttendanceRecord,
+  type AttendanceUser,
+  type CertificateStatus,
+  type EventStatus,
+  type RegisteredEvent,
+  downloadAttendanceCertificate,
+  formatEventDate,
+  getCertificateStatus,
+  getCurrentAttendanceUser,
+  getEventStatus,
+  getRegisteredEventId,
+  readRegisteredEvents,
+  readUserAttendanceRecords,
+  recordRfidAttendanceTap,
+  setSelectedAttendanceEvent,
+} from "@/lib/attendance";
 
 type AttendanceEvent = {
+  id: string;
   name: string;
   date: string;
-  status: string;
-  certificate: string;
+  status: EventStatus;
+  certificate: CertificateStatus;
+  registeredEvent: RegisteredEvent;
+  record?: AttendanceRecord;
 };
 
-type RegisteredEvent = {
-  month: string;
-  day: string;
-  year: string;
-  name: string;
-  status: string;
-  certificate: string;
-};
+function buildAttendanceEvents(
+  registeredEvents: RegisteredEvent[],
+  records: Record<string, AttendanceRecord>,
+): AttendanceEvent[] {
+  return registeredEvents.map((event) => {
+    const id = getRegisteredEventId(event);
+    const record = records[id];
+
+    return {
+      id,
+      name: event.name || "Event Name",
+      date: formatEventDate(event),
+      status: getEventStatus(event),
+      certificate: getCertificateStatus(record),
+      registeredEvent: event,
+      record,
+    };
+  });
+}
+
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+
+  return (
+    target.isContentEditable ||
+    ["INPUT", "TEXTAREA", "SELECT", "BUTTON", "A"].includes(target.tagName)
+  );
+}
 
 export function AttendancePageContent() {
   const [attendanceEvents, setAttendanceEvents] = useState<AttendanceEvent[]>([]);
+  const [currentUser, setCurrentUser] = useState<AttendanceUser | null>(null);
+  const [scanMessage, setScanMessage] = useState("");
+  const registeredEventsRef = useRef<RegisteredEvent[]>([]);
+  const scanBufferRef = useRef("");
+  const scanTimeoutRef = useRef<number | null>(null);
+
+  const loadAttendanceEvents = useCallback(() => {
+    const user = getCurrentAttendanceUser();
+    const registeredEvents = readRegisteredEvents();
+    const records = readUserAttendanceRecords(user);
+
+    registeredEventsRef.current = registeredEvents;
+    setCurrentUser(user);
+    setAttendanceEvents(buildAttendanceEvents(registeredEvents, records));
+  }, []);
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("dcspaceRegisteredEvents") || "[]") as RegisteredEvent[];
+    loadAttendanceEvents();
 
-    const formatted = saved.map((event) => ({
-      name: event.name,
-      date: `${event.month} ${event.day}, ${event.year}`,
-      status: event.status,
-      certificate: event.certificate,
-    }));
+    const handleRefresh = () => loadAttendanceEvents();
+    const handleStorage = (event: StorageEvent) => {
+      if (!event.key || event.key === REGISTERED_EVENTS_KEY || event.key.startsWith("dcspaceAttendanceRecords:")) {
+        loadAttendanceEvents();
+      }
+    };
 
-    setAttendanceEvents(formatted);
-  }, []);
+    window.addEventListener("pageshow", handleRefresh);
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener(ATTENDANCE_UPDATED_EVENT, handleRefresh);
+
+    return () => {
+      window.removeEventListener("pageshow", handleRefresh);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(ATTENDANCE_UPDATED_EVENT, handleRefresh);
+    };
+  }, [loadAttendanceEvents]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.altKey || event.ctrlKey || event.metaKey || isEditableTarget(event.target)) {
+        return;
+      }
+
+      if (scanTimeoutRef.current) {
+        window.clearTimeout(scanTimeoutRef.current);
+      }
+
+      if (event.key === "Enter") {
+        const scannedRfid = scanBufferRef.current.trim();
+        scanBufferRef.current = "";
+
+        if (!scannedRfid) return;
+
+        const result = recordRfidAttendanceTap(scannedRfid, registeredEventsRef.current);
+        setScanMessage(result.message);
+
+        if (result.ok) {
+          loadAttendanceEvents();
+        }
+
+        return;
+      }
+
+      if (event.key.length === 1) {
+        scanBufferRef.current += event.key;
+        scanTimeoutRef.current = window.setTimeout(() => {
+          scanBufferRef.current = "";
+        }, 1200);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+
+      if (scanTimeoutRef.current) {
+        window.clearTimeout(scanTimeoutRef.current);
+      }
+    };
+  }, [loadAttendanceEvents]);
+
+  const handleDownload = (event: AttendanceEvent) => {
+    if (!currentUser) return;
+    downloadAttendanceCertificate(event.registeredEvent, currentUser, event.record);
+  };
 
   return (
     <>
@@ -49,6 +165,11 @@ export function AttendancePageContent() {
           <section className="attendance-shell" aria-label="My events attendance">
             <div className="attendance-top">
               <h2 className="attendance-subtitle">My Events</h2>
+              {scanMessage && (
+                <p className="attendance-scan-status" aria-live="polite">
+                  {scanMessage}
+                </p>
+              )}
             </div>
 
             <div className="table-wrap" aria-label="Attendance list">
@@ -65,13 +186,29 @@ export function AttendancePageContent() {
 
                 <tbody>
                   {attendanceEvents.map((event) => (
-                    <tr key={`${event.name}-${event.date}`}>
+                    <tr key={event.id}>
                       <td>{event.name}</td>
                       <td className="cell-muted">{event.date}</td>
-                      <td className="cell-muted">{event.status}</td>
-                      <td className="cert">{event.certificate}</td>
+                      <td className="cell-muted">
+                        <span className={`status-pill status-pill--${event.status.toLowerCase()}`}>
+                          {event.status}
+                        </span>
+                      </td>
+                      <td className="cert">
+                        {event.certificate === "Download" ? (
+                          <button className="cert-download" type="button" onClick={() => handleDownload(event)}>
+                            Download
+                          </button>
+                        ) : (
+                          event.certificate
+                        )}
+                      </td>
                       <td className="col-open">
-                        <a href="/attendance/details" className="open-btn open-btn--ghost">
+                        <Link
+                          href="/attendance/details"
+                          className="open-btn open-btn--ghost"
+                          onClick={() => setSelectedAttendanceEvent(event.id)}
+                        >
                           View Details
                           <svg viewBox="0 0 24 24" fill="none" aria-hidden>
                             <path
@@ -82,7 +219,7 @@ export function AttendancePageContent() {
                               strokeLinejoin="round"
                             />
                           </svg>
-                        </a>
+                        </Link>
                       </td>
                     </tr>
                   ))}

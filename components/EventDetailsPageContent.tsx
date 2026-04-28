@@ -2,10 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { startTransition, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
+import { type FrontendEvent, readSelectedBrowseEvent, registerEventForCurrentUser } from "@/lib/dc-events";
 
-const eventDetails = {
+const fallbackEventDetails: FrontendEvent = {
+  id: "fallback-event",
   name: "Event Name",
+  month: "MAR",
+  day: "15",
+  year: "2026",
   dateTime: "Event Date, Time Start and End",
   venue: "Event Venue",
   organizer: "Event Organizer",
@@ -54,32 +59,16 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
   const [showRequirements, setShowRequirements] = useState(false);
   const [fileAdded, setFileAdded] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<FrontendEvent>(fallbackEventDetails);
+
+  useEffect(() => {
+    setSelectedEvent(readSelectedBrowseEvent());
+  }, [source]);
 
   const handleConfirm = () => {
     if (!fileAdded) return;
 
-    const newEvent = {
-      month: "March",
-      day: "15",
-      year: "2026",
-      name: eventDetails.name,
-      dateTime: eventDetails.dateTime,
-      venue: eventDetails.venue,
-      organizer: eventDetails.organizer,
-      status: "Registered",
-      certificate: "Pending",
-    };
-
-    const existing = JSON.parse(localStorage.getItem("dcspaceRegisteredEvents") || "[]");
-
-    const alreadyExists = existing.some(
-      (event: typeof newEvent) =>
-        event.name === newEvent.name && event.dateTime === newEvent.dateTime,
-    );
-
-    if (!alreadyExists) {
-      localStorage.setItem("dcspaceRegisteredEvents", JSON.stringify([...existing, newEvent]));
-    }
+    registerEventForCurrentUser(selectedEvent);
 
     setIsRedirecting(true);
 
@@ -89,6 +78,8 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
       });
     }, 180);
   };
+
+  const eventDetails = selectedEvent;
 
   return (
     <section className={`event-details-page${isRedirecting ? " is-exiting" : ""}`}>
