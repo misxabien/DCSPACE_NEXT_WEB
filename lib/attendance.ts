@@ -25,9 +25,15 @@ export type RegisteredEvent = {
 };
 
 export type AttendanceUser = {
+  firstName: string;
+  lastName: string;
   studentNumber: string;
   studentEmail: string;
   rfidNumber: string;
+  course: string;
+  school: string;
+  organizationPart: string;
+  organizationRole: string;
   accountKey: string;
   isLoggedIn: boolean;
 };
@@ -76,13 +82,26 @@ export function readRegisteredEvents() {
 
 export function signInAttendanceUser(email?: string) {
   const savedEmail = present(email) || present(window.localStorage.getItem("dcspaceStudentEmail"));
+
+  const firstName = present(window.localStorage.getItem("dcspaceFirstName"));
+  const lastName = present(window.localStorage.getItem("dcspaceLastName"));
   const studentNumber = present(window.localStorage.getItem("dcspaceStudentNumber")) || DEFAULT_STUDENT_NUMBER;
   const rfidNumber = present(window.localStorage.getItem("dcspaceRfidNumber"));
+  const course = present(window.localStorage.getItem("dcspaceCourse"));
+  const school = present(window.localStorage.getItem("dcspaceSchool"));
+  const organizationPart = present(window.localStorage.getItem("dcspaceOrganizationPart"));
+  const organizationRole = present(window.localStorage.getItem("dcspaceOrganizationRole"));
 
   const user: AttendanceUser = {
+    firstName,
+    lastName,
     studentNumber,
     studentEmail: savedEmail,
     rfidNumber,
+    course,
+    school,
+    organizationPart,
+    organizationRole,
     accountKey: normalizeKey(savedEmail || studentNumber || rfidNumber),
     isLoggedIn: true,
   };
@@ -117,9 +136,17 @@ export function getCurrentAttendanceUser(): AttendanceUser {
     Boolean(window.sessionStorage.getItem(CURRENT_USER_KEY));
 
   return {
+    firstName: present(sessionUser.firstName) || present(window.localStorage.getItem("dcspaceFirstName")),
+    lastName: present(sessionUser.lastName) || present(window.localStorage.getItem("dcspaceLastName")),
     studentNumber,
     studentEmail,
     rfidNumber,
+    course: present(sessionUser.course) || present(window.localStorage.getItem("dcspaceCourse")),
+    school: present(sessionUser.school) || present(window.localStorage.getItem("dcspaceSchool")),
+    organizationPart:
+      present(sessionUser.organizationPart) || present(window.localStorage.getItem("dcspaceOrganizationPart")),
+    organizationRole:
+      present(sessionUser.organizationRole) || present(window.localStorage.getItem("dcspaceOrganizationRole")),
     accountKey: normalizeKey(studentEmail || studentNumber || rfidNumber),
     isLoggedIn,
   };

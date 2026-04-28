@@ -100,6 +100,8 @@ export function RegisterAccountContent() {
 
     const formData = new FormData(formRef.current);
 
+    window.localStorage.setItem("dcspaceFirstName", getValue(formData, "first_name"));
+    window.localStorage.setItem("dcspaceLastName", getValue(formData, "last_name"));
     window.localStorage.setItem("dcspaceStudentNumber", getValue(formData, "student_number"));
     window.localStorage.setItem("dcspaceStudentEmail", studentEmail.trim());
     window.localStorage.setItem("dcspaceRfidNumber", getValue(formData, "rfid_number"));

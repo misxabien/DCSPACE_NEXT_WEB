@@ -1,17 +1,75 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { signOutAttendanceUser } from "@/lib/attendance";
+import type { RegisteredEvent } from "@/lib/attendance";
+import { useEffect, useMemo, useState } from "react";import {
+  getCurrentAttendanceUser,
+  readRegisteredEvents,
+  readUserAttendanceRecords,
+  getEventStatus,
+  formatEventDate,
+  getRegisteredEventId,
+  getCertificateStatus,
+  signOutAttendanceUser,
+} from "@/lib/attendance";
 
 export function MyProfileContent() {
-  const [tab, setTab] = useState<"attended" | "organized" | "certs">("organized");
+  const [tab, setTab] = useState<"attended" | "organized" | "certs">("attended");
   const [sortAsc, setSortAsc] = useState(true);
+
+  const [user, setUser] = useState<ReturnType<typeof getCurrentAttendanceUser> | null>(null);
+  const [registeredEvents, setRegisteredEvents] = useState<ReturnType<typeof readRegisteredEvents>>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, ReturnType<typeof readUserAttendanceRecords>[string]>>({});
+
+  useEffect(() => {
+    const currentUser = getCurrentAttendanceUser();
+
+    setUser(currentUser);
+    setRegisteredEvents(readRegisteredEvents());
+    setAttendanceRecords(readUserAttendanceRecords(currentUser));
+  }, []);
+  
+  const attendedEvents = registeredEvents.filter((event) => {
+    const eventId = getRegisteredEventId(event);
+    return attendanceRecords[eventId];
+  });
+
+  const certificateEvents = attendedEvents.filter((event) => {
+    const eventId = getRegisteredEventId(event);
+    const record = attendanceRecords[eventId];
+    return getCertificateStatus(record) === "Download";
+  });
+
+  const organizedEvents: RegisteredEvent[] = [];
+
+  const visibleEvents = useMemo(() => {
+    const events: typeof attendedEvents =
+      tab === "attended"
+        ? attendedEvents
+        : tab === "certs"
+        ? certificateEvents
+        : organizedEvents;
+
+    return [...events].sort((a, b) => {
+      const dateA = formatEventDate(a);
+      const dateB = formatEventDate(b);
+
+      return sortAsc
+        ? dateA.localeCompare(dateB)
+        : dateB.localeCompare(dateA);
+    });
+  }, [tab, sortAsc, attendedEvents, certificateEvents, organizedEvents]);
+
+  const initials =
+    user?.studentEmail?.slice(0, 2).toUpperCase() ||
+    user?.studentNumber?.slice(0, 2).toUpperCase() ||
+    "DC";
 
   return (
     <div className="main--profile">
       <header className="profile-page-header">
         <h1 className="profile-page-header__title">My Profile</h1>
+
         <div className="profile-page-header__tools">
           <Link
             className="profile-logout"
@@ -39,22 +97,30 @@ export function MyProfileContent() {
           <h2 id="profile-summary-heading" className="visually-hidden">
             Profile summary
           </h2>
+
           <div className="profile-summary__photo" aria-hidden>
-            <span className="profile-summary__initials">FN</span>
+            <span className="profile-summary__initials">{initials}</span>
           </div>
+
           <div className="profile-summary__fields">
-            <p className="profile-summary__name">Full Name</p>
-            <p className="profile-summary__line">
-              <span>Student Number:</span> 2024-01452
+            <p className="profile-summary__name">
+              {user?.studentEmail || "Student Account"}
             </p>
+
             <p className="profile-summary__line">
-              <span>Course &amp; Section:</span> BSIT 4A
+              <span>Student Number:</span> {user?.studentNumber || "Not available"}
             </p>
+
             <p className="profile-summary__line">
-              <span>School:</span> SNAHS
+              <span>Email:</span> {user?.studentEmail || "Not available"}
             </p>
+
             <p className="profile-summary__line">
-              <span>Organization/Club:</span> DC Space Guild
+              <span>RFID Number:</span> {user?.rfidNumber || "Not available"}
+            </p>
+
+            <p className="profile-summary__line">
+              <span>Account Type:</span> Student
             </p>
           </div>
         </section>
@@ -67,8 +133,9 @@ export function MyProfileContent() {
             aria-selected={tab === "attended"}
             onClick={() => setTab("attended")}
           >
-            Events Attended (3)
+            Events Attended ({attendedEvents.length})
           </button>
+
           <button
             type="button"
             className={`profile-tab${tab === "organized" ? " is-active" : ""}`}
@@ -76,8 +143,9 @@ export function MyProfileContent() {
             aria-selected={tab === "organized"}
             onClick={() => setTab("organized")}
           >
-            Events Organized (5)
+            Events Organized ({organizedEvents.length})
           </button>
+
           <button
             type="button"
             className={`profile-tab${tab === "certs" ? " is-active" : ""}`}
@@ -85,7 +153,7 @@ export function MyProfileContent() {
             aria-selected={tab === "certs"}
             onClick={() => setTab("certs")}
           >
-            Certificates (2)
+            Certificates ({certificateEvents.length})
           </button>
         </div>
 
@@ -99,31 +167,31 @@ export function MyProfileContent() {
                   <th scope="col">Event Status</th>
                 </tr>
               </thead>
+
               <tbody>
-                <tr>
-                  <td>Event Name</td>
-                  <td>MM/DD/YYYY</td>
-                  <td>
-                    <span className="profile-table__status">Upcoming</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Event Name</td>
-                  <td>MM/DD/YYYY</td>
-                  <td>
-                    <span className="profile-table__status profile-table__status--ongoing">Ongoing</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Event Name</td>
-                  <td>MM/DD/YYYY</td>
-                  <td>
-                    <span className="profile-table__status profile-table__status--past">Past</span>
-                  </td>
-                </tr>
+                {visibleEvents.length > 0 ? (
+                  visibleEvents.map((event) => (
+                    <tr key={getRegisteredEventId(event)}>
+                      <td>{event.name || "Event Name"}</td>
+                      <td>{formatEventDate(event)}</td>
+                      <td>
+                        <span className="profile-table__status">
+                          {getEventStatus(event)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3}>
+                      No records available yet.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
+
           <div className="profile-panel__footer">
             <div className="profile-sort" role="group" aria-label="Sort order">
               <button
@@ -132,20 +200,15 @@ export function MyProfileContent() {
                 aria-pressed={sortAsc}
                 onClick={() => setSortAsc(true)}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 10l4-4 4 4M16 14l-4 4-4-4" />
-                </svg>
                 Ascending
               </button>
+
               <button
                 type="button"
                 className={`profile-sort__btn${!sortAsc ? " is-active" : ""}`}
                 aria-pressed={!sortAsc}
                 onClick={() => setSortAsc(false)}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 14l4 4 4-4M16 10l-4-4-4 4" />
-                </svg>
                 Descending
               </button>
             </div>
