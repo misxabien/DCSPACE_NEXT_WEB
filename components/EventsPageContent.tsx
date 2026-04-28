@@ -23,6 +23,7 @@ type EventCard = {
   time: string;
   venue: string;
   department: string;
+  posterImage?: string;
 };
 
 export function EventsPageContent() {
@@ -48,6 +49,7 @@ export function EventsPageContent() {
       time: `${event.date} ${event.startTime && event.endTime ? `| ${event.startTime} - ${event.endTime}` : ""}`.trim(),
       venue: event.venue,
       department: event.department || event.requester || "Organizer TBA",
+      posterImage: event.posterImage || "",
     }));
   }, [apiEvents]);
 
@@ -72,9 +74,13 @@ export function EventsPageContent() {
             {displayedEvents.map((event, index) => (
               <article className="browse-event-card" key={`${event.title}-${event.date}-${index}`}>
                 <div className="event-image">
-                  <svg className="folder-icon" viewBox="0 0 7 7" fill="none" aria-hidden="true">
-                    <path d="M1.38831 4.72105L2.63783 3.05502L3.60967 4.30454L4.30385 3.47153L5.2757 4.72105H1.38831ZM5.55337 1.66667H3.332L2.77666 1.11133H1.11064C0.963353 1.11133 0.8221 1.16984 0.717954 1.27398C0.613807 1.37813 0.555298 1.51938 0.555298 1.66667V4.99872C0.555298 5.146 0.613807 5.28726 0.717954 5.3914C0.8221 5.49555 0.963353 5.55406 1.11064 5.55406H5.55337C5.70066 5.55406 5.84191 5.49555 5.94605 5.3914C6.0502 5.28726 6.10871 5.146 6.10871 4.99872V2.22201C6.10871 2.07473 6.0502 1.93347 5.94605 1.82933C5.84191 1.72518 5.70066 1.66667 5.55337 1.66667Z" fill="currentColor" />
-                  </svg>
+                  {event.posterImage ? (
+                    <img src={event.posterImage} alt={`${event.title} poster`} className="event-image__img" />
+                  ) : (
+                    <svg className="folder-icon" viewBox="0 0 7 7" fill="none" aria-hidden="true">
+                      <path d="M1.38831 4.72105L2.63783 3.05502L3.60967 4.30454L4.30385 3.47153L5.2757 4.72105H1.38831ZM5.55337 1.66667H3.332L2.77666 1.11133H1.11064C0.963353 1.11133 0.8221 1.16984 0.717954 1.27398C0.613807 1.37813 0.555298 1.51938 0.555298 1.66667V4.99872C0.555298 5.146 0.613807 5.28726 0.717954 5.3914C0.8221 5.49555 0.963353 5.55406 1.11064 5.55406H5.55337C5.70066 5.55406 5.84191 5.49555 5.94605 5.3914C6.0502 5.28726 6.10871 5.146 6.10871 4.99872V2.22201C6.10871 2.07473 6.0502 1.93347 5.94605 1.82933C5.84191 1.72518 5.70066 1.66667 5.55337 1.66667Z" fill="currentColor" />
+                    </svg>
+                  )}
                 </div>
                 <div className="event-card-body">
                   <h2>{event.title}</h2>

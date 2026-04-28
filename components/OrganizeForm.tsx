@@ -88,6 +88,18 @@ export function OrganizeForm() {
     return "Not provided";
   };
 
+  const readFileAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        resolve(typeof reader.result === "string" ? reader.result : "");
+      };
+      reader.onerror = () => {
+        reject(new Error("Failed to read uploaded file."));
+      };
+      reader.readAsDataURL(file);
+    });
+
   const buildDetailsFromFormData = (formData: FormData): ReviewDetails => ({
     eventName: getFormValue(formData, "event_name"),
     eventDate: getFormValue(formData, "event_date"),
@@ -160,6 +172,9 @@ export function OrganizeForm() {
           setSubmitSuccess("");
           setIsSubmitting(true);
           const formData = new FormData(formRef.current);
+          const posterValue = formData.get("poster");
+          const posterImage =
+            posterValue instanceof File && posterValue.size > 0 ? await readFileAsDataUrl(posterValue) : "";
           await submitOrganizedEvent({
             eventName: getFormValue(formData, "event_name"),
             date: getFormValue(formData, "event_date"),
@@ -175,6 +190,7 @@ export function OrganizeForm() {
             endTime: getFormValue(formData, "end_time"),
             duration: getFormValue(formData, "duration"),
             minAttendance: getFormValue(formData, "min_attendance"),
+            posterImage,
           });
           setSubmitSuccess("Event submitted to admin for review. It will appear in Events after approval.");
           formRef.current.reset();

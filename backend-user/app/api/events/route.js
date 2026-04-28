@@ -37,6 +37,7 @@ export async function POST(request) {
       endTime: String(body.endTime || "").trim(),
       duration: String(body.duration || "").trim(),
       minAttendance: String(body.minAttendance || "").trim(),
+      posterImage: String(body.posterImage || "").trim(),
       status: "pending",
       certificate: "Processing",
       createdAt: new Date().toISOString(),

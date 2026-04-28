@@ -14,6 +14,7 @@ type RegisteredEvent = {
   dateTime: string;
   venue: string;
   organizer: string;
+  posterImage?: string;
 };
 
 const registeredEventsStorageKey = "dcspace_registered_events";
@@ -156,6 +157,7 @@ export function DashboardPageContent() {
                 dateTime,
                 venue: String(ev.venue || ""),
                 organizer: String(ev.organizer || ""),
+                posterImage: typeof ev.posterImage === "string" ? ev.posterImage : "",
               });
             }
           }
@@ -253,6 +255,11 @@ export function DashboardPageContent() {
                               href={getRegisteredEventDetailsHref(event)}
                               key={`${section.key}-${event.name}-${index}`}
                             >
+                              {event.posterImage ? (
+                                <span className="registered-poster" aria-hidden="true">
+                                  <img src={event.posterImage} alt="" />
+                                </span>
+                              ) : null}
                               <span className="registered-date">
                                 <span>{event.month}</span>
                                 <strong>{event.day}</strong>
@@ -278,6 +285,7 @@ export function DashboardPageContent() {
           ) : organizedEvents.length > 0 ? (
             <section className="organized-table" aria-label="Organized events">
               <div className="organized-row organized-header">
+                <span>Poster</span>
                 <span>Event Name</span>
                 <span>Date</span>
                 <span>Event Status</span>
@@ -287,6 +295,9 @@ export function DashboardPageContent() {
 
                 {organizedEvents.map((event, index) => (
                   <div className="organized-row" key={`${event.id}-${index}`}>
+                    <span className="organized-poster" aria-hidden="true">
+                      {event.posterImage ? <img src={event.posterImage} alt="" /> : <span className="organized-poster--empty" />}
+                    </span>
                     <span>{event.title}</span>
                     <span>{event.date}</span>
                     <span>{event.status || "pending"}</span>

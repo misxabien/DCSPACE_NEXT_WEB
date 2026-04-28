@@ -175,7 +175,7 @@ export function LoginForm() {
 
           <div className="below">
             Don&apos;t have an account?
-            <Link href="/register" aria-label="Register here">
+            <Link href="/register" prefetch={false} aria-label="Register here">
               REGISTER HERE
             </Link>
           </div>

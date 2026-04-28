@@ -1,19 +1,36 @@
 const configuredBackendUrl = process.env.NEXT_PUBLIC_BACKEND_USER_API_URL;
 const authStorageKey = "dcspace_auth";
-const requestTimeoutMs = 30000;
+const requestTimeoutMs = 10000;
 
 function getCandidateBaseUrls() {
-  const urls = [];
+  const urls = new Set<string>();
 
   // Prefer explicit environment first.
   if (configuredBackendUrl) {
-    urls.push(configuredBackendUrl);
+    urls.add(configuredBackendUrl);
+    try {
+      const parsed = new URL(configuredBackendUrl);
+      if (parsed.hostname === "localhost") {
+        parsed.hostname = "127.0.0.1";
+        urls.add(parsed.toString().replace(/\/$/, ""));
+      } else if (parsed.hostname === "127.0.0.1") {
+        parsed.hostname = "localhost";
+        urls.add(parsed.toString().replace(/\/$/, ""));
+      }
+    } catch {
+      // Ignore malformed configured URL; request will fail with a clear error.
+    }
   } else {
-    // Dev fallback order: 4101 is the active backend-user port.
-    urls.push("http://127.0.0.1:4101");
+    // Dev fallback order: try both localhost and 127.0.0.1.
+    urls.add("http://127.0.0.1:4001");
+    urls.add("http://localhost:4001");
+    urls.add("http://127.0.0.1:4102");
+    urls.add("http://localhost:4102");
+    urls.add("http://127.0.0.1:4101");
+    urls.add("http://localhost:4101");
   }
 
-  return urls;
+  return Array.from(urls);
 }
 
 export type UserProfile = {
@@ -43,6 +60,7 @@ export type UserEvent = {
   endTime: string;
   status: string;
   certificate: string;
+  posterImage?: string;
 };
 
 type FetchEventsOptions = {
@@ -62,7 +80,17 @@ function extractErrorMessage(payload: unknown): string | null {
   }
 
   const errorValue = (payload as { error?: unknown }).error;
-  return typeof errorValue === "string" && errorValue.trim() ? errorValue : null;
+  if (typeof errorValue === "string" && errorValue.trim()) {
+    if (errorValue === "Failed to register account." || errorValue === "Failed to login.") {
+      const detailsValue = (payload as { details?: unknown }).details;
+      if (typeof detailsValue === "string" && detailsValue.trim()) {
+        return `${errorValue} ${detailsValue}`;
+      }
+    }
+    return errorValue;
+  }
+  const detailsValue = (payload as { details?: unknown }).details;
+  return typeof detailsValue === "string" && detailsValue.trim() ? detailsValue : null;
 }
 
 async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T> {
@@ -88,7 +116,9 @@ async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T>
       if (error instanceof Error && error.name === "AbortError") {
         lastError = new Error("Request timed out. Please check the server and try again.");
       } else {
-        lastError = new Error("Could not reach the server. Please check your connection and try again.");
+        lastError = new Error(
+          "Could not reach the server. Please make sure backend-user is running on port 4101 or 4001.",
+        );
       }
       continue;
     } finally {
@@ -182,6 +212,7 @@ export async function submitOrganizedEvent(
     endTime?: string;
     duration?: string;
     minAttendance?: string;
+    posterImage?: string;
   },
 ) {
   return apiRequest<{ event: UserEvent; message: string }>("/api/events", {

@@ -40,9 +40,10 @@ export async function POST(request) {
     });
     return withCors(NextResponse.json({ message: "Login successful.", token, user: sanitizeUser(user) }, { status: 200 }));
   } catch (error) {
+    const details = error instanceof Error ? error.message : "Unknown error";
     return withCors(
       NextResponse.json(
-        { error: "Failed to login.", details: error instanceof Error ? error.message : "Unknown error" },
+        { error: "Failed to login.", details },
         { status: 500 },
       ),
     );
