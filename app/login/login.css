@@ -11,6 +11,7 @@
   --pill: #e7efff;
   --shadow: 0 18px 34px rgba(0, 0, 0, 0.18);
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   font-family: var(--font-poppins), "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, Arial,
     sans-serif;
@@ -27,9 +28,11 @@
 
 .login-scope .page {
   min-height: 100vh;
-  padding: 56px 46px;
+  min-height: 100dvh;
+  padding: clamp(30px, 5vw, 56px) clamp(16px, 4vw, 46px);
   display: grid;
   place-items: center;
+  overflow-x: hidden;
 }
 
 .login-scope .layout {
@@ -48,8 +51,9 @@
 }
 
 .login-scope .brand__logo-wrap {
-  width: 430px;
-  height: 200px;
+  width: min(430px, 100%);
+  aspect-ratio: 43 / 20;
+  height: auto;
   display: grid;
   place-items: center;
 }
@@ -64,7 +68,7 @@
 
 .login-scope .brand__headline {
   margin-top: 34px;
-  font-size: 28px;
+  font-size: clamp(22px, 3vw, 28px);
   font-weight: 700;
   letter-spacing: 0.6px;
   color: rgba(255, 255, 255, 0.92);
@@ -79,7 +83,7 @@
 }
 
 .login-scope .card {
-  width: 520px;
+  width: min(520px, 100%);
   border-radius: 22px;
   background: var(--card);
   box-shadow: var(--shadow);
@@ -99,7 +103,8 @@
 
 .login-scope .google {
   width: 100%;
-  height: 54px;
+  min-height: 54px;
+  height: auto;
   border-radius: 10px;
   border: 1px solid var(--border);
   display: inline-flex;
@@ -109,6 +114,13 @@
   font-weight: 500;
   color: rgba(42, 42, 42, 0.75);
   background: rgba(255, 255, 255, 0.35);
+  text-align: center;
+  padding: 10px 14px;
+}
+
+.login-scope .google span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .login-scope .divider {
@@ -234,6 +246,7 @@
   font-size: 11px;
   font-weight: 500;
   color: rgba(42, 42, 42, 0.65);
+  overflow-wrap: anywhere;
 }
 
 .login-scope .below a {
@@ -316,30 +329,52 @@
 
 @media (max-width: 560px) {
   .login-scope .page {
-    padding: 30px 16px;
+    padding: 24px 16px;
+    align-items: start;
   }
 
-  .login-scope .brand__logo {
-    transform: scale(0.92);
+  .login-scope .brand {
+    width: 100%;
+    padding: 0;
   }
 
   .login-scope .brand__headline {
-    font-size: 22px;
+    margin-top: 18px;
+  }
+
+  .login-scope .brand__sub {
+    max-width: 320px;
+  }
+
+  .login-scope .card {
+    border-radius: 18px;
+    padding: 22px 18px 22px;
+  }
+
+  .login-scope .input {
+    height: 50px;
+    font-size: 13px;
+  }
+
+  .login-scope .primary {
+    height: 52px;
   }
 
   .login-scope .role {
     width: 100%;
+    max-width: 340px;
   }
 }
 
 .login-scope .register-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 24px;
-  padding: 30px 22px;
+  padding: clamp(22px, 4vw, 30px) clamp(14px, 3vw, 22px);
   background:
     linear-gradient(
       180deg,
@@ -349,7 +384,8 @@
       #8ab6ff 78%,
       #dbe8ff 100%
     );
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .login-scope .register-card {
@@ -366,7 +402,7 @@
   margin: 0 0 20px;
   color: #448aff;
   font-family: var(--font-montserrat), sans-serif;
-  font-size: 24px;
+  font-size: clamp(20px, 3vw, 24px);
   font-weight: 800;
   letter-spacing: 0.01em;
 }
@@ -390,7 +426,7 @@
   background: transparent;
   color: #3f3f3f;
   font-family: var(--font-poppins), sans-serif;
-  font-size: 18px;
+  font-size: clamp(14px, 2.5vw, 18px);
   font-weight: 300;
   padding: 0 14px;
   outline: none;
@@ -410,7 +446,7 @@
   background: transparent;
   color: #81817c;
   font-family: var(--font-poppins), sans-serif;
-  font-size: 18px;
+  font-size: clamp(14px, 2.5vw, 18px);
   font-weight: 300;
   padding: 0 14px;
   outline: none;
@@ -526,6 +562,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 24px;
   animation: registerActionsIn 0.58s cubic-bezier(0.2, 0.85, 0.22, 1) 0.12s both;
 }
@@ -585,7 +622,7 @@
   gap: 10px;
   color: #2b3f6c;
   font-family: var(--font-poppins), sans-serif;
-  font-size: 24px;
+  font-size: clamp(18px, 4vw, 24px);
   font-weight: 300;
   text-decoration: none;
   letter-spacing: 0.02em;
@@ -713,9 +750,10 @@
 
 .login-scope .forgot-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 38px 22px;
+  padding: clamp(24px, 5vw, 38px) clamp(16px, 4vw, 22px);
   background:
     linear-gradient(
       180deg,
@@ -737,8 +775,8 @@
 }
 
 .login-scope .fish-icon {
-  width: 88px;
-  height: 74px;
+  width: clamp(68px, 18vw, 88px);
+  height: auto;
   color: #2b3f6c;
   margin-bottom: 18px;
 }
@@ -747,7 +785,7 @@
   margin: 0 0 38px;
   color: #fffef4;
   font-family: var(--font-poppins), sans-serif;
-  font-size: 26px;
+  font-size: clamp(22px, 4vw, 26px);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-shadow: 2px 3px 2px rgba(43, 63, 108, 0.55);
@@ -765,7 +803,7 @@
   margin: 0 0 14px 10px;
   color: #fffef4;
   font-family: var(--font-poppins), sans-serif;
-  font-size: 24px;
+  font-size: clamp(18px, 4vw, 24px);
   font-weight: 300;
   letter-spacing: 0.02em;
 }
@@ -778,7 +816,7 @@
   background: #fffef4;
   color: #2b3f6c;
   font-family: var(--font-poppins), sans-serif;
-  font-size: 20px;
+  font-size: clamp(16px, 3.5vw, 20px);
   padding: 0 26px;
   outline: none;
   margin-bottom: 18px;
@@ -797,7 +835,7 @@
   background: #448aff;
   color: #fffef4;
   font-family: var(--font-poppins), sans-serif;
-  font-size: 26px;
+  font-size: clamp(20px, 4vw, 26px);
   font-weight: 700;
   letter-spacing: 0.08em;
   cursor: pointer;
@@ -836,7 +874,10 @@
 
 @media (max-width: 560px) {
   .login-scope .register-card {
+    width: 100%;
     min-height: auto;
+    border-radius: 18px;
+    padding: 20px 16px 22px;
   }
 
   .login-scope .register-two-col {
@@ -862,37 +903,50 @@
 
   .login-scope .forgot-panel h1 {
     text-align: center;
-    font-size: 22px;
+    margin-bottom: 28px;
+  }
+
+  .login-scope .forgot-form {
+    margin-bottom: 26px;
   }
 
   .login-scope .forgot-form label {
-    font-size: 20px;
+    margin-left: 4px;
   }
 
-  .login-scope .forgot-form button,
-  .login-scope .back-login-link {
-    font-size: 20px;
+  .login-scope .forgot-form input {
+    height: 52px;
+    padding: 0 18px;
   }
 
-  .login-scope .register-card {
-    min-height: auto;
+  .login-scope .forgot-form button {
+    height: 54px;
+  }
+}
+
+@media (max-width: 380px) {
+  .login-scope .page {
+    padding: 20px 12px;
   }
 
-  .login-scope .register-name-row,
-  .login-scope .register-two-col {
-    grid-template-columns: 1fr;
+  .login-scope .card,
+  .login-scope .register-card,
+  .login-scope .register-review-modal {
+    border-radius: 14px;
   }
 
-  .login-scope .register-review-list {
-    grid-template-columns: 1fr;
+  .login-scope .role__btn {
+    gap: 6px;
+    font-size: 11px;
   }
 
-  .login-scope .register-review-actions {
-    flex-direction: column;
-    align-items: stretch;
+  .login-scope .register-actions {
+    gap: 12px;
   }
 
-  .login-scope .password-requirements {
-    grid-template-columns: 1fr;
+  .login-scope .review-btn,
+  .login-scope .signup-btn {
+    flex: 1;
+    min-width: 0;
   }
 }
