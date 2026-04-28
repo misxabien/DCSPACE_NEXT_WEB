@@ -41,8 +41,8 @@
 }
 
 .main::-webkit-scrollbar-thumb {
-        background: #3d3530;
-        border-radius: 3px;
+  background: #3d3530;
+  border-radius: 3px;
 }
 
 .main__header {
@@ -106,6 +106,30 @@
 .main__grid-wrap {
   padding: 22px 38px 56px;
   flex: 1;
+}
+
+.attendance-empty-state {
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+  color: #604d18;
+}
+
+.attendance-empty-state svg {
+  width: 64px;
+  height: auto;
+}
+
+.attendance-empty-state p {
+  margin: 0;
+  color: rgba(96, 77, 24, 0.82);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 .attendance-shell {
@@ -526,5 +550,142 @@ a.open-btn {
 
   .attendance-search {
     width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .main__header {
+    padding: 22px 18px 10px;
+  }
+
+  .main__header-row {
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .main__title {
+    font-size: 34px;
+  }
+
+  .main__grid-wrap {
+    padding: 16px 18px 36px;
+  }
+
+  .attendance-subtitle {
+    font-size: 28px;
+  }
+
+  .attendance-search {
+    width: 100%;
+    height: 40px;
+  }
+
+  .attendance-empty-state {
+    min-height: 360px;
+    padding: 24px 10px;
+  }
+
+  .attendance-empty-state svg {
+    width: 58px;
+  }
+
+  .attendance-empty-state p {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .table-wrap {
+    overflow-x: visible;
+  }
+
+  .attendance-table,
+  .attendance-table thead,
+  .attendance-table tbody,
+  .attendance-table tr,
+  .attendance-table th,
+  .attendance-table td {
+    display: block;
+  }
+
+  .attendance-table thead {
+    display: none;
+  }
+
+  .attendance-table tbody tr {
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 1.5px solid rgba(96, 77, 24, 0.28);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 18px rgba(96, 77, 24, 0.08);
+  }
+
+  .attendance-table tbody td {
+    height: auto;
+    padding: 7px 0;
+    border-bottom: none;
+    font-size: 15px;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    text-align: right;
+  }
+
+  .attendance-table tbody td::before {
+    content: "";
+    color: #604d18;
+    font-weight: 900;
+    text-align: left;
+  }
+
+  .attendance-table tbody td:nth-child(1)::before {
+    content: "Event Name";
+  }
+
+  .attendance-table tbody td:nth-child(2)::before {
+    content: "Date";
+  }
+
+  .attendance-table tbody td:nth-child(3)::before {
+    content: "Event Status";
+  }
+
+  .attendance-table tbody td:nth-child(4)::before {
+    content: "E-certificate";
+  }
+
+  .attendance-table tbody td:nth-child(5) {
+    justify-content: flex-end;
+    padding-top: 12px;
+  }
+
+  .attendance-table tbody td:nth-child(5)::before {
+    content: "";
+  }
+
+  .col-open {
+    width: 100%;
+    text-align: right;
+  }
+
+  .open-btn {
+    width: 100%;
+    min-height: 34px;
+    font-size: 13px;
+  }
+
+  .footer-controls {
+    justify-content: center;
+    margin-top: 18px;
+  }
+
+  .segmented {
+    width: 100%;
+  }
+
+  .segmented button {
+    flex: 1;
+    justify-content: center;
+    padding: 9px 8px;
   }
 }

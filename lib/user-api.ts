@@ -1,6 +1,4 @@
 const configuredBackendUrl = process.env.NEXT_PUBLIC_BACKEND_USER_API_URL;
-const defaultBackendUrl = "http://127.0.0.1:4001";
-const backendBaseUrl = configuredBackendUrl || defaultBackendUrl;
 const authStorageKey = "dcspace_auth";
 const requestTimeoutMs = 30000;
 
@@ -26,6 +24,11 @@ export type UserProfile = {
   studentNumber: string;
   email: string;
   role: string;
+  rfidNumber?: string;
+  organizationPart?: string;
+  organizationRole?: string;
+  course?: string;
+  school?: string;
 };
 
 export type UserEvent = {
@@ -117,6 +120,11 @@ export async function registerUser(payload: {
   lastName: string;
   studentNumber: string;
   email: string;
+  rfidNumber?: string;
+  organizationPart?: string;
+  organizationRole?: string;
+  course?: string;
+  school?: string;
   password: string;
   confirmPassword: string;
   role?: "student" | "faculty";

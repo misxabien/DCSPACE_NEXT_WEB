@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
-import { ObjectId } from "mongodb";
-import { getAdminCollection } from "./mongo";
+import { MongoClient, ObjectId } from "mongodb";
+
+const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
+const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
+
+const globalForMongo = globalThis as unknown as {
+  adminMongoClient?: MongoClient;
+  adminMongoClientPromise?: Promise<MongoClient>;
+};
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -10,13 +17,35 @@ function createAppError(name: string, message: string, status: number) {
   return error;
 }
 
+async function getMongoClient() {
+  if (globalForMongo.adminMongoClient) {
+    return globalForMongo.adminMongoClient;
+  }
+
+  if (!globalForMongo.adminMongoClientPromise) {
+    const client = new MongoClient(mongoUri);
+    globalForMongo.adminMongoClientPromise = client.connect();
+  }
+
+  globalForMongo.adminMongoClient = await globalForMongo.adminMongoClientPromise;
+  return globalForMongo.adminMongoClient;
+}
+
+async function getDatabase() {
+  const client = await getMongoClient();
+  return client.db(mongoDbName);
+}
+
 async function getUsersCollection() {
-  return getAdminCollection<any>("users");
+  const db = await getDatabase();
+  return db.collection<any>("users");
 }
 
 async function getEventsCollection() {
-  return getAdminCollection<any>("events");
+  const db = await getDatabase();
+  return db.collection<any>("events");
 }
+
 function hashPassword(password: string, salt = randomBytes(16).toString("hex")) {
   const hash = scryptSync(password, salt, 64).toString("hex");
   return `${salt}:${hash}`;
@@ -532,6 +561,3 @@ export async function assignToEvent(id: string, input: AssignToEventInput) {
     assignedEvent: mapAssignedEvent(eventRecord),
   };
 }
-
-
-

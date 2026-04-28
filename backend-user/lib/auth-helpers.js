@@ -11,6 +11,11 @@ export function sanitizeUser(user) {
     studentNumber: user.studentNumber,
     email: user.email,
     role: user.role || "student",
+    rfidNumber: user.rfidNumber || "",
+    organizationPart: user.organizationPart || "",
+    organizationRole: user.organizationRole || "",
+    course: user.course || "",
+    school: user.school || "",
     dataPrivacyAcceptedAt: user.dataPrivacyAcceptedAt || null,
     createdAt: user.createdAt,
   };
