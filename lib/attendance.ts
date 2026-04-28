@@ -8,8 +8,14 @@ const ATTENDANCE_RECORDS_KEY_PREFIX = "dcspaceAttendanceRecords:";
 const DEFAULT_STUDENT_NUMBER = "2025-0000";
 
 export type EventStatus = "Ongoing" | "Passed" | "Upcoming";
-export type RequirementStatus = "Completed" | "Processing";
-export type CertificateStatus = "Download" | "Processing";
+export type RequirementStatus =
+  | "Processing"
+  | "Complete"
+  | "Undertime"
+  | "Overtime"
+  | "Invalid";
+
+export type CertificateStatus = "Download" | "Processing" | "Invalid";
 
 export type RegisteredEvent = {
   id?: string;
@@ -40,15 +46,21 @@ export type AttendanceUser = {
   isLoggedIn: boolean;
 };
 
+export type AttendanceTapPair = {
+  tapIn?: string;
+  tapOut?: string;
+};
+
 export type AttendanceRecord = {
   eventId: string;
   eventName: string;
   eventDate: string;
   studentNumber: string;
   rfidNumber: string;
+  taps: AttendanceTapPair[];
+  updatedAt: string;
   tapIn?: string;
   tapOut?: string;
-  updatedAt: string;
 };
 
 export type AttendanceTapResult = {
@@ -222,15 +234,94 @@ export function writeUserAttendanceRecords(user: AttendanceUser, records: Record
 }
 
 export function isAttendanceComplete(record?: AttendanceRecord) {
-  return Boolean(record?.tapIn && record.tapOut);
+  const taps = record?.taps || [];
+
+  return taps.some((pair) => pair.tapIn && pair.tapOut) || Boolean(record?.tapIn && record.tapOut);
 }
 
-export function getRequirementStatus(record?: AttendanceRecord): RequirementStatus {
-  return isAttendanceComplete(record) ? "Completed" : "Processing";
+function getRequiredMinutes(minAttendance?: string) {
+  if (!minAttendance) return 0;
+
+  const value = minAttendance.toLowerCase();
+
+  if (value.includes("none") || value.includes("tba")) return 0;
+
+  const number = Number(value.match(/\d+(\.\d+)?/)?.[0] || 0);
+
+  if (value.includes("hour")) return number * 60;
+  if (value.includes("min")) return number;
+
+  return number;
 }
 
-export function getCertificateStatus(record?: AttendanceRecord): CertificateStatus {
-  return isAttendanceComplete(record) ? "Download" : "Processing";
+function getMinutesFromTime(time?: string) {
+  if (!time) return null;
+
+  const parsed = new Date(`January 1, 2026 ${time}`);
+
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  return parsed.getHours() * 60 + parsed.getMinutes();
+}
+
+function getEventEndMinutes(event?: RegisteredEvent) {
+  const endTime = event?.dateTime?.split("-").at(-1)?.trim();
+
+  return getMinutesFromTime(endTime);
+}
+
+function getAttendedMinutes(record?: AttendanceRecord) {
+  const tapIn = getMinutesFromTime(record?.tapIn);
+  const tapOut = getMinutesFromTime(record?.tapOut);
+
+  if (tapIn === null || tapOut === null) return null;
+
+  return tapOut - tapIn;
+}
+
+export function getRequirementStatus(record?: AttendanceRecord, event?: RegisteredEvent): RequirementStatus {
+  if (!record?.tapIn) return "Processing";
+  if (!record.tapOut) return "Processing";
+
+  const attendedMinutes = getAttendedMinutes(record);
+
+  if (attendedMinutes === null) return "Processing";
+
+  const requiredMinutes = getRequiredMinutes(event?.minAttendance);
+  const eventEndMinutes = getEventEndMinutes(event);
+  const tapOutMinutes = getMinutesFromTime(record.tapOut);
+
+  if (requiredMinutes > 0 && attendedMinutes < requiredMinutes) {
+    return "Undertime";
+  }
+
+  if (eventEndMinutes !== null && tapOutMinutes !== null) {
+    const overtimeMinutes = tapOutMinutes - eventEndMinutes;
+
+    if (overtimeMinutes > 60) {
+      return "Invalid";
+    }
+
+    if (overtimeMinutes >= 30 && overtimeMinutes <= 60) {
+      return "Overtime";
+    }
+  }
+
+  return "Complete";
+}
+
+export function getCertificateStatus(record?: AttendanceRecord, event?: RegisteredEvent): CertificateStatus {
+  const status = getRequirementStatus(record, event);
+
+  if (status === "Complete" || status === "Overtime") {
+    return "Download";
+  }
+
+  if (status === "Invalid") {
+    return "Invalid";
+  }
+
+  return "Processing";
 }
 
 export function setSelectedAttendanceEvent(eventId: string) {
@@ -262,35 +353,47 @@ export function recordRfidAttendanceTap(scannedRfid: string, events: RegisteredE
   const eventId = getRegisteredEventId(ongoingEvent);
   const records = readUserAttendanceRecords(user);
   const now = new Date();
+  const currentTime = formatAttendanceTime(now);
   const existingRecord = records[eventId];
+
+  const taps = existingRecord?.taps?.length
+    ? [...existingRecord.taps]
+    : existingRecord?.tapIn || existingRecord?.tapOut
+    ? [{ tapIn: existingRecord.tapIn, tapOut: existingRecord.tapOut }]
+    : [];
+
+  const lastTapPair = taps[taps.length - 1];
+
+  if (!lastTapPair || lastTapPair.tapOut) {
+    taps.push({ tapIn: currentTime });
+  } else {
+    lastTapPair.tapOut = currentTime;
+  }
+
+  const firstPair = taps[0];
+
   const nextRecord: AttendanceRecord = {
     eventId,
     eventName: ongoingEvent.name || "Event Name",
     eventDate: formatEventDate(ongoingEvent),
     studentNumber: user.studentNumber,
     rfidNumber: user.rfidNumber,
-    tapIn: existingRecord?.tapIn,
-    tapOut: existingRecord?.tapOut,
+    taps,
+    tapIn: firstPair?.tapIn,
+    tapOut: firstPair?.tapOut,
     updatedAt: now.toISOString(),
   };
 
-  if (!nextRecord.tapIn) {
-    nextRecord.tapIn = formatAttendanceTime(now);
-    records[eventId] = nextRecord;
-    writeUserAttendanceRecords(user, records);
-    setSelectedAttendanceEvent(eventId);
-    return { ok: true, message: `${nextRecord.eventName} tap in recorded.` };
-  }
+  records[eventId] = nextRecord;
+  writeUserAttendanceRecords(user, records);
+  setSelectedAttendanceEvent(eventId);
 
-  if (!nextRecord.tapOut) {
-    nextRecord.tapOut = formatAttendanceTime(now);
-    records[eventId] = nextRecord;
-    writeUserAttendanceRecords(user, records);
-    setSelectedAttendanceEvent(eventId);
-    return { ok: true, message: `${nextRecord.eventName} tap out recorded.` };
-  }
+  const tapType = lastTapPair && !lastTapPair.tapOut ? "tap out" : "tap in";
 
-  return { ok: false, message: `${nextRecord.eventName} attendance is already completed.` };
+  return {
+    ok: true,
+    message: `${nextRecord.eventName} ${tapType} recorded at ${currentTime}.`,
+  };
 }
 
 export function downloadAttendanceCertificate(

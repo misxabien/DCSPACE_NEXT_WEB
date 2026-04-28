@@ -534,6 +534,30 @@ a.open-btn {
   color: #ffffff;
 }
 
+.rfid-hidden-form {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rfid-hidden-input {
+  width: 1px;
+  height: 1px;
+  border: 0;
+  padding: 0;
+  opacity: 0;
+}
+
+.rfid-scan-message {
+  margin: 6px 0 0;
+  color: #604d18;
+  font-weight: 700;
+}
+
 @media (max-width: 960px) {
   .app {
     flex-direction: column;
