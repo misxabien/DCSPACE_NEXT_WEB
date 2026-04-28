@@ -126,6 +126,68 @@
   font-weight: 900;
 }
 
+.attendance-detail-summary {
+  display: none;
+  width: min(760px, 100%);
+  margin: 12px 0 20px;
+  border: 1px solid rgba(96, 77, 24, 0.32);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: 2px 2px 0 rgba(96, 77, 24, 0.22);
+}
+
+.attendance-detail-list {
+  margin: 0;
+  padding: 20px 26px;
+}
+
+.attendance-detail-list div {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) minmax(180px, 1fr);
+  gap: 22px;
+  align-items: center;
+  min-height: 40px;
+}
+
+.attendance-detail-list dt,
+.attendance-detail-list dd {
+  margin: 0;
+  color: #604d18;
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.attendance-detail-list dt {
+  font-weight: 900;
+}
+
+.attendance-detail-list dd {
+  justify-self: end;
+  text-align: right;
+  font-weight: 500;
+}
+
+.cert-download {
+  display: inline;
+  border: none;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.cert-download:hover,
+.cert-download:focus-visible {
+  background: transparent;
+  outline: none;
+  text-decoration: underline;
+}
+
 .details-back {
   min-width: 142px;
   height: 30px;
@@ -212,6 +274,10 @@
   text-align: center;
 }
 
+.details-table-wrap--mobile {
+  display: none;
+}
+
 @media (max-width: 960px) {
   .main__header {
     padding: 24px;
@@ -240,6 +306,7 @@
   .main__header-row,
   .details-top {
     align-items: stretch;
+    flex-direction: column;
     gap: 14px;
   }
 
@@ -253,87 +320,81 @@
   }
 
   .details-wrap {
-    padding: 10px 18px 34px;
+    padding: 10px 22px 34px;
   }
 
   .event-block__title {
-    font-size: 28px;
+    font-size: 24px;
   }
 
   .event-block__sub {
-    font-size: 15px;
+    display: none;
   }
 
   .details-back {
     width: 100%;
-    height: 38px;
-    font-size: 18px;
+    height: 20px;
+    border-radius: 6px;
+    font-size: 10px;
+    box-shadow: none;
+  }
+
+  .details-back svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .attendance-detail-summary {
+    display: block;
+    margin: 18px 0 16px;
+  }
+
+  .attendance-detail-list {
+    padding: 16px;
+  }
+
+  .attendance-detail-list div {
+    grid-template-columns: minmax(130px, 1fr) minmax(120px, 1fr);
+    gap: 14px;
+    min-height: 45px;
+  }
+
+  .attendance-detail-list dt,
+  .attendance-detail-list dd {
+    font-size: 15px;
   }
 
   .details-table-wrap {
     overflow-x: visible;
   }
 
-  .detail-table,
-  .detail-table thead,
-  .detail-table tbody,
-  .detail-table tr,
-  .detail-table th,
-  .detail-table td {
-    display: block;
-  }
-
-  .detail-table thead {
+  .details-table-wrap--desktop {
     display: none;
   }
 
-  .detail-table tbody tr {
-    margin-bottom: 16px;
-    padding: 16px;
-    border: 1.5px solid rgba(96, 77, 24, 0.28);
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 18px rgba(96, 77, 24, 0.08);
+  .details-table-wrap--mobile {
+    display: block;
+  }
+
+  .detail-table--mobile {
+    min-width: 0;
+    table-layout: fixed;
+  }
+
+  .detail-table thead th {
+    padding: 0 6px 8px;
+    font-size: 15px;
+    text-align: center;
   }
 
   .detail-table tbody td {
-    height: auto;
-    padding: 7px 0;
-    border-bottom: none;
-    font-size: 15px;
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    text-align: right;
+    height: 40px;
+    padding: 9px 6px;
+    font-size: 13px;
+    text-align: center;
   }
 
-  .detail-table tbody td::before {
-    color: #604d18;
-    font-weight: 900;
-    text-align: left;
-  }
-
-  .detail-table tbody td:nth-child(1)::before {
-    content: "Student Name";
-  }
-
-  .detail-table tbody td:nth-child(2)::before {
-    content: "Student No.";
-  }
-
-  .detail-table tbody td:nth-child(3)::before {
-    content: "Time In";
-  }
-
-  .detail-table tbody td:nth-child(4)::before {
-    content: "Time Out";
-  }
-
-  .detail-table tbody td:nth-child(5)::before {
-    content: "Status";
-  }
-
-  .detail-table tbody td:nth-child(6)::before {
-    content: "Certificate";
+  .detail-empty-row td {
+    height: 40px;
   }
 }

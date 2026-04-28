@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { signOutAttendanceUser } from "@/lib/attendance";
 
 export function MyProfileContent() {
   const [tab, setTab] = useState<"attended" | "organized" | "certs">("organized");
@@ -16,6 +17,7 @@ export function MyProfileContent() {
             className="profile-logout"
             href="/login"
             onClick={() => {
+              signOutAttendanceUser();
               window.sessionStorage.removeItem("dcspacePrivacySeen");
             }}
           >

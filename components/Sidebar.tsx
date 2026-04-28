@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { canOrganizeEvents } from "@/lib/dc-events";
 import { NAV_ITEMS } from "@/lib/nav";
 
 const AVATAR =
@@ -10,6 +12,20 @@ const AVATAR =
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [canCreateEvents, setCanCreateEvents] = useState(false);
+
+  useEffect(() => {
+    const refreshAccess = () => setCanCreateEvents(canOrganizeEvents());
+
+    refreshAccess();
+    window.addEventListener("pageshow", refreshAccess);
+    window.addEventListener("storage", refreshAccess);
+
+    return () => {
+      window.removeEventListener("pageshow", refreshAccess);
+      window.removeEventListener("storage", refreshAccess);
+    };
+  }, []);
 
   return (
     <header className="topbar" aria-label="Primary navigation">
@@ -25,6 +41,10 @@ export function Sidebar() {
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const isCreate = "kind" in item && item.kind === "create";
+
+            if (isCreate && !canCreateEvents) {
+              return null;
+            }
 
             return (
               <li key={item.href}>

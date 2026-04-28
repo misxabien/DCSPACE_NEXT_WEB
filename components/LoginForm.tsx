@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
+import { signInAttendanceUser } from "@/lib/attendance";
 
 export function LoginForm() {
   const router = useRouter();
@@ -13,6 +14,10 @@ export function LoginForm() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get("email");
+
+    signInAttendanceUser(typeof email === "string" ? email : "");
     router.push("/dashboard");
   };
 

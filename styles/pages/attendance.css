@@ -144,6 +144,20 @@
   gap: 18px;
 }
 
+.attendance-scan-status {
+  display: none;
+  margin: 0;
+  min-height: 30px;
+  padding: 7px 14px;
+  border: 1px solid rgba(96, 77, 24, 0.28);
+  border-radius: 999px;
+  color: #604d18;
+  background: rgba(255, 255, 255, 0.24);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
 .attendance-subtitle {
   margin: 0;
   font-size: clamp(30px, 3vw, 38px);
@@ -248,6 +262,32 @@
 .cert {
   font-weight: 700;
   color: var(--att-text);
+}
+
+.status-pill {
+  color: inherit;
+  font: inherit;
+}
+
+.cert-download {
+  display: inline;
+  border: none;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.cert-download:hover,
+.cert-download:focus-visible {
+  background: transparent;
+  outline: none;
+  text-decoration: underline;
 }
 
 .open-btn {
@@ -575,6 +615,17 @@ a.open-btn {
     font-size: 28px;
   }
 
+  .attendance-top {
+    gap: 10px;
+  }
+
+  .attendance-scan-status {
+    display: block;
+    width: 100%;
+    border-radius: 8px;
+    font-size: 12px;
+  }
+
   .attendance-search {
     width: 100%;
     height: 40px;
@@ -613,22 +664,25 @@ a.open-btn {
 
   .attendance-table tbody tr {
     margin-bottom: 16px;
-    padding: 16px;
-    border: 1.5px solid rgba(96, 77, 24, 0.28);
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 18px rgba(96, 77, 24, 0.08);
+    padding: 18px 16px 8px;
+    border: 1px solid rgba(96, 77, 24, 0.32);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.16);
+    box-shadow: 2px 2px 0 rgba(96, 77, 24, 0.22);
   }
 
   .attendance-table tbody td {
     height: auto;
-    padding: 7px 0;
+    min-height: 41px;
+    padding: 6px 0;
     border-bottom: none;
     font-size: 15px;
     display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 16px;
     text-align: right;
+    color: #604d18;
   }
 
   .attendance-table tbody td::before {
@@ -656,7 +710,8 @@ a.open-btn {
 
   .attendance-table tbody td:nth-child(5) {
     justify-content: flex-end;
-    padding-top: 12px;
+    min-height: 30px;
+    padding-top: 8px;
   }
 
   .attendance-table tbody td:nth-child(5)::before {
@@ -670,22 +725,17 @@ a.open-btn {
 
   .open-btn {
     width: 100%;
-    min-height: 34px;
-    font-size: 13px;
+    min-height: 20px;
+    border-radius: 6px;
+    font-size: 10px;
+  }
+
+  .status-pill,
+  .cert-download {
+    margin-left: auto;
   }
 
   .footer-controls {
-    justify-content: center;
-    margin-top: 18px;
-  }
-
-  .segmented {
-    width: 100%;
-  }
-
-  .segmented button {
-    flex: 1;
-    justify-content: center;
-    padding: 9px 8px;
+    display: none;
   }
 }

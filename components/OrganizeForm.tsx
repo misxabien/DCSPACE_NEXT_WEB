@@ -1,6 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
+import { canOrganizeEvents, saveOrganizedEvent } from "@/lib/dc-events";
 
 type ReviewDetails = {
   eventName: string;
@@ -31,12 +35,18 @@ const emptyReviewDetails: ReviewDetails = {
 };
 
 export function OrganizeForm() {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const courseRef = useRef<HTMLSelectElement>(null);
   const orgRef = useRef<HTMLInputElement>(null);
   const combinedRef = useRef<HTMLInputElement>(null);
+  const [canCreate, setCanCreate] = useState<boolean | null>(null);
   const [showReview, setShowReview] = useState(false);
   const [reviewDetails, setReviewDetails] = useState<ReviewDetails>(emptyReviewDetails);
+
+  useEffect(() => {
+    setCanCreate(canOrganizeEvents());
+  }, []);
 
   useEffect(() => {
     function syncCombined() {
@@ -67,19 +77,24 @@ export function OrganizeForm() {
     return typeof value === "string" && value.trim() ? value.trim() : "Not provided";
   };
 
-  const handleReview = () => {
+  const syncCourseOrganizer = () => {
     if (combinedRef.current && courseRef.current && orgRef.current) {
       const course = (courseRef.current.value || "").trim();
       const org = (orgRef.current.value || "").trim().replace(/^[\s—-]+|[\s—-]+$/g, "");
       combinedRef.current.value = course && org ? `${course}-${org}` : course || org || "";
     }
+  };
+
+  const getReviewDetails = () => {
+    syncCourseOrganizer();
 
     if (!formRef.current) {
-      return;
+      return emptyReviewDetails;
     }
 
     const formData = new FormData(formRef.current);
-    setReviewDetails({
+
+    return {
       eventName: getFormValue(formData, "event_name"),
       eventDate: getFormValue(formData, "event_date"),
       venue: getFormValue(formData, "venue"),
@@ -91,12 +106,38 @@ export function OrganizeForm() {
       eventType: getFormValue(formData, "event_type"),
       duration: getFormValue(formData, "duration"),
       minAttendance: getFormValue(formData, "min_attendance"),
-    });
+    };
+  };
+
+  const handleReview = () => {
+    setReviewDetails(getReviewDetails());
     setShowReview(true);
   };
 
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!canCreate) {
+      return;
+    }
+
+    saveOrganizedEvent(getReviewDetails());
+    setShowReview(false);
+    router.push("/events");
+  };
+
+  if (canCreate === null) {
+    return null;
+  }
+
+  if (!canCreate) {
+    return (
+      <EmptyState message="Only organization officers can organize and create events. Organization members can browse events, register, and track attendance." />
+    );
+  }
+
   return (
-    <form ref={formRef} className="organize-form-shell" action="#" method="post" aria-label="Create new event">
+    <form ref={formRef} className="organize-form-shell" onSubmit={handleSubmit} aria-label="Create new event">
       <label className="form-section-label" htmlFor="event-name">
         Event Name
       </label>
