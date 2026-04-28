@@ -11,6 +11,7 @@ export function toEventResponse(event) {
     endTime: event.endTime || "",
     status: event.status || "pending",
     certificate: event.certificate || "Processing",
+    posterImage: event.posterImage || "",
     createdAt: event.createdAt || new Date().toISOString(),
   };
 }

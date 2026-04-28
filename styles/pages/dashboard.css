@@ -89,7 +89,7 @@
 
 .registered-card {
   display: grid;
-  grid-template-columns: 118px 1fr;
+  grid-template-columns: 118px 118px 1fr;
   align-items: center;
   min-height: 172px;
   border: none;
@@ -102,6 +102,21 @@
   text-align: left;
   padding: 18px 22px;
   transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, color 0.2s ease;
+}
+
+.registered-poster {
+  width: 96px;
+  height: 96px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #ead8a6;
+  display: inline-flex;
+}
+
+.registered-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .registered-card:hover,
@@ -178,7 +193,7 @@
 
 .organized-row {
   display: grid;
-  grid-template-columns: 1.4fr 0.85fr 1.1fr 1.25fr 150px;
+  grid-template-columns: 96px 1.25fr 0.85fr 1.1fr 1.25fr 150px;
   align-items: center;
   min-height: 68px;
   padding: 0 36px 0 48px;
@@ -187,6 +202,26 @@
   font-size: 22px;
   font-weight: 500;
   line-height: 1.25;
+}
+
+.organized-poster {
+  width: 72px;
+  height: 52px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #ead8a6;
+  display: inline-flex;
+}
+
+.organized-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.organized-poster--empty {
+  width: 100%;
+  height: 100%;
 }
 
 .organized-header {
@@ -429,9 +464,14 @@
   }
 
   .registered-card {
-    grid-template-columns: 104px 1fr;
+    grid-template-columns: 104px 104px 1fr;
     min-height: 132px;
     padding: 18px;
+  }
+
+  .registered-poster {
+    width: 86px;
+    height: 86px;
   }
 
   .registered-date span {
@@ -458,8 +498,8 @@
   }
 
   .organized-row {
-    grid-template-columns: 170px 120px 170px 170px 140px;
-    min-width: 770px;
+    grid-template-columns: 88px 170px 120px 170px 170px 140px;
+    min-width: 860px;
     padding: 0 18px;
     font-size: 17px;
   }
