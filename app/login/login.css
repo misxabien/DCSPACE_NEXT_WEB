@@ -11,6 +11,7 @@
   --pill: #e7efff;
   --shadow: 0 18px 34px rgba(0, 0, 0, 0.18);
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   font-family: var(--font-poppins), "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, Arial,
     sans-serif;
@@ -27,9 +28,11 @@
 
 .login-scope .page {
   min-height: 100vh;
-  padding: 56px 46px;
+  min-height: 100dvh;
+  padding: clamp(30px, 5vw, 56px) clamp(16px, 4vw, 46px);
   display: grid;
   place-items: center;
+  overflow-x: hidden;
 }
 
 .login-scope .layout {
@@ -48,8 +51,9 @@
 }
 
 .login-scope .brand__logo-wrap {
-  width: 430px;
-  height: 200px;
+  width: min(430px, 100%);
+  aspect-ratio: 43 / 20;
+  height: auto;
   display: grid;
   place-items: center;
 }
@@ -64,7 +68,7 @@
 
 .login-scope .brand__headline {
   margin-top: 34px;
-  font-size: 28px;
+  font-size: clamp(22px, 3vw, 28px);
   font-weight: 700;
   letter-spacing: 0.6px;
   color: rgba(255, 255, 255, 0.92);
@@ -79,7 +83,7 @@
 }
 
 .login-scope .card {
-  width: 520px;
+  width: min(520px, 100%);
   border-radius: 22px;
   background: var(--card);
   box-shadow: var(--shadow);
@@ -99,7 +103,8 @@
 
 .login-scope .google {
   width: 100%;
-  height: 54px;
+  min-height: 54px;
+  height: auto;
   border-radius: 10px;
   border: 1px solid var(--border);
   display: inline-flex;
@@ -109,6 +114,13 @@
   font-weight: 500;
   color: rgba(42, 42, 42, 0.75);
   background: rgba(255, 255, 255, 0.35);
+  text-align: center;
+  padding: 10px 14px;
+}
+
+.login-scope .google span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .login-scope .divider {
@@ -192,6 +204,15 @@
   margin-top: 10px;
 }
 
+.login-scope .auth-field-error {
+  margin: 8px 2px 0;
+  color: #e33e33;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .login-scope .link {
   font-size: 11px;
   font-weight: 600;
@@ -225,6 +246,7 @@
   font-size: 11px;
   font-weight: 500;
   color: rgba(42, 42, 42, 0.65);
+  overflow-wrap: anywhere;
 }
 
 .login-scope .below a {
@@ -307,18 +329,624 @@
 
 @media (max-width: 560px) {
   .login-scope .page {
-    padding: 30px 16px;
+    padding: 24px 16px;
+    align-items: start;
   }
 
-  .login-scope .brand__logo {
-    transform: scale(0.92);
+  .login-scope .brand {
+    width: 100%;
+    padding: 0;
   }
 
   .login-scope .brand__headline {
-    font-size: 22px;
+    margin-top: 18px;
+  }
+
+  .login-scope .brand__sub {
+    max-width: 320px;
+  }
+
+  .login-scope .card {
+    border-radius: 18px;
+    padding: 22px 18px 22px;
+  }
+
+  .login-scope .input {
+    height: 50px;
+    font-size: 13px;
+  }
+
+  .login-scope .primary {
+    height: 52px;
   }
 
   .login-scope .role {
     width: 100%;
+    max-width: 340px;
+  }
+}
+
+.login-scope .register-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: clamp(22px, 4vw, 30px) clamp(14px, 3vw, 22px);
+  background:
+    linear-gradient(
+      180deg,
+      #dbe8ff 0%,
+      #8ab6ff 32%,
+      #448aff 51%,
+      #8ab6ff 78%,
+      #dbe8ff 100%
+    );
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.login-scope .register-card {
+  width: min(100%, 930px);
+  min-height: auto;
+  padding: 24px 26px 28px;
+  border-radius: 24px;
+  background: #fffef4;
+  box-shadow: 6px 8px 5px rgba(50, 59, 77, 0.35);
+  animation: registerCardIn 0.58s cubic-bezier(0.2, 0.85, 0.22, 1) both;
+}
+
+.login-scope .register-card h1 {
+  margin: 0 0 20px;
+  color: #448aff;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: clamp(20px, 3vw, 24px);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.login-scope .register-form {
+  display: grid;
+  gap: 10px;
+}
+
+.login-scope .register-name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.login-scope .register-form input {
+  width: 100%;
+  height: 42px;
+  border: 1.5px solid #b8b8b8;
+  border-radius: 6px;
+  background: transparent;
+  color: #3f3f3f;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(14px, 2.5vw, 18px);
+  font-weight: 300;
+  padding: 0 14px;
+  outline: none;
+}
+
+.login-scope .register-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.login-scope .register-form select {
+  width: 100%;
+  height: 42px;
+  border: 1.5px solid #b8b8b8;
+  border-radius: 6px;
+  background: transparent;
+  color: #81817c;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(14px, 2.5vw, 18px);
+  font-weight: 300;
+  padding: 0 14px;
+  outline: none;
+  cursor: pointer;
+}
+
+.login-scope .register-form select:focus {
+  border-color: #448aff;
+}
+
+.login-scope .register-form select option {
+  color: #3f3f3f;
+  background: #fffef4;
+}
+
+.login-scope .register-form input::placeholder {
+  color: #81817c;
+}
+
+.login-scope .register-form input:focus {
+  border-color: #448aff;
+}
+
+.login-scope .register-password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.login-scope .register-password-wrap input {
+  padding-right: 48px;
+}
+
+.login-scope .register-eye-toggle {
+  position: absolute;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #7e7d77;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.login-scope .register-eye-toggle:hover,
+.login-scope .register-eye-toggle:focus-visible {
+  background: rgba(68, 138, 255, 0.12);
+  color: #448aff;
+  outline: none;
+}
+
+.login-scope .register-eye-toggle svg {
+  width: 21px;
+  height: 21px;
+}
+
+.login-scope .password-requirements {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 12px;
+  margin: -4px 0 2px;
+  padding: 0;
+  list-style: none;
+}
+
+.login-scope .password-requirements li {
+  position: relative;
+  color: rgba(42, 42, 42, 0.62);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
+  padding-left: 16px;
+}
+
+.login-scope .password-requirements li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.42em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c6c6c6;
+}
+
+.login-scope .password-requirements li.is-valid {
+  color: #2f9c57;
+}
+
+.login-scope .password-requirements li.is-valid::before {
+  background: #2f9c57;
+}
+
+.login-scope .register-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.login-scope .register-actions {
+  width: min(100%, 286px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  animation: registerActionsIn 0.58s cubic-bezier(0.2, 0.85, 0.22, 1) 0.12s both;
+}
+
+.login-scope .review-btn,
+.login-scope .signup-btn {
+  height: 28px;
+  border-radius: 4px;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.login-scope .review-btn {
+  min-width: 98px;
+  border: 1px solid #7e56bc;
+  background: #a878dc;
+  color: #fffef4;
+}
+
+.login-scope .signup-btn {
+  min-width: 96px;
+  border: 1px solid #1f8ed9;
+  background: #46b0f3;
+  color: #fffef4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.login-scope .signup-btn span {
+  width: 20px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+}
+
+.login-scope .signup-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.login-scope .review-btn:hover,
+.login-scope .signup-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+.login-scope .back-login-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #2b3f6c;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(18px, 4vw, 24px);
+  font-weight: 300;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.login-scope .back-login-link svg {
+  width: 52px;
+  height: 52px;
+}
+
+.login-scope .back-login-link:hover {
+  color: #1b2f5a;
+  transform: translateX(-2px);
+}
+
+.login-scope .register-back-link {
+  margin-top: -8px;
+  font-size: 18px;
+}
+
+.login-scope .register-back-link svg {
+  width: 34px;
+  height: 34px;
+}
+
+.login-scope .register-review-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(43, 63, 108, 0.36);
+}
+
+.login-scope .register-review-modal {
+  width: min(100%, 620px);
+  max-height: min(88vh, 680px);
+  overflow-y: auto;
+  border-radius: 18px;
+  background: #fffef4;
+  color: #2b3f6c;
+  box-shadow: 8px 10px 4px rgba(50, 59, 77, 0.34);
+  padding: 24px 28px 28px;
+  animation: registerActionsIn 0.26s ease both;
+}
+
+.login-scope .register-review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.login-scope .register-review-header h2 {
+  margin: 0;
+  color: #448aff;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.login-scope .register-review-close {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #2b3f6c;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.login-scope .register-review-close:hover {
+  background: rgba(68, 138, 255, 0.12);
+}
+
+.login-scope .register-review-close svg {
+  width: 22px;
+  height: 22px;
+}
+
+.login-scope .register-review-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin: 0;
+}
+
+.login-scope .register-review-list div {
+  min-width: 0;
+  border-bottom: 1px solid rgba(43, 63, 108, 0.18);
+  padding-bottom: 10px;
+}
+
+.login-scope .register-review-list dt {
+  color: #448aff;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.login-scope .register-review-list dd {
+  margin: 4px 0 0;
+  color: #2a2a2a;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.login-scope .register-review-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 26px;
+}
+
+.login-scope .forgot-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, 5vw, 38px) clamp(16px, 4vw, 22px);
+  background:
+    linear-gradient(
+      180deg,
+      #dbe8ff 0%,
+      #8ab6ff 34%,
+      #448aff 52%,
+      #8ab6ff 76%,
+      #dbe8ff 100%
+    );
+}
+
+.login-scope .forgot-panel {
+  width: min(100%, 820px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #2b3f6c;
+  animation: registerActionsIn 0.5s ease both;
+}
+
+.login-scope .fish-icon {
+  width: clamp(68px, 18vw, 88px);
+  height: auto;
+  color: #2b3f6c;
+  margin-bottom: 18px;
+}
+
+.login-scope .forgot-panel h1 {
+  margin: 0 0 38px;
+  color: #fffef4;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(22px, 4vw, 26px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-shadow: 2px 3px 2px rgba(43, 63, 108, 0.55);
+}
+
+.login-scope .forgot-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin-bottom: 34px;
+}
+
+.login-scope .forgot-form label {
+  margin: 0 0 14px 10px;
+  color: #fffef4;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(18px, 4vw, 24px);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+}
+
+.login-scope .forgot-form input {
+  width: 100%;
+  height: 56px;
+  border: 2px solid #c6c6c6;
+  border-radius: 999px;
+  background: #fffef4;
+  color: #2b3f6c;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(16px, 3.5vw, 20px);
+  padding: 0 26px;
+  outline: none;
+  margin-bottom: 18px;
+}
+
+.login-scope .forgot-form input:focus {
+  border-color: #2b3f6c;
+}
+
+.login-scope .forgot-form button {
+  width: min(100%, 610px);
+  height: 58px;
+  align-self: center;
+  border: 2px solid #2b5c9a;
+  border-radius: 999px;
+  background: #448aff;
+  color: #fffef4;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(20px, 4vw, 26px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  box-shadow: 0 3px 5px rgba(43, 63, 108, 0.38);
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.login-scope .forgot-form button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+@keyframes registerCardIn {
+  from {
+    opacity: 0.4;
+    transform: translateX(190px) scaleX(0.74) scaleY(1.12);
+    transform-origin: right center;
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    transform-origin: center center;
+  }
+}
+
+@keyframes registerActionsIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 560px) {
+  .login-scope .register-card {
+    width: 100%;
+    min-height: auto;
+    border-radius: 18px;
+    padding: 20px 16px 22px;
+  }
+
+  .login-scope .register-two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .login-scope .register-name-row {
+    grid-template-columns: 1fr;
+  }
+
+  .login-scope .register-review-list {
+    grid-template-columns: 1fr;
+  }
+
+  .login-scope .register-review-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .login-scope .password-requirements {
+    grid-template-columns: 1fr;
+  }
+
+  .login-scope .forgot-panel h1 {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .login-scope .forgot-form {
+    margin-bottom: 26px;
+  }
+
+  .login-scope .forgot-form label {
+    margin-left: 4px;
+  }
+
+  .login-scope .forgot-form input {
+    height: 52px;
+    padding: 0 18px;
+  }
+
+  .login-scope .forgot-form button {
+    height: 54px;
+  }
+}
+
+@media (max-width: 380px) {
+  .login-scope .page {
+    padding: 20px 12px;
+  }
+
+  .login-scope .card,
+  .login-scope .register-card,
+  .login-scope .register-review-modal {
+    border-radius: 14px;
+  }
+
+  .login-scope .role__btn {
+    gap: 6px;
+    font-size: 11px;
+  }
+
+  .login-scope .register-actions {
+    gap: 12px;
+  }
+
+  .login-scope .review-btn,
+  .login-scope .signup-btn {
+    flex: 1;
+    min-width: 0;
   }
 }

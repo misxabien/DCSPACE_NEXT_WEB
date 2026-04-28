@@ -1,125 +1,264 @@
 "use client";
 
 import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SearchWithClear } from "@/components/SearchWithClear";
+import {
+  ATTENDANCE_UPDATED_EVENT,
+  REGISTERED_EVENTS_KEY,
+  type AttendanceRecord,
+  type AttendanceUser,
+  type CertificateStatus,
+  type EventStatus,
+  type RegisteredEvent,
+  downloadAttendanceCertificate,
+  formatEventDate,
+  getCertificateStatus,
+  getCurrentAttendanceUser,
+  getEventStatus,
+  getRegisteredEventId,
+  readRegisteredEvents,
+  readUserAttendanceRecords,
+  recordRfidAttendanceTap,
+  setSelectedAttendanceEvent,
+} from "@/lib/attendance";
+
+type AttendanceEvent = {
+  id: string;
+  name: string;
+  date: string;
+  status: EventStatus;
+  certificate: CertificateStatus;
+  registeredEvent: RegisteredEvent;
+  record?: AttendanceRecord;
+};
+
+function buildAttendanceEvents(
+  registeredEvents: RegisteredEvent[],
+  records: Record<string, AttendanceRecord>,
+): AttendanceEvent[] {
+  return registeredEvents.map((event) => {
+    const id = getRegisteredEventId(event);
+    const record = records[id];
+
+    return {
+      id,
+      name: event.name || "Event Name",
+      date: formatEventDate(event),
+      status: getEventStatus(event),
+      certificate: getCertificateStatus(record),
+      registeredEvent: event,
+      record,
+    };
+  });
+}
+
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+
+  return (
+    target.isContentEditable ||
+    ["INPUT", "TEXTAREA", "SELECT", "BUTTON", "A"].includes(target.tagName)
+  );
+}
 
 export function AttendancePageContent() {
+  const [attendanceEvents, setAttendanceEvents] = useState<AttendanceEvent[]>([]);
+  const [currentUser, setCurrentUser] = useState<AttendanceUser | null>(null);
+  const [scanMessage, setScanMessage] = useState("");
+  const registeredEventsRef = useRef<RegisteredEvent[]>([]);
+  const scanBufferRef = useRef("");
+  const scanTimeoutRef = useRef<number | null>(null);
+
+  const loadAttendanceEvents = useCallback(() => {
+    const user = getCurrentAttendanceUser();
+    const registeredEvents = readRegisteredEvents();
+    const records = readUserAttendanceRecords(user);
+
+    registeredEventsRef.current = registeredEvents;
+    setCurrentUser(user);
+    setAttendanceEvents(buildAttendanceEvents(registeredEvents, records));
+  }, []);
+
+  useEffect(() => {
+    loadAttendanceEvents();
+
+    const handleRefresh = () => loadAttendanceEvents();
+    const handleStorage = (event: StorageEvent) => {
+      if (!event.key || event.key === REGISTERED_EVENTS_KEY || event.key.startsWith("dcspaceAttendanceRecords:")) {
+        loadAttendanceEvents();
+      }
+    };
+
+    window.addEventListener("pageshow", handleRefresh);
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener(ATTENDANCE_UPDATED_EVENT, handleRefresh);
+
+    return () => {
+      window.removeEventListener("pageshow", handleRefresh);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(ATTENDANCE_UPDATED_EVENT, handleRefresh);
+    };
+  }, [loadAttendanceEvents]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.altKey || event.ctrlKey || event.metaKey || isEditableTarget(event.target)) {
+        return;
+      }
+
+      if (scanTimeoutRef.current) {
+        window.clearTimeout(scanTimeoutRef.current);
+      }
+
+      if (event.key === "Enter") {
+        const scannedRfid = scanBufferRef.current.trim();
+        scanBufferRef.current = "";
+
+        if (!scannedRfid) return;
+
+        const result = recordRfidAttendanceTap(scannedRfid, registeredEventsRef.current);
+        setScanMessage(result.message);
+
+        if (result.ok) {
+          loadAttendanceEvents();
+        }
+
+        return;
+      }
+
+      if (event.key.length === 1) {
+        scanBufferRef.current += event.key;
+        scanTimeoutRef.current = window.setTimeout(() => {
+          scanBufferRef.current = "";
+        }, 1200);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+
+      if (scanTimeoutRef.current) {
+        window.clearTimeout(scanTimeoutRef.current);
+      }
+    };
+  }, [loadAttendanceEvents]);
+
+  const handleDownload = (event: AttendanceEvent) => {
+    if (!currentUser) return;
+    downloadAttendanceCertificate(event.registeredEvent, currentUser, event.record);
+  };
+
   return (
     <>
       <header className="main__header">
         <div className="main__header-row">
           <h1 className="main__title">Attendance</h1>
-          <div className="main__tools">
-            <button type="button" className="main__tool" aria-label="Layout">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <rect x="4" y="4" width="7" height="7" rx="1.5" />
-                <rect x="13" y="4" width="7" height="7" rx="1.5" />
-                <rect x="4" y="13" width="7" height="7" rx="1.5" />
-                <rect x="13" y="13" width="7" height="7" rx="1.5" />
-              </svg>
-            </button>
-            <button type="button" className="main__tool" aria-label="Refresh">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-2.64-6.36" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 3v6h-6" />
-              </svg>
-            </button>
-          </div>
+          <SearchWithClear className="attendance-search" role="search" />
         </div>
-        <div className="main__divider" role="presentation" />
       </header>
 
       <div className="main__grid-wrap">
-        <section className="attendance-shell" aria-label="My events attendance">
-          <div className="attendance-top">
-            <h2 className="attendance-subtitle">My Events</h2>
-            <SearchWithClear role="search" />
-          </div>
-
-          <div className="table-wrap" aria-label="Attendance list">
-            <table className="attendance-table">
-              <thead>
-                <tr>
-                  <th scope="col">Event Name</th>
-                  <th scope="col">Date</th>
-                  <th scope="col">Event Status</th>
-                  <th scope="col">E-certificate</th>
-                  <th scope="col" className="col-open" />
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Event Name</td>
-                  <td className="cell-muted">Date</td>
-                  <td className="cell-muted">Ongoing</td>
-                  <td className="cert">Pending</td>
-                  <td className="col-open">
-                    <Link href="/attendance/details" className="open-btn open-btn--ghost">
-                      Open
-                      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                        <path
-                          d="M9 6l6 6-6 6"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </Link>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Event Name</td>
-                  <td className="cell-muted">Date</td>
-                  <td className="cell-muted">Ongoing</td>
-                  <td className="cert">Upcoming</td>
-                  <td className="col-open">
-                    <Link href="/attendance/details" className="open-btn open-btn--primary">
-                      Open
-                      <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                        <path
-                          d="M9 6l6 6-6 6"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </Link>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div className="footer-controls" aria-label="Attendance filters">
-            <div className="segmented" role="group" aria-label="Attendance controls">
-              <button type="button">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path
-                    d="M4 7h16M6 12h12M8 17h8"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                Attending
-              </button>
-              <button type="button">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path
-                    d="M8 10l4-4 4 4M16 14l-4 4-4-4"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                Descending
-              </button>
+        {attendanceEvents.length > 0 ? (
+          <section className="attendance-shell" aria-label="My events attendance">
+            <div className="attendance-top">
+              <h2 className="attendance-subtitle">My Events</h2>
+              {scanMessage && (
+                <p className="attendance-scan-status" aria-live="polite">
+                  {scanMessage}
+                </p>
+              )}
             </div>
-          </div>
-        </section>
+
+            <div className="table-wrap" aria-label="Attendance list">
+              <table className="attendance-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Event Name</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">Event Status</th>
+                    <th scope="col">E-certificate</th>
+                    <th scope="col" className="col-open" />
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {attendanceEvents.map((event) => (
+                    <tr key={event.id}>
+                      <td>{event.name}</td>
+                      <td className="cell-muted">{event.date}</td>
+                      <td className="cell-muted">
+                        <span className={`status-pill status-pill--${event.status.toLowerCase()}`}>
+                          {event.status}
+                        </span>
+                      </td>
+                      <td className="cert">
+                        {event.certificate === "Download" ? (
+                          <button className="cert-download" type="button" onClick={() => handleDownload(event)}>
+                            Download
+                          </button>
+                        ) : (
+                          event.certificate
+                        )}
+                      </td>
+                      <td className="col-open">
+                        <Link
+                          href="/attendance/details"
+                          className="open-btn open-btn--ghost"
+                          onClick={() => setSelectedAttendanceEvent(event.id)}
+                        >
+                          View Details
+                          <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                            <path
+                              d="M9 6l6 6-6 6"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="footer-controls" aria-label="Attendance filters">
+              <div className="segmented" role="group" aria-label="Attendance controls">
+                <button type="button">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M4 7h16M6 12h12M8 17h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  Ascending
+                </button>
+
+                <button type="button">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M8 10l4-4 4 4M16 14l-4 4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  Descending
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="attendance-empty-state" aria-label="No attendance records">
+            <svg width="82" height="76" viewBox="0 0 82 76" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M30.7499 12.667H18.7916C17.8481 12.667 17.0833 13.3759 17.0833 14.2503V68.0837C17.0833 68.958 17.8481 69.667 18.7916 69.667H66.6249C67.5683 69.667 68.3333 68.958 68.3333 68.0837V14.2503C68.3333 13.3759 67.5683 12.667 66.6249 12.667H54.6666" stroke="#604D18" strokeWidth="2" />
+              <path d="M30.75 20.5833V12.6667H37.4989C37.5454 12.6667 37.5833 12.6316 37.5833 12.5883V9.5C37.5833 6.87667 39.8776 4.75 42.7083 4.75C45.539 4.75 47.8333 6.87667 47.8333 9.5V12.5883C47.8333 12.6316 47.8713 12.6667 47.9177 12.6667H54.6667V20.5833C54.6667 21.4578 53.9017 22.1667 52.9583 22.1667H32.4583C31.5148 22.1667 30.75 21.4578 30.75 20.5833Z" stroke="#604D18" strokeWidth="2" />
+            </svg>
+
+            <p>
+              No attendance records found yet. Once you join an
+              <br />
+              event, you can track your attendance here.
+            </p>
+          </section>
+        )}
       </div>
     </>
   );
