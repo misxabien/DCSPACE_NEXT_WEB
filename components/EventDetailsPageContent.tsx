@@ -137,6 +137,10 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
           {eventDetails.requirements.map((requirement) => (
             <li key={requirement}>{requirement}</li>
           ))}
+
+          <li>
+            Minimum Attendance Time Required: {eventDetails.minAttendance || "TBA"}
+          </li>
         </ul>
       </section>
 

@@ -92,7 +92,9 @@ export function AttendanceDetailsPageContent() {
       <div className="details-top">
         <div className="event-block">
           <h2 className="event-block__title">{event.name || "Event Name"}</h2>
-          <p className="event-block__sub">Required Attendance Time:</p>
+          <p className="event-block__sub">
+            Required Attendance Time: {event.minAttendance || "TBA"}
+          </p>
         </div>
 
         <Link href="/attendance" className="details-back">
