@@ -270,33 +270,50 @@ function getEventEndMinutes(event?: RegisteredEvent) {
   return getMinutesFromTime(endTime);
 }
 
-function getAttendedMinutes(record?: AttendanceRecord) {
-  const tapIn = getMinutesFromTime(record?.tapIn);
-  const tapOut = getMinutesFromTime(record?.tapOut);
+function getTotalAttendedMinutes(record?: AttendanceRecord) {
+  const pairs = record?.taps?.length
+    ? record.taps
+    : record?.tapIn || record?.tapOut
+    ? [{ tapIn: record.tapIn, tapOut: record.tapOut }]
+    : [];
 
-  if (tapIn === null || tapOut === null) return null;
+  return pairs.reduce((total, pair) => {
+    const tapInMinutes = getMinutesFromTime(pair.tapIn);
+    const tapOutMinutes = getMinutesFromTime(pair.tapOut);
 
-  return tapOut - tapIn;
+    if (tapInMinutes === null || tapOutMinutes === null) {
+      return total;
+    }
+
+    return total + Math.max(0, tapOutMinutes - tapInMinutes);
+  }, 0);
 }
 
 export function getRequirementStatus(record?: AttendanceRecord, event?: RegisteredEvent): RequirementStatus {
-  if (!record?.tapIn) return "Processing";
-  if (!record.tapOut) return "Processing";
+  if (!record?.taps?.length && !record?.tapIn) return "Processing";
 
-  const attendedMinutes = getAttendedMinutes(record);
+  const hasOpenTap = record.taps?.some((pair) => pair.tapIn && !pair.tapOut);
 
-  if (attendedMinutes === null) return "Processing";
+  if (hasOpenTap) {
+    return "Processing";
+  }
 
+  const totalAttendedMinutes = getTotalAttendedMinutes(record);
   const requiredMinutes = getRequiredMinutes(event?.minAttendance);
-  const eventEndMinutes = getEventEndMinutes(event);
-  const tapOutMinutes = getMinutesFromTime(record.tapOut);
 
-  if (requiredMinutes > 0 && attendedMinutes < requiredMinutes) {
+  if (requiredMinutes > 0 && totalAttendedMinutes < requiredMinutes) {
     return "Undertime";
   }
 
-  if (eventEndMinutes !== null && tapOutMinutes !== null) {
-    const overtimeMinutes = tapOutMinutes - eventEndMinutes;
+  const lastCompletedPair = [...(record.taps || [])]
+    .reverse()
+    .find((pair) => pair.tapIn && pair.tapOut);
+
+  const eventEndMinutes = getEventEndMinutes(event);
+  const finalTapOutMinutes = getMinutesFromTime(lastCompletedPair?.tapOut || record.tapOut);
+
+  if (eventEndMinutes !== null && finalTapOutMinutes !== null) {
+    const overtimeMinutes = finalTapOutMinutes - eventEndMinutes;
 
     if (overtimeMinutes > 60) {
       return "Invalid";

@@ -20,6 +20,38 @@ import {
   recordRfidAttendanceTap,
 } from "@/lib/attendance";
 
+function getTimeMinutes(time?: string) {
+  if (!time) return null;
+
+  const date = new Date(`January 1, 2026 ${time}`);
+
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date.getHours() * 60 + date.getMinutes();
+}
+
+function getTotalTimeLabel(record?: AttendanceRecord) {
+  const pairs = record?.taps?.length
+    ? record.taps
+    : record?.tapIn || record?.tapOut
+    ? [{ tapIn: record.tapIn, tapOut: record.tapOut }]
+    : [];
+
+  const totalMinutes = pairs.reduce((total, pair) => {
+    const tapIn = getTimeMinutes(pair.tapIn);
+    const tapOut = getTimeMinutes(pair.tapOut);
+
+    if (tapIn === null || tapOut === null) return total;
+
+    return total + Math.max(0, tapOut - tapIn);
+  }, 0);
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return `${hours} hr ${minutes} min`;
+}
+
 type AttendanceDetail = {
   event: RegisteredEvent;
   record?: AttendanceRecord;
@@ -94,6 +126,7 @@ export function AttendanceDetailsPageContent() {
 
   const requirementStatus = getRequirementStatus(record, event);
   const certificateStatus = getCertificateStatus(record, event);
+  const totalTimeLabel = getTotalTimeLabel(record);
 
   const savedTapRows =
     record?.taps?.length
@@ -178,6 +211,11 @@ export function AttendanceDetailsPageContent() {
           <div>
             <dt>Student No.</dt>
             <dd>{user?.studentNumber || "2025-0000"}</dd>
+          </div>
+
+          <div>
+            <dt>Total Attendance Time</dt>
+            <dd>{totalTimeLabel}</dd>
           </div>
 
           <div>
