@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ObjectId } from "mongodb";
+import { promises as fs } from "fs";
+import path from "path";
 import { getAdminCollection } from "./mongo";
+import { generateCertificatePdf } from "@/lib/admin/certificates/generate";
+import type { CertificateData } from "@/lib/admin/certificates/generate";
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -401,11 +405,10 @@ function mapCertAttendanceRecord(user: any, attendance: any) {
     tapIn: formatTapTime(attendance.tapIn ?? attendance.attendance?.tapIn),
     tapOut: formatTapTime(attendance.tapOut ?? attendance.attendance?.tapOut),
     attendance: attendanceStatus,
-    certificateStatus: attendanceStatus === "Completed" ? "available" : "pending",
-    certificateUrl:
-      attendanceStatus === "Completed"
-        ? attendance.certificateUrl ?? null
-        : null,
+    certificateStatus: attendance.certificateId ? "issued" : (attendanceStatus === "Completed" ? "available" : "pending"),
+    certificateId: attendance.certificateId ?? null,
+    canGenerate: attendanceStatus === "Completed",
+    canDownload: !!attendance.certificateId,
   };
 }
 
@@ -494,5 +497,142 @@ export async function getCertAttendanceByEvent(
       sheetsUrl: event.sheetsUrl ?? event.googleSheetsUrl ?? null,
     },
     records,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Certificate template resolution                                   */
+/* ------------------------------------------------------------------ */
+
+const CERTIFICATES_DIR = path.join(process.cwd(), "public", "certificates");
+const DEFAULT_TEMPLATE = path.join(CERTIFICATES_DIR, "default-template.png");
+
+/**
+ * Resolves the absolute file path to the certificate template for an event.
+ * Checks for a custom upload first, then falls back to the default.
+ */
+export async function getEventTemplatePath(eventId: string): Promise<string> {
+  const pngPath = path.join(CERTIFICATES_DIR, `${eventId}.png`);
+  const jpgPath = path.join(CERTIFICATES_DIR, `${eventId}.jpg`);
+
+  try {
+    await fs.access(pngPath);
+    return pngPath;
+  } catch {
+    /* not found — try jpg */
+  }
+
+  try {
+    await fs.access(jpgPath);
+    return jpgPath;
+  } catch {
+    /* not found — use default */
+  }
+
+  return DEFAULT_TEMPLATE;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Certificate generation + persistence                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Generates a PDF certificate for a student who has completed attendance
+ * at the given event, persists the certificate metadata to the attendance
+ * record, and returns the PDF bytes.
+ */
+export async function generateAndSaveCertificate(
+  eventId: string,
+  userId: string,
+) {
+  const trimmedEventId = eventId?.trim();
+  const trimmedUserId = userId?.trim();
+
+  if (!trimmedEventId) {
+    throw createAppError("ValidationError", "eventId is required", 400);
+  }
+
+  if (!trimmedUserId) {
+    throw createAppError("ValidationError", "userId is required", 400);
+  }
+
+  /* Fetch event, user, and attendance data. */
+  const event = await findEventById(trimmedEventId);
+  const users = await getUsersCollection();
+  const userObjectId = toObjectId(trimmedUserId, "user");
+  const user = await users.findOne({ _id: userObjectId });
+
+  if (!user) {
+    throw createAppError("NotFoundError", "User not found", 404);
+  }
+
+  const attendance = await getAttendanceCollection();
+  const eventObjectId = toObjectId(trimmedEventId, "event");
+
+  const attendanceRecord = await attendance.findOne({
+    $or: [
+      { userId: trimmedUserId, eventId: trimmedEventId },
+      { userId: userObjectId, eventId: trimmedEventId },
+      { userId: trimmedUserId, eventId: eventObjectId },
+      { userId: userObjectId, eventId: eventObjectId },
+    ],
+  });
+
+  if (!attendanceRecord) {
+    throw createAppError("NotFoundError", "Attendance record not found", 404);
+  }
+
+  const status = deriveAttendanceStatus(attendanceRecord);
+
+  if (status !== "Completed") {
+    throw createAppError(
+      "ValidationError",
+      "Cannot generate certificate — attendance is not completed",
+      400,
+    );
+  }
+
+  /* Resolve template. */
+  const templatePath = await getEventTemplatePath(trimmedEventId);
+
+  /* Build certificate data. */
+  const now = new Date();
+  const shortEventId = trimmedEventId.slice(-4).toUpperCase();
+  const shortUserId = trimmedUserId.slice(-4).toUpperCase();
+  const timestamp = now.getTime().toString(36).toUpperCase();
+  const certificateId = `DC-${shortEventId}-${shortUserId}-${timestamp}`;
+
+  const eventStart = event.startTime ?? event.startDate ?? event.eventDate ?? null;
+
+  const certData: CertificateData = {
+    studentName: user.name ?? user.fullName ?? "Student",
+    eventTitle: event.title ?? event.name ?? "Untitled Event",
+    eventDate: formatDateLabel(eventStart),
+    organizer: event.organizerName ?? event.organizer?.name ?? "Unknown organizer",
+    organization: event.organizationName ?? event.organization?.name ?? "",
+    certificateId,
+  };
+
+  /* Generate the PDF. */
+  const pdfBytes = await generateCertificatePdf(certData, templatePath);
+
+  /* Persist certificate metadata to the attendance record. */
+  await attendance.updateOne(
+    { _id: attendanceRecord._id },
+    {
+      $set: {
+        certificateId,
+        certificateStatus: "issued",
+        certificateGeneratedAt: now,
+        updatedAt: now,
+      },
+    },
+  );
+
+  return {
+    pdfBytes,
+    certificateId,
+    studentName: certData.studentName,
+    eventTitle: certData.eventTitle,
   };
 }

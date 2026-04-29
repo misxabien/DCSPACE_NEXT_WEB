@@ -300,6 +300,37 @@ export async function updateEventStatus(id: string, status: string, comment?: st
 }
 
 /**
+ * Updates the certificate template path stored on an event document.
+ * Called when an admin uploads a custom certificate background image.
+ */
+export async function updateEventTemplate(
+  id: string,
+  templateFilePath: string,
+  templateUrl: string,
+) {
+  const events = await getEventsCollection();
+  const objectId = toObjectId(id);
+  const existingEvent = await events.findOne({ _id: objectId });
+
+  if (!existingEvent) {
+    throw createAppError("NotFoundError", "Event not found", 404);
+  }
+
+  await events.updateOne(
+    { _id: objectId },
+    {
+      $set: {
+        eCertificateTemplate: templateUrl,
+        eCertificateTemplatePath: templateFilePath,
+        updatedAt: new Date(),
+      },
+    },
+  );
+
+  return { id, templateUrl };
+}
+
+/**
  * Appends an admin comment to an event without changing its approval status.
  */
 export async function postAdminComment(id: string, comment: string) {
