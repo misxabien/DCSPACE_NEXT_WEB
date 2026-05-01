@@ -24,11 +24,13 @@ export async function POST(request) {
     }
 
     const rfidNumber = String(body.rfidNumber || "").trim();
+    const photoUrl = String(body.photoUrl || "").trim();
     const newUser = {
       firstName: String(body.firstName).trim(),
       lastName: String(body.lastName).trim(),
       studentNumber: String(body.studentNumber).trim(),
       email: String(body.email).trim().toLowerCase(),
+      ...(photoUrl ? { photoUrl } : {}),
       ...(rfidNumber ? { rfidNumber } : {}),
       organizationPart: String(body.organizationPart || "").trim(),
       organizationRole: String(body.organizationRole || "").trim(),

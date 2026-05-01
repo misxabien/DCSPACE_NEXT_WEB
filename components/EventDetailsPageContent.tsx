@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
-import { fetchEventById, type UserEvent } from "@/lib/user-api";
+import { fetchEventById, readAuthSession, type UserEvent } from "@/lib/user-api";
 
 const registeredEventsStorageKey = "dcspace_registered_events";
 
@@ -38,6 +38,7 @@ type StoredRegisteredEvent = {
   venue: string;
   organizer: string;
   posterImage?: string;
+  ownerEmail?: string;
 };
 
 function getRegisteredEventStatusLabel(eventDate?: EventDetailsPageContentProps["eventDate"]) {
@@ -146,6 +147,14 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
 
   const handleConfirm = () => {
     if (!fileAdded) return;
+    const ownerEmail = (
+      readAuthSession()?.user?.email ||
+      window.localStorage.getItem("dcspaceStudentEmail") ||
+      ""
+    ).trim().toLowerCase();
+    if (!ownerEmail) {
+      return;
+    }
 
     const newEvent = {
       month: "March",
@@ -157,12 +166,14 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
       organizer: eventDetails.organizer,
       status: "Registered",
       certificate: "Pending",
+      ownerEmail,
     };
 
     const existing = JSON.parse(localStorage.getItem("dcspaceRegisteredEvents") || "[]");
 
     const alreadyExists = existing.some(
       (event: typeof newEvent) =>
+        String(event.ownerEmail || "").trim().toLowerCase() === ownerEmail &&
         event.name === newEvent.name && event.dateTime === newEvent.dateTime,
     );
 
@@ -193,12 +204,18 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
         dateTime: details.dateTime,
         venue: details.venue || "Event Venue",
         organizer: details.organizer || "Event Organizer",
-        posterImage: apiEvent?.posterImage || "",
+        minAttendance: apiEvent?.minAttendance || "",
+        posterImage: posterForStorage,
+        ownerEmail,
       };
 
       const dedupedEvents = [
         newEvent,
-        ...existingEvents.filter((event) => String(event.id || "") !== newEvent.id),
+        ...existingEvents.filter((event) => {
+          const sameOwner =
+            String(event.ownerEmail || "").trim().toLowerCase() === ownerEmail;
+          return !(sameOwner && String(event.id || "") === newEvent.id);
+        }),
       ];
       window.localStorage.setItem(registeredEventsStorageKey, JSON.stringify(dedupedEvents as StoredRegisteredEvent[]));
     }

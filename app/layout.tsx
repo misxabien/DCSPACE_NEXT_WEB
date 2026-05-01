@@ -48,8 +48,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${dmSans.variable} ${lato.variable} ${montserrat.variable} ${poppins.variable} ${lato.className}`}>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        suppressHydrationWarning
+        className={`${dmSans.variable} ${lato.variable} ${montserrat.variable} ${poppins.variable} ${lato.className}`}
+      >
         {children}
       </body>
     </html>

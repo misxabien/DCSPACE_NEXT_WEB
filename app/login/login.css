@@ -48,10 +48,12 @@
 }
 
 .login-scope .brand__logo-wrap {
-  width: 430px;
-  height: 200px;
+  width: 460px;
+  height: 300px;
   display: grid;
   place-items: center;
+  margin-top: -6px;
+  margin-bottom: 10px;
 }
 
 .login-scope .brand__logo {
@@ -63,7 +65,7 @@
 }
 
 .login-scope .brand__headline {
-  margin-top: 34px;
+  margin-top: 0;
   font-size: 28px;
   font-weight: 700;
   letter-spacing: 0.6px;
@@ -86,6 +88,14 @@
   padding: 28px 34px 26px;
   justify-self: start;
   margin-left: -22px;
+  cursor: default;
+}
+
+/* Attendance page uses global `.card:hover`; keep login card appearance fixed on hover. */
+.login-scope .card:hover {
+  background: var(--card);
+  box-shadow: var(--shadow);
+  transform: none;
 }
 
 .login-scope .btn {

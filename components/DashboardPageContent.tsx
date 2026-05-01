@@ -15,6 +15,7 @@ type RegisteredEvent = {
   venue: string;
   organizer: string;
   posterImage?: string;
+  ownerEmail?: string;
 };
 
 const registeredEventsStorageKey = "dcspace_registered_events";
@@ -123,6 +124,11 @@ export function DashboardPageContent() {
   useEffect(() => {
     const readRegisteredEvents = () => {
       try {
+        const ownerEmail = String(readAuthSession()?.user?.email || "").trim().toLowerCase();
+        if (!ownerEmail) {
+          setRegisteredEvents([]);
+          return;
+        }
         const byKey = new Map<string, RegisteredEvent>();
 
         const rawReg = window.localStorage.getItem(registeredEventsStorageKey);
@@ -130,6 +136,8 @@ export function DashboardPageContent() {
           const parsed = JSON.parse(rawReg) as RegisteredEvent[];
           if (Array.isArray(parsed)) {
             for (const event of parsed) {
+              const eventOwner = String(event?.ownerEmail || "").trim().toLowerCase();
+              if (!eventOwner || eventOwner !== ownerEmail) continue;
               const name = String(event?.name || "").trim().toLowerCase();
               if (!name.length || name === "event name") continue;
               const key = `${String(event.name)}|${String(event.dateTime)}`;
@@ -143,6 +151,8 @@ export function DashboardPageContent() {
           const parsed = JSON.parse(rawBridge) as Array<Record<string, unknown>>;
           if (Array.isArray(parsed)) {
             for (const ev of parsed) {
+              const eventOwner = String(ev.ownerEmail || "").trim().toLowerCase();
+              if (!eventOwner || eventOwner !== ownerEmail) continue;
               const name = String(ev.name || "").trim();
               if (!name || name.toLowerCase() === "event name") continue;
               const dateTime = String(ev.dateTime || "");
@@ -158,6 +168,7 @@ export function DashboardPageContent() {
                 venue: String(ev.venue || ""),
                 organizer: String(ev.organizer || ""),
                 posterImage: typeof ev.posterImage === "string" ? ev.posterImage : "",
+                ownerEmail: eventOwner,
               });
             }
           }

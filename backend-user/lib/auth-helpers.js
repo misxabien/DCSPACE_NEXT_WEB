@@ -10,6 +10,7 @@ export function sanitizeUser(user) {
     fullName: `${user.firstName} ${user.lastName}`.trim(),
     studentNumber: user.studentNumber,
     email: user.email,
+    photoUrl: user.photoUrl || "",
     role: user.role || "student",
     rfidNumber: user.rfidNumber || "",
     organizationPart: user.organizationPart || "",

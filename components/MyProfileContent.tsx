@@ -68,7 +68,11 @@ export function MyProfileContent() {
             Profile summary
           </h2>
           <div className="profile-summary__photo" aria-hidden>
-            <span className="profile-summary__initials">{initials}</span>
+            {profile?.photoUrl ? (
+              <img className="profile-summary__image" src={profile.photoUrl} alt="" />
+            ) : (
+              <span className="profile-summary__initials">{initials}</span>
+            )}
           </div>
           <div className="profile-summary__fields">
             <p className="profile-summary__name">{profile?.fullName || "Full Name"}</p>

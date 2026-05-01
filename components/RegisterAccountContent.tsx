@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { type ChangeEvent, useRef, useState } from "react";
 import { registerUser } from "@/lib/user-api";
 
 type RegisterReview = {
@@ -10,6 +10,7 @@ type RegisterReview = {
   lastName: string;
   studentNumber: string;
   studentEmail: string;
+  profilePhoto: string;
   rfidNumber: string;
   organizationPart: string;
   organizationRole: string;
@@ -24,6 +25,7 @@ const emptyReview: RegisterReview = {
   lastName: "",
   studentNumber: "",
   studentEmail: "",
+  profilePhoto: "",
   rfidNumber: "",
   organizationPart: "",
   organizationRole: "",
@@ -46,6 +48,8 @@ export function RegisterAccountContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [validationError, setValidationError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadedPhotoDataUrl, setUploadedPhotoDataUrl] = useState("");
+  const [uploadedPhotoName, setUploadedPhotoName] = useState("");
 
   const passwordChecks = [
     { label: "At least 8 characters", valid: password.length >= 8 },
@@ -57,6 +61,36 @@ export function RegisterAccountContent() {
   ];
 
   const passwordIsValid = passwordChecks.every((check) => check.valid);
+
+  const handleProfilePhotoChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      setUploadedPhotoDataUrl("");
+      setUploadedPhotoName("");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setValidationError("Please upload a valid image file.");
+      event.target.value = "";
+      setUploadedPhotoDataUrl("");
+      setUploadedPhotoName("");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      setUploadedPhotoDataUrl(result);
+      setUploadedPhotoName(file.name || "Uploaded image");
+      setValidationError("");
+    };
+    reader.onerror = () => {
+      setValidationError("Failed to read the selected image. Please try another file.");
+      setUploadedPhotoDataUrl("");
+      setUploadedPhotoName("");
+    };
+    reader.readAsDataURL(file);
+  };
 
   const getValue = (formData: FormData, key: string) => {
     const value = formData.get(key);
@@ -78,6 +112,7 @@ export function RegisterAccountContent() {
       lastName: getValue(formData, "last_name"),
       studentNumber: getValue(formData, "student_number"),
       studentEmail: getValue(formData, "student_email"),
+      profilePhoto: uploadedPhotoName || "Not provided",
       rfidNumber: getValue(formData, "rfid_number"),
       organizationPart: getValue(formData, "organization_part"),
       organizationRole: getValue(formData, "organization_role"),
@@ -114,6 +149,7 @@ export function RegisterAccountContent() {
         lastName,
         studentNumber,
         email: studentEmail.trim(),
+        photoUrl: uploadedPhotoDataUrl,
         rfidNumber: getValue(formData, "rfid_number"),
         organizationPart: getValue(formData, "organization_part"),
         organizationRole: getValue(formData, "organization_role"),
@@ -127,6 +163,7 @@ export function RegisterAccountContent() {
 
       window.localStorage.setItem("dcspaceStudentNumber", studentNumber);
       window.localStorage.setItem("dcspaceStudentEmail", studentEmail.trim());
+      window.localStorage.setItem("dcspacePhotoUrl", uploadedPhotoDataUrl);
       window.localStorage.setItem("dcspaceRfidNumber", getValue(formData, "rfid_number"));
       window.localStorage.setItem("dcspaceCourse", getValue(formData, "course"));
       window.localStorage.setItem("dcspaceSchool", getValue(formData, "school"));
@@ -239,6 +276,18 @@ export function RegisterAccountContent() {
                 setValidationError("");
               }}
             />
+
+            <label className="register-photo-field" aria-label="Upload profile photo">
+              <span className="register-photo-label">
+                {uploadedPhotoName ? `Profile Photo: ${uploadedPhotoName}` : "Upload Profile Photo:"}
+              </span>
+              <input
+                name="profile_photo"
+                type="file"
+                accept="image/*"
+                onChange={handleProfilePhotoChange}
+              />
+            </label>
 
             <label className="register-password-wrap">
               <span className="register-sr-only">Password</span>
@@ -371,6 +420,10 @@ export function RegisterAccountContent() {
                 <div>
                   <dt>Student Email</dt>
                   <dd>{review.studentEmail}</dd>
+                </div>
+                <div>
+                  <dt>Profile Photo</dt>
+                  <dd>{review.profilePhoto}</dd>
                 </div>
                 <div>
                   <dt>Password</dt>

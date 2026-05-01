@@ -30,6 +30,7 @@ export type RegisteredEvent = {
   certificate?: string;
   minAttendance?: string;
   duration?: string;
+  ownerEmail?: string;
 };
 
 export type AttendanceUser = {
@@ -91,7 +92,31 @@ function normalizeRfid(value: string) {
 }
 
 export function readRegisteredEvents() {
-  return readJson<RegisteredEvent[]>(window.localStorage, REGISTERED_EVENTS_KEY, []);
+  const ownerEmail = String(readAuthSession()?.user?.email || "").trim().toLowerCase();
+  if (!ownerEmail) {
+    return [];
+  }
+  const byKey = new Map<string, RegisteredEvent>();
+  const addEvents = (events: RegisteredEvent[]) => {
+    for (const event of events) {
+      const eventOwner = String(event?.ownerEmail || "").trim().toLowerCase();
+      if (!eventOwner || eventOwner !== ownerEmail) {
+        continue;
+      }
+      const name = present(event?.name);
+      const dateTime = present(event?.dateTime);
+      if (!name || name.toLowerCase() === "event name") {
+        continue;
+      }
+      const id = present(event?.id);
+      const key = id || `${name}|${dateTime}`;
+      byKey.set(key, event);
+    }
+  };
+
+  addEvents(readJson<RegisteredEvent[]>(window.localStorage, REGISTERED_EVENTS_KEY, []));
+  addEvents(readJson<RegisteredEvent[]>(window.localStorage, REGISTERED_EVENTS_KEY_V2, []));
+  return Array.from(byKey.values());
 }
 
 export function signInAttendanceUser(email?: string) {
@@ -316,7 +341,7 @@ export function getRequirementStatus(record?: AttendanceRecord, event?: Register
     const overtimeMinutes = finalTapOutMinutes - eventEndMinutes;
 
     if (overtimeMinutes > 60) {
-      return "Invalid";
+      return "Processing";
     }
 
     if (overtimeMinutes >= 30 && overtimeMinutes <= 60) {
@@ -332,10 +357,6 @@ export function getCertificateStatus(record?: AttendanceRecord, event?: Register
 
   if (status === "Complete" || status === "Overtime") {
     return "Download";
-  }
-
-  if (status === "Invalid") {
-    return "Invalid";
   }
 
   return "Processing";

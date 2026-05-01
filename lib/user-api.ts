@@ -28,6 +28,16 @@ function getCandidateBaseUrls() {
     urls.add("http://localhost:4102");
     urls.add("http://127.0.0.1:4101");
     urls.add("http://localhost:4101");
+    // If frontend is opened via LAN hostname/IP, try that host too.
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      const protocol = window.location.protocol === "https:" ? "https:" : "http:";
+      if (host && host !== "localhost" && host !== "127.0.0.1") {
+        urls.add(`${protocol}//${host}:4001`);
+        urls.add(`${protocol}//${host}:4102`);
+        urls.add(`${protocol}//${host}:4101`);
+      }
+    }
   }
 
   return Array.from(urls);
@@ -40,6 +50,7 @@ export type UserProfile = {
   fullName: string;
   studentNumber: string;
   email: string;
+  photoUrl?: string;
   role: string;
   rfidNumber?: string;
   organizationPart?: string;
@@ -150,6 +161,7 @@ export async function registerUser(payload: {
   lastName: string;
   studentNumber: string;
   email: string;
+  photoUrl?: string;
   rfidNumber?: string;
   organizationPart?: string;
   organizationRole?: string;
@@ -218,6 +230,56 @@ export async function submitOrganizedEvent(
   return apiRequest<{ event: UserEvent; message: string }>("/api/events", {
     method: "POST",
     body: event,
+  });
+}
+
+export async function recordAttendanceTap(
+  token: string,
+  payload: {
+    eventId: string;
+    eventName: string;
+    eventDate: string;
+    rfidNumber: string;
+  },
+) {
+  return apiRequest<{
+    message: string;
+    tapType: "tap in" | "tap out";
+    currentTime: string;
+    record: {
+      eventId: string;
+      eventName: string;
+      eventDate: string;
+      studentNumber: string;
+      rfidNumber: string;
+      tapIn?: string;
+      tapOut?: string;
+      taps?: Array<{ tapIn?: string; tapOut?: string }>;
+      updatedAt: string;
+    };
+  }>("/api/attendance", {
+    method: "POST",
+    token,
+    body: payload,
+  });
+}
+
+export async function fetchAttendanceLogs(token: string) {
+  return apiRequest<{
+    attendance: Array<{
+      eventId: string;
+      eventName: string;
+      eventDate: string;
+      studentNumber: string;
+      rfidNumber: string;
+      tapIn?: string;
+      tapOut?: string;
+      taps?: Array<{ tapIn?: string; tapOut?: string }>;
+      updatedAt?: string;
+    }>;
+  }>("/api/attendance", {
+    method: "GET",
+    token,
   });
 }
 

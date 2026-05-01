@@ -28,6 +28,17 @@ export function LoginForm() {
       setIsLoading(true);
       const result = await loginUser(email, password);
       saveAuthSession(result.token, result.user);
+      window.localStorage.setItem("dcspaceFirstName", result.user.firstName || "");
+      window.localStorage.setItem("dcspaceLastName", result.user.lastName || "");
+      window.localStorage.setItem("dcspaceStudentNumber", result.user.studentNumber || "");
+      window.localStorage.setItem("dcspaceStudentEmail", result.user.email || email);
+      window.localStorage.setItem("dcspacePhotoUrl", result.user.photoUrl || "");
+      window.localStorage.setItem("dcspaceRfidNumber", result.user.rfidNumber || "");
+      window.localStorage.setItem("dcspaceCourse", result.user.course || "");
+      window.localStorage.setItem("dcspaceSchool", result.user.school || "");
+      window.localStorage.setItem("dcspaceOrganizationPart", result.user.organizationPart || "");
+      window.localStorage.setItem("dcspaceOrganizationRole", result.user.organizationRole || "");
+      signInAttendanceUser(result.user.email || email);
       router.push("/dashboard");
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Failed to login.");
@@ -43,7 +54,7 @@ export function LoginForm() {
           <div className="brand__logo-wrap">
             <Image
               className="brand__logo"
-              src="/assets/logo-dc-space.png"
+              src="/assets/logo-dc-space-login-v2.png"
               alt="DC Space logo"
               width={430}
               height={200}

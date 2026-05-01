@@ -131,6 +131,13 @@
         box-shadow: 0 4px 18px rgba(42, 77, 143, 0.18);
       }
 
+      .profile-summary__image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 12px;
+      }
+
       .profile-summary__initials {
         font-size: 2.5rem;
         font-weight: 800;
