@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { SearchWithClear } from "@/components/SearchWithClear";
+import Link from 'next/link';
+import { SearchWithClear } from '@/components/SearchWithClear';
 
 export function AttendancePageContent() {
   return (

@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { NAV_ITEMS } from "@/lib/nav";
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { NAV_ITEMS } from '@/lib/nav';
 
 const AVATAR =
-  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=128&h=128&fit=crop&crop=faces";
+  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=128&h=128&fit=crop&crop=faces';
 
 export function Sidebar({
   collapsed,
@@ -27,13 +27,13 @@ export function Sidebar({
       }
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (e.key === 'Escape') setMenuOpen(false);
     }
-    document.addEventListener("click", onDocClick);
-    document.addEventListener("keydown", onKey);
+    document.addEventListener('click', onDocClick);
+    document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener("click", onDocClick);
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener('click', onDocClick);
+      document.removeEventListener('keydown', onKey);
     };
   }, []);
 
@@ -41,7 +41,7 @@ export function Sidebar({
     <aside className="sidebar" aria-label="Primary">
       <div className="sidebar__top">
         <div
-          className={`sidebar__user${menuOpen ? " is-open" : ""}`}
+          className={`sidebar__user${menuOpen ? ' is-open' : ''}`}
           ref={userRootRef}
         >
           <button
@@ -116,13 +116,13 @@ export function Sidebar({
           {NAV_ITEMS.map((item) => {
             const active =
               pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
+              (item.href !== '/dashboard' && pathname.startsWith(item.href));
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={active ? "is-active" : undefined}
-                  aria-current={active ? "page" : undefined}
+                  className={active ? 'is-active' : undefined}
+                  aria-current={active ? 'page' : undefined}
                 >
                   {item.label}
                 </Link>

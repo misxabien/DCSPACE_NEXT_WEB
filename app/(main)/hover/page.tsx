@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
-import "@/styles/pages/hover.css";
+import type { Metadata } from 'next';
+import '@/styles/pages/hover.css';
 
 export const metadata: Metadata = {
-  title: "Event Details — DC Space",
+  title: 'Event Details — DC Space',
 };
 
 export default function HoverPage() {

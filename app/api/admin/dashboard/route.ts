@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { requireAdmin } from "../../../../lib/admin/auth/roleGuard";
-import { getAIRecommendations, sendToGemini } from "../../../../lib/admin/ai/gemini";
+import { NextResponse } from 'next/server';
+import { requireAdmin } from '../../../../lib/admin/auth/roleGuard';
+import { getAIRecommendations, sendToGemini } from '../../../../lib/admin/ai/gemini';
 import {
   getDashboardAttendanceData,
   getDashboardCharts,
@@ -9,8 +9,8 @@ import {
   getKeyEventInsights,
   getMostUsedFacilities,
   getTopEngagedCourses,
-} from "../../../../lib/admin/db/dashboard";
-import { toErrorResponse } from "../../../../lib/admin/errors";
+} from '../../../../lib/admin/db/dashboard';
+import { toErrorResponse } from '../../../../lib/admin/errors';
 
 export async function GET() {
   try {

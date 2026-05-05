@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useState } from "react";
+import Link from 'next/link';
+import { useState } from 'react';
 
 export function MyProfileContent() {
-  const [tab, setTab] = useState<"attended" | "organized" | "certs">("organized");
+  const [tab, setTab] = useState<'attended' | 'organized' | 'certs'>('organized');
   const [sortAsc, setSortAsc] = useState(true);
 
   return (
@@ -54,28 +54,28 @@ export function MyProfileContent() {
         <div className="profile-tabs" role="tablist" aria-label="Profile sections">
           <button
             type="button"
-            className={`profile-tab${tab === "attended" ? " is-active" : ""}`}
+            className={`profile-tab${tab === 'attended' ? ' is-active' : ''}`}
             role="tab"
-            aria-selected={tab === "attended"}
-            onClick={() => setTab("attended")}
+            aria-selected={tab === 'attended'}
+            onClick={() => setTab('attended')}
           >
             Events Attended (3)
           </button>
           <button
             type="button"
-            className={`profile-tab${tab === "organized" ? " is-active" : ""}`}
+            className={`profile-tab${tab === 'organized' ? ' is-active' : ''}`}
             role="tab"
-            aria-selected={tab === "organized"}
-            onClick={() => setTab("organized")}
+            aria-selected={tab === 'organized'}
+            onClick={() => setTab('organized')}
           >
             Events Organized (5)
           </button>
           <button
             type="button"
-            className={`profile-tab${tab === "certs" ? " is-active" : ""}`}
+            className={`profile-tab${tab === 'certs' ? ' is-active' : ''}`}
             role="tab"
-            aria-selected={tab === "certs"}
-            onClick={() => setTab("certs")}
+            aria-selected={tab === 'certs'}
+            onClick={() => setTab('certs')}
           >
             Certificates (2)
           </button>
@@ -120,7 +120,7 @@ export function MyProfileContent() {
             <div className="profile-sort" role="group" aria-label="Sort order">
               <button
                 type="button"
-                className={`profile-sort__btn${sortAsc ? " is-active" : ""}`}
+                className={`profile-sort__btn${sortAsc ? ' is-active' : ''}`}
                 aria-pressed={sortAsc}
                 onClick={() => setSortAsc(true)}
               >
@@ -131,7 +131,7 @@ export function MyProfileContent() {
               </button>
               <button
                 type="button"
-                className={`profile-sort__btn${!sortAsc ? " is-active" : ""}`}
+                className={`profile-sort__btn${!sortAsc ? ' is-active' : ''}`}
                 aria-pressed={!sortAsc}
                 onClick={() => setSortAsc(false)}
               >

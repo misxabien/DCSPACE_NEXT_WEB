@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { DashboardSavedEvents } from "@/components/DashboardSavedEvents";
+import { DashboardSavedEvents } from '@/components/DashboardSavedEvents';
 
 export function DashboardPageContent() {
   return (
@@ -21,7 +21,7 @@ export function DashboardPageContent() {
               type="button"
               className="main__tool"
               aria-label="Refresh"
-              onClick={() => window.dispatchEvent(new Event("dc-refresh-saved"))}
+              onClick={() => window.dispatchEvent(new Event('dc-refresh-saved'))}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 1 1-2.64-6.36" />

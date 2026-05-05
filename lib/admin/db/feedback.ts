@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ObjectId } from "mongodb";
-import { getAdminCollection } from "./mongo";
+import { ObjectId } from 'mongodb';
+import { getAdminCollection } from './mongo';
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -10,20 +10,20 @@ function createAppError(name: string, message: string, status: number) {
 }
 
 async function getFeedbackCollection() {
-  return getAdminCollection<any>("feedback");
+  return getAdminCollection<any>('feedback');
 }
 
 async function getUsersCollection() {
-  return getAdminCollection<any>("users");
+  return getAdminCollection<any>('users');
 }
 
 async function getEventsCollection() {
-  return getAdminCollection<any>("events");
+  return getAdminCollection<any>('events');
 }
 
 function toObjectId(id: string) {
   if (!ObjectId.isValid(id)) {
-    throw createAppError("ValidationError", "Invalid identifier", 400);
+    throw createAppError('ValidationError', 'Invalid identifier', 400);
   }
 
   return new ObjectId(id);
@@ -40,18 +40,18 @@ function roundAverage(value: number) {
 
 function formatTimeLabel(value: Date | string | null | undefined) {
   if (!value) {
-    return "-";
+    return '-';
   }
 
   const date = value instanceof Date ? value : new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "-";
+    return '-';
   }
 
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
   }).format(date);
 }
 
@@ -61,51 +61,51 @@ function normalizeRegistrationType(record: any) {
     record.feedbackType ??
     record.scope ??
     record.category ??
-    "event"
+    'event'
   )
     .toString()
     .trim()
     .toLowerCase();
 
-  return rawType.includes("system") ? "System" : "Event";
+  return rawType.includes('system') ? 'System' : 'Event';
 }
 
 function normalizeAttendanceStatus(value: unknown) {
-  const normalized = (value ?? "pending").toString().trim().toLowerCase();
+  const normalized = (value ?? 'pending').toString().trim().toLowerCase();
 
-  if (["completed", "complete", "present", "attended"].includes(normalized)) {
-    return "Completed";
+  if (['completed', 'complete', 'present', 'attended'].includes(normalized)) {
+    return 'Completed';
   }
 
-  return "Pending";
+  return 'Pending';
 }
 
 function normalizeCertificateStatus(value: unknown) {
-  if (typeof value === "boolean") {
-    return value ? "issued" : "-";
+  if (typeof value === 'boolean') {
+    return value ? 'issued' : '-';
   }
 
-  const normalized = (value ?? "").toString().trim().toLowerCase();
+  const normalized = (value ?? '').toString().trim().toLowerCase();
 
-  if (!normalized || normalized === "pending" || normalized === "-" || normalized === "none") {
-    return "-";
+  if (!normalized || normalized === 'pending' || normalized === '-' || normalized === 'none') {
+    return '-';
   }
 
-  if (normalized.includes("issued")) {
-    return "issued";
+  if (normalized.includes('issued')) {
+    return 'issued';
   }
 
-  return value?.toString() ?? "-";
+  return value?.toString() ?? '-';
 }
 
 function normalizeStatus(value: unknown) {
-  const normalized = (value ?? "New").toString().trim();
+  const normalized = (value ?? 'New').toString().trim();
 
-  if (["New", "Actioned", "Reviewed"].includes(normalized)) {
-    return normalized as "New" | "Actioned" | "Reviewed";
+  if (['New', 'Actioned', 'Reviewed'].includes(normalized)) {
+    return normalized as 'New' | 'Actioned' | 'Reviewed';
   }
 
-  return "New";
+  return 'New';
 }
 
 function getEventRating(record: any) {
@@ -131,7 +131,7 @@ function getAverage(values: number[]) {
 
 function mapFeedbackRow(record: any) {
   const registrationType = normalizeRegistrationType(record);
-  const rating = registrationType === "System" ? getSystemRating(record) : getEventRating(record);
+  const rating = registrationType === 'System' ? getSystemRating(record) : getEventRating(record);
 
   return {
     rating: rating ?? 0,
@@ -152,19 +152,19 @@ function mapFeedbackRow(record: any) {
 
 function mapFeedbackListItem(record: any) {
   const category = normalizeRegistrationType(record);
-  const rating = category === "System" ? getSystemRating(record) : getEventRating(record);
+  const rating = category === 'System' ? getSystemRating(record) : getEventRating(record);
 
   return {
     id: String(record._id),
     rating: rating ?? 0,
     category,
     user: {
-      name: record.userName ?? record.user?.name ?? record.submitterName ?? "Unknown",
-      email: record.userEmail ?? record.user?.email ?? record.submitterEmail ?? "",
+      name: record.userName ?? record.user?.name ?? record.submitterName ?? 'Unknown',
+      email: record.userEmail ?? record.user?.email ?? record.submitterEmail ?? '',
       avatarUrl: record.userAvatar ?? record.user?.avatarUrl ?? null,
     },
-    event: record.eventName ?? record.event?.title ?? record.eventTitle ?? "N/A",
-    facility: record.facility ?? record.venue ?? record.location ?? "N/A",
+    event: record.eventName ?? record.event?.title ?? record.eventTitle ?? 'N/A',
+    facility: record.facility ?? record.venue ?? record.location ?? 'N/A',
     status: normalizeStatus(record.status),
   };
 }
@@ -186,7 +186,7 @@ export async function getFeedbackOverview() {
   for (const record of records) {
     const registrationType = normalizeRegistrationType(record);
 
-    if (registrationType === "System") {
+    if (registrationType === 'System') {
       const systemRating = getSystemRating(record);
 
       if (systemRating !== null) {
@@ -233,7 +233,7 @@ export async function getFeedbackById(id: string) {
   const record = await feedback.findOne({ _id: objectId });
 
   if (!record) {
-    throw createAppError("NotFoundError", "Feedback not found", 404);
+    throw createAppError('NotFoundError', 'Feedback not found', 404);
   }
 
   /* Try to enrich with user and event data. */
@@ -259,32 +259,32 @@ export async function getFeedbackById(id: string) {
   }
 
   const category = normalizeRegistrationType(record);
-  const rating = category === "System" ? getSystemRating(record) : getEventRating(record);
+  const rating = category === 'System' ? getSystemRating(record) : getEventRating(record);
 
   return {
     feedback: {
       id: String(record._id),
       submittedAt: record.createdAt ?? record.submittedAt ?? null,
       rating: rating ?? 0,
-      comment: record.comment ?? record.message ?? record.feedback ?? "",
+      comment: record.comment ?? record.message ?? record.feedback ?? '',
       category,
       status: normalizeStatus(record.status),
       adminNote: record.adminNote ?? null,
       user: {
-        name: userDetail?.name ?? record.userName ?? record.user?.name ?? "Unknown",
-        email: userDetail?.email ?? record.userEmail ?? record.user?.email ?? "",
+        name: userDetail?.name ?? record.userName ?? record.user?.name ?? 'Unknown',
+        email: userDetail?.email ?? record.userEmail ?? record.user?.email ?? '',
         avatarUrl: userDetail?.avatarUrl ?? record.userAvatar ?? null,
-        studentNumber: String(userDetail?.studentId ?? userDetail?.idNumber ?? record.studentNumber ?? "N/A"),
-        course: userDetail?.course ?? record.course ?? "N/A",
-        yearAndSection: userDetail?.yearAndSection ?? record.yearAndSection ?? "N/A",
-        organization: userDetail?.organizationName ?? userDetail?.organization?.name ?? record.organization ?? "N/A",
-        role: userDetail?.role?.toUpperCase() ?? "STUDENT",
+        studentNumber: String(userDetail?.studentId ?? userDetail?.idNumber ?? record.studentNumber ?? 'N/A'),
+        course: userDetail?.course ?? record.course ?? 'N/A',
+        yearAndSection: userDetail?.yearAndSection ?? record.yearAndSection ?? 'N/A',
+        organization: userDetail?.organizationName ?? userDetail?.organization?.name ?? record.organization ?? 'N/A',
+        role: userDetail?.role?.toUpperCase() ?? 'STUDENT',
       },
       eventDetails: {
         category: eventDetail?.type ?? eventDetail?.eventType ?? category,
-        eventName: eventDetail?.title ?? eventDetail?.name ?? record.eventName ?? "N/A",
-        location: eventDetail?.venue ?? eventDetail?.location ?? record.venue ?? "N/A",
-        date: eventDetail?.startTime ?? eventDetail?.eventDate ?? record.eventDate ?? "N/A",
+        eventName: eventDetail?.title ?? eventDetail?.name ?? record.eventName ?? 'N/A',
+        location: eventDetail?.venue ?? eventDetail?.location ?? record.venue ?? 'N/A',
+        date: eventDetail?.startTime ?? eventDetail?.eventDate ?? record.eventDate ?? 'N/A',
       },
       certificateUrl: record.certificateUrl ?? null,
     },
@@ -303,7 +303,7 @@ export async function updateFeedback(
   const existing = await feedback.findOne({ _id: objectId });
 
   if (!existing) {
-    throw createAppError("NotFoundError", "Feedback not found", 404);
+    throw createAppError('NotFoundError', 'Feedback not found', 404);
   }
 
   const updates: Record<string, unknown> = {
@@ -311,10 +311,10 @@ export async function updateFeedback(
   };
 
   if (input.status !== undefined) {
-    const validStatuses = ["New", "Actioned", "Reviewed"];
+    const validStatuses = ['New', 'Actioned', 'Reviewed'];
 
     if (!validStatuses.includes(input.status)) {
-      throw createAppError("ValidationError", `status must be one of: ${validStatuses.join(", ")}`, 400);
+      throw createAppError('ValidationError', `status must be one of: ${validStatuses.join(', ')}`, 400);
     }
 
     updates.status = input.status;
@@ -330,7 +330,7 @@ export async function updateFeedback(
     success: true,
     feedback: {
       id,
-      status: (updates.status ?? existing.status ?? "New") as string,
+      status: (updates.status ?? existing.status ?? 'New') as string,
       adminNote: (updates.adminNote ?? existing.adminNote ?? null) as string | null,
     },
   };
@@ -346,20 +346,20 @@ export async function sendFeedbackEmail(id: string, message?: string) {
   const record = await feedback.findOne({ _id: objectId });
 
   if (!record) {
-    throw createAppError("NotFoundError", "Feedback not found", 404);
+    throw createAppError('NotFoundError', 'Feedback not found', 404);
   }
 
   const recipientEmail =
     record.userEmail ?? record.user?.email ?? record.submitterEmail ?? null;
 
   if (!recipientEmail) {
-    throw createAppError("ValidationError", "No email address found for this feedback submitter", 400);
+    throw createAppError('ValidationError', 'No email address found for this feedback submitter', 400);
   }
 
   /* TODO: Replace with real email provider (Resend, Nodemailer, etc.) */
   console.log(
     `[FeedbackEmail] Would send follow-up to ${recipientEmail} for feedback ${id}`,
-    message ? `Message: ${message}` : "(no custom message)",
+    message ? `Message: ${message}` : '(no custom message)',
   );
 
   /* Record that we attempted the email. */
@@ -372,7 +372,7 @@ export async function sendFeedbackEmail(id: string, message?: string) {
           sentAt: new Date(),
           recipient: recipientEmail,
           message: message ?? null,
-          status: "stub",
+          status: 'stub',
         },
       },
     } as any,

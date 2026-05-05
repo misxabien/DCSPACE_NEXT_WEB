@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { requireAdmin } from "../../../../../lib/admin/auth/roleGuard";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { requireAdmin } from '../../../../../lib/admin/auth/roleGuard';
 import {
   getFeedbackById,
   sendFeedbackEmail,
   updateFeedback,
-} from "../../../../../lib/admin/db/feedback";
-import { toErrorResponse } from "../../../../../lib/admin/errors";
+} from '../../../../../lib/admin/db/feedback';
+import { toErrorResponse } from '../../../../../lib/admin/errors';
 
 /**
  * Returns the full feedback detail with user info and event details.
@@ -22,7 +22,7 @@ export async function GET(
 
     if (!id) {
       return NextResponse.json(
-        { error: "Feedback id is required", code: 400 },
+        { error: 'Feedback id is required', code: 400 },
         { status: 400 },
       );
     }
@@ -52,14 +52,14 @@ export async function PATCH(
 
     if (!id) {
       return NextResponse.json(
-        { error: "Feedback id is required", code: 400 },
+        { error: 'Feedback id is required', code: 400 },
         { status: 400 },
       );
     }
 
     const result = await updateFeedback(id, {
-      status: typeof body.status === "string" ? body.status : undefined,
-      adminNote: typeof body.adminNote === "string" ? body.adminNote : undefined,
+      status: typeof body.status === 'string' ? body.status : undefined,
+      adminNote: typeof body.adminNote === 'string' ? body.adminNote : undefined,
     });
 
     return NextResponse.json(result, { status: 200 });
@@ -83,14 +83,14 @@ export async function POST(
 
     if (!id) {
       return NextResponse.json(
-        { error: "Feedback id is required", code: 400 },
+        { error: 'Feedback id is required', code: 400 },
         { status: 400 },
       );
     }
 
     const result = await sendFeedbackEmail(
       id,
-      typeof body.message === "string" ? body.message : undefined,
+      typeof body.message === 'string' ? body.message : undefined,
     );
 
     return NextResponse.json(result, { status: 200 });

@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
-import { requireAdmin } from "../../../../lib/admin/auth/roleGuard";
-import { getNotifications } from "../../../../lib/admin/db/notifications";
+import { NextResponse } from 'next/server';
+import { requireAdmin } from '../../../../lib/admin/auth/roleGuard';
+import { getNotifications } from '../../../../lib/admin/db/notifications';
 
 function toErrorResponse(error: unknown) {
-  if (error instanceof Error && error.name === "AdminAuthorizationError") {
+  if (error instanceof Error && error.name === 'AdminAuthorizationError') {
     return NextResponse.json({ error: error.message }, { status: 403 });
   }
 
-  return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
 }
 
 export async function GET() {

@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getAdminCollection } from "./mongo";
+import { getAdminCollection } from './mongo';
 
 const MONTH_LABELS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ] as const;
 
 const FACILITY_KEYS = [
-  "DRA_HALL", "AVR", "STUDIO_THEATER", "CONFERENCE_HALL", "SKYLINE",
+  'DRA_HALL', 'AVR', 'STUDIO_THEATER', 'CONFERENCE_HALL', 'SKYLINE',
 ] as const;
 
 /* ------------------------------------------------------------------ */
@@ -15,19 +15,19 @@ const FACILITY_KEYS = [
 /* ------------------------------------------------------------------ */
 
 async function getEventsCollection() {
-  return getAdminCollection<any>("events");
+  return getAdminCollection<any>('events');
 }
 
 async function getAttendanceCollection() {
-  return getAdminCollection<any>("attendance");
+  return getAdminCollection<any>('attendance');
 }
 
 async function getCertificatesCollection() {
-  return getAdminCollection<any>("certificates");
+  return getAdminCollection<any>('certificates');
 }
 
 async function getUsersCollection() {
-  return getAdminCollection<any>("users");
+  return getAdminCollection<any>('users');
 }
 
 /* ------------------------------------------------------------------ */
@@ -36,7 +36,7 @@ async function getUsersCollection() {
 
 function toDateKey(value: Date | string | null | undefined) {
   if (!value) {
-    return "Unknown";
+    return 'Unknown';
   }
 
   const date = value instanceof Date ? value : new Date(value);
@@ -45,11 +45,11 @@ function toDateKey(value: Date | string | null | undefined) {
 
 function toHourLabel(value: Date | string | null | undefined) {
   if (!value) {
-    return "Unknown";
+    return 'Unknown';
   }
 
   const date = value instanceof Date ? value : new Date(value);
-  return `${String(date.getHours()).padStart(2, "0")}:00`;
+  return `${String(date.getHours()).padStart(2, '0')}:00`;
 }
 
 function getMonthRange(offsetMonths: number) {
@@ -68,13 +68,13 @@ function growthPercent(current: number, previous: number) {
 }
 
 function normalizeVenueKey(venue: string): (typeof FACILITY_KEYS)[number] | null {
-  const v = venue.toUpperCase().replace(/[\s\-_]+/g, "_");
+  const v = venue.toUpperCase().replace(/[\s\-_]+/g, '_');
 
-  if (v.includes("DRA")) return "DRA_HALL";
-  if (v.includes("AVR")) return "AVR";
-  if (v.includes("STUDIO") || v.includes("THEATER")) return "STUDIO_THEATER";
-  if (v.includes("CONFERENCE")) return "CONFERENCE_HALL";
-  if (v.includes("SKYLINE")) return "SKYLINE";
+  if (v.includes('DRA')) return 'DRA_HALL';
+  if (v.includes('AVR')) return 'AVR';
+  if (v.includes('STUDIO') || v.includes('THEATER')) return 'STUDIO_THEATER';
+  if (v.includes('CONFERENCE')) return 'CONFERENCE_HALL';
+  if (v.includes('SKYLINE')) return 'SKYLINE';
 
   return null;
 }
@@ -118,8 +118,8 @@ export async function getDashboardStats() {
     events.countDocuments({}),
     attendance.countDocuments({}),
     certificates.countDocuments({}),
-    users.distinct("organizationName").then((orgs: any[]) =>
-      orgs.filter((o) => o && o !== "Unassigned" && o !== "N/A").length,
+    users.distinct('organizationName').then((orgs: any[]) =>
+      orgs.filter((o) => o && o !== 'Unassigned' && o !== 'N/A').length,
     ),
     events.countDocuments(dateFilter(currentMonth)),
     events.countDocuments(dateFilter(prevMonth)),
@@ -127,11 +127,11 @@ export async function getDashboardStats() {
     attendance.countDocuments(dateFilter(prevMonth)),
     certificates.countDocuments(dateFilter(currentMonth)),
     certificates.countDocuments(dateFilter(prevMonth)),
-    users.distinct("organizationName", dateFilter(currentMonth)).then((o: any[]) =>
-      o.filter((v) => v && v !== "Unassigned" && v !== "N/A").length,
+    users.distinct('organizationName', dateFilter(currentMonth)).then((o: any[]) =>
+      o.filter((v) => v && v !== 'Unassigned' && v !== 'N/A').length,
     ),
-    users.distinct("organizationName", dateFilter(prevMonth)).then((o: any[]) =>
-      o.filter((v) => v && v !== "Unassigned" && v !== "N/A").length,
+    users.distinct('organizationName', dateFilter(prevMonth)).then((o: any[]) =>
+      o.filter((v) => v && v !== 'Unassigned' && v !== 'N/A').length,
     ),
   ]);
 
@@ -155,10 +155,10 @@ export async function getKeyEventInsights() {
   const events = await getEventsCollection();
   const pipeline = [
     { $match: { course: { $exists: true, $ne: null } } },
-    { $group: { _id: "$course", count: { $sum: 1 } } },
+    { $group: { _id: '$course', count: { $sum: 1 } } },
     { $sort: { count: -1 as const } },
     { $limit: 10 },
-    { $project: { _id: 0, course: "$_id", count: 1 } },
+    { $project: { _id: 0, course: '$_id', count: 1 } },
   ];
 
   return events.aggregate(pipeline).toArray();
@@ -173,7 +173,7 @@ export async function getTopEngagedCourses() {
 
   /* Try a lookup on the event to get course info. */
   const pipeline = [
-    { $group: { _id: "$eventId", count: { $sum: 1 } } },
+    { $group: { _id: '$eventId', count: { $sum: 1 } } },
     { $sort: { count: -1 as const } },
     { $limit: 20 },
   ];
@@ -193,12 +193,12 @@ export async function getTopEngagedCourses() {
 
   const courseMap = new Map<string, any>();
   for (const doc of eventDocs) {
-    courseMap.set(String(doc._id), doc.course ?? "Unknown");
+    courseMap.set(String(doc._id), doc.course ?? 'Unknown');
   }
 
   const courseCounts = new Map<string, number>();
   for (const ec of eventCounts) {
-    const course = courseMap.get(String(ec._id)) ?? "Unknown";
+    const course = courseMap.get(String(ec._id)) ?? 'Unknown';
     courseCounts.set(course, (courseCounts.get(course) ?? 0) + ec.count);
   }
 
@@ -234,7 +234,7 @@ export async function getMostUsedFacilities() {
   }
 
   for (const doc of docs) {
-    const rawVenue = (doc.venue ?? doc.location ?? "").toString();
+    const rawVenue = (doc.venue ?? doc.location ?? '').toString();
     const facilityKey = normalizeVenueKey(rawVenue);
 
     if (!facilityKey) continue;
@@ -266,12 +266,12 @@ export async function getDashboardAttendanceData() {
 
   return records.map((record: any) => ({
     eventId: record.eventId ?? null,
-    eventTitle: record.eventTitle ?? record.eventName ?? "Untitled event",
+    eventTitle: record.eventTitle ?? record.eventName ?? 'Untitled event',
     attendedAt: record.attendedAt ?? record.tapIn ?? record.createdAt ?? null,
     tapOut: record.tapOut ?? null,
     attendeeId: record.attendeeId ?? record.userId ?? null,
-    attendeeName: record.attendeeName ?? record.name ?? "Unknown attendee",
-    status: record.status ?? "Present",
+    attendeeName: record.attendeeName ?? record.name ?? 'Unknown attendee',
+    status: record.status ?? 'Present',
     venue: record.venue ?? record.location ?? null,
     course: record.course ?? record.department ?? null,
   }));
@@ -294,7 +294,7 @@ export function getDashboardCharts(attendanceData: Array<Record<string, unknown>
 
   for (const record of attendanceData) {
     const attendedAt =
-      typeof record.attendedAt === "string" || record.attendedAt instanceof Date
+      typeof record.attendedAt === 'string' || record.attendedAt instanceof Date
         ? record.attendedAt
         : null;
 
@@ -310,7 +310,7 @@ export function getDashboardCharts(attendanceData: Array<Record<string, unknown>
       labels: Array.from(eventsByDate.keys()),
       datasets: [
         {
-          label: "Attendance Trend",
+          label: 'Attendance Trend',
           data: Array.from(eventsByDate.values()),
         },
       ],
@@ -319,7 +319,7 @@ export function getDashboardCharts(attendanceData: Array<Record<string, unknown>
       labels: Array.from(attendeesByHour.keys()),
       datasets: [
         {
-          label: "Peak Event Times",
+          label: 'Peak Event Times',
           data: Array.from(attendeesByHour.values()),
         },
       ],

@@ -1,17 +1,17 @@
-import type { Metadata } from "next";
-import "@/styles/pages/certificates.css";
+import type { Metadata } from 'next';
+import '@/styles/pages/certificates.css';
 
 export const metadata: Metadata = {
-  title: "My Certificates — DC Space",
+  title: 'My Certificates — DC Space',
 };
 
 const CERTS = [
-  "March 15, 2026",
-  "March 20, 2026",
-  "April 2, 2026",
-  "April 10, 2026",
-  "May 5, 2026",
-  "May 18, 2026",
+  'March 15, 2026',
+  'March 20, 2026',
+  'April 2, 2026',
+  'April 10, 2026',
+  'May 5, 2026',
+  'May 18, 2026',
 ];
 
 function CertBadge() {

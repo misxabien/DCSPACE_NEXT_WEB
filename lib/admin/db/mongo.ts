@@ -3,10 +3,10 @@ import {
   type Collection,
   type Db,
   type Document,
-} from "mongodb";
+} from 'mongodb';
 
-const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
-const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
+const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
+const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
 
 const globalForMongo = globalThis as unknown as {
   adminSharedMongoClient?: MongoClient;
@@ -23,9 +23,9 @@ const mongoClientOptions = {
 
 function createDatabaseConnectionError(error: unknown) {
   const message =
-    error instanceof Error ? error.message : "Failed to connect to MongoDB";
+    error instanceof Error ? error.message : 'Failed to connect to MongoDB';
   const wrappedError = new Error(message) as Error & { status: number };
-  wrappedError.name = "DatabaseConnectionError";
+  wrappedError.name = 'DatabaseConnectionError';
   wrappedError.status = 500;
   return wrappedError;
 }

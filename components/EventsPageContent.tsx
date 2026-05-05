@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { EventBookmarkButton, EventsBookmarks } from "@/components/EventsBookmarks";
-import { SearchWithClear } from "@/components/SearchWithClear";
+import { EventBookmarkButton, EventsBookmarks } from '@/components/EventsBookmarks';
+import { SearchWithClear } from '@/components/SearchWithClear';
 
 const EVENTS = [
-  { id: "evt-1", variant: "event-card--cream" as const },
-  { id: "evt-2", variant: "event-card--white" as const },
-  { id: "evt-3", variant: "event-card--cream" as const },
-  { id: "evt-4", variant: "event-card--white" as const },
+  { id: 'evt-1', variant: 'event-card--cream' as const },
+  { id: 'evt-2', variant: 'event-card--white' as const },
+  { id: 'evt-3', variant: 'event-card--cream' as const },
+  { id: 'evt-4', variant: 'event-card--white' as const },
 ];
 
 function EventCta() {

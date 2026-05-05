@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
 type AppError = Error & { status?: number };
 
@@ -21,7 +21,7 @@ const ERROR_MAP: Record<string, number> = {
 export function toErrorResponse(error: unknown): NextResponse {
   if (!(error instanceof Error)) {
     return NextResponse.json(
-      { error: "Internal Server Error", code: 500 },
+      { error: 'Internal Server Error', code: 500 },
       { status: 500 },
     );
   }
@@ -31,7 +31,7 @@ export function toErrorResponse(error: unknown): NextResponse {
     appError.status ?? ERROR_MAP[appError.name] ?? 500;
 
   return NextResponse.json(
-    { error: appError.message || "Internal Server Error", code: status },
+    { error: appError.message || 'Internal Server Error', code: status },
     { status },
   );
 }

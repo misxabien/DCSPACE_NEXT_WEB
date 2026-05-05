@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ObjectId } from "mongodb";
-import { getAdminCollection } from "./mongo";
+import { ObjectId } from 'mongodb';
+import { getAdminCollection } from './mongo';
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -10,11 +10,11 @@ function createAppError(name: string, message: string, status: number) {
 }
 
 async function getEventsCollection() {
-  return getAdminCollection<any>("events");
+  return getAdminCollection<any>('events');
 }
 function toObjectId(id: string) {
   if (!ObjectId.isValid(id)) {
-    throw createAppError("ValidationError", "Invalid event id", 400);
+    throw createAppError('ValidationError', 'Invalid event id', 400);
   }
 
   return new ObjectId(id);
@@ -32,44 +32,44 @@ function normalizeTextFilter(value: string | null | undefined) {
 function normalizeStatus(value: string | null | undefined) {
   const normalized = value?.trim().toLowerCase();
 
-  if (!normalized || normalized === "all") {
-    return "all";
+  if (!normalized || normalized === 'all') {
+    return 'all';
   }
 
-  if (normalized === "pending") {
-    return "pending";
+  if (normalized === 'pending') {
+    return 'pending';
   }
 
-  if (normalized === "approved") {
-    return "approved";
+  if (normalized === 'approved') {
+    return 'approved';
   }
 
-  return "all";
+  return 'all';
 }
 
 function toDateLabel(value: Date | string | null | undefined) {
   if (!value) {
-    return "TBA";
+    return 'TBA';
   }
 
   const date = value instanceof Date ? value : new Date(value);
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
   }).format(date);
 }
 
 function toTimeLabel(startValue: Date | string | null | undefined, endValue: Date | string | null | undefined) {
   if (!startValue) {
-    return "TBA";
+    return 'TBA';
   }
 
   const start = startValue instanceof Date ? startValue : new Date(startValue);
   const end = endValue ? (endValue instanceof Date ? endValue : new Date(endValue)) : null;
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
   });
 
   if (!end) {
@@ -80,13 +80,13 @@ function toTimeLabel(startValue: Date | string | null | undefined, endValue: Dat
 }
 
 function normalizeEventStatus(status: unknown) {
-  return (status ?? "pending").toString().toLowerCase();
+  return (status ?? 'pending').toString().toLowerCase();
 }
 
 function getAllowedActions(status: string) {
-  return status === "approved"
-    ? ["comment"]
-    : ["approve", "reject", "requestChanges", "comment"];
+  return status === 'approved'
+    ? ['comment']
+    : ['approve', 'reject', 'requestChanges', 'comment'];
 }
 
 function mapEventCard(event: any) {
@@ -95,16 +95,16 @@ function mapEventCard(event: any) {
 
   return {
     id: String(event._id),
-    title: event.title ?? event.name ?? "Untitled event",
+    title: event.title ?? event.name ?? 'Untitled event',
     date: toDateLabel(start),
     time: toTimeLabel(start, end),
-    venue: event.venue ?? event.location ?? "TBA",
+    venue: event.venue ?? event.location ?? 'TBA',
     organizer:
       event.representativeName ??
       event.organizerName ??
       event.organizer?.name ??
       event.createdByName ??
-      "Unknown organizer",
+      'Unknown organizer',
     pubmatImage:
       event.pubmatImage ??
       event.posterUrl ??
@@ -123,24 +123,24 @@ function mapEventDetail(event: any) {
 
   return {
     id: String(event._id),
-    title: event.title ?? event.name ?? "Untitled event",
-    description: event.description ?? "",
+    title: event.title ?? event.name ?? 'Untitled event',
+    description: event.description ?? '',
     date: toDateLabel(start),
-    venue: event.venue ?? event.location ?? "TBA",
+    venue: event.venue ?? event.location ?? 'TBA',
     startTime: toTimeLabel(start, null),
     endTime: toTimeLabel(end, null),
-    organizer: event.organizerName ?? event.organizer?.name ?? "Unknown organizer",
-    campus: event.campus ?? "N/A",
-    department: event.department ?? "N/A",
-    course: event.course ?? "N/A",
-    organization: event.organizationName ?? event.organization?.name ?? "N/A",
-    type: event.type ?? event.eventType ?? "N/A",
-    duration: event.totalDuration ?? event.duration ?? "N/A",
-    minimumAttendanceTime: event.minimumAttendanceTime ?? event.minAttendanceTime ?? "N/A",
+    organizer: event.organizerName ?? event.organizer?.name ?? 'Unknown organizer',
+    campus: event.campus ?? 'N/A',
+    department: event.department ?? 'N/A',
+    course: event.course ?? 'N/A',
+    organization: event.organizationName ?? event.organization?.name ?? 'N/A',
+    type: event.type ?? event.eventType ?? 'N/A',
+    duration: event.totalDuration ?? event.duration ?? 'N/A',
+    minimumAttendanceTime: event.minimumAttendanceTime ?? event.minAttendanceTime ?? 'N/A',
     surveyLink: event.surveyLink ?? null,
     submittedAt: event.submittedAt ?? event.createdAt ?? null,
     status,
-    canModerate: status !== "approved",
+    canModerate: status !== 'approved',
     allowedActions,
     attachments: {
       eventPoster: event.eventPoster ?? event.attachments?.eventPoster ?? null,
@@ -177,18 +177,18 @@ export async function getEvents(params: GetEventsParams) {
 
   const andConditions: Record<string, unknown>[] = [];
 
-  if (status === "pending") {
+  if (status === 'pending') {
     andConditions.push({
       status: {
-        $in: ["pending", "pending_approval", "changes_requested", "PENDING", "PENDING_APPROVAL"],
+        $in: ['pending', 'pending_approval', 'changes_requested', 'PENDING', 'PENDING_APPROVAL'],
       },
     });
   }
 
-  if (status === "approved") {
+  if (status === 'approved') {
     andConditions.push({
       status: {
-        $in: ["approved", "APPROVED"],
+        $in: ['approved', 'APPROVED'],
       },
     });
   }
@@ -196,8 +196,8 @@ export async function getEvents(params: GetEventsParams) {
   if (search) {
     andConditions.push({
       $or: [
-        { title: { $regex: search, $options: "i" } },
-        { name: { $regex: search, $options: "i" } },
+        { title: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } },
       ],
     });
   }
@@ -205,10 +205,10 @@ export async function getEvents(params: GetEventsParams) {
   if (filter) {
     andConditions.push({
       $or: [
-        { type: { $regex: filter, $options: "i" } },
-        { campus: { $regex: filter, $options: "i" } },
-        { department: { $regex: filter, $options: "i" } },
-        { organizationName: { $regex: filter, $options: "i" } },
+        { type: { $regex: filter, $options: 'i' } },
+        { campus: { $regex: filter, $options: 'i' } },
+        { department: { $regex: filter, $options: 'i' } },
+        { organizationName: { $regex: filter, $options: 'i' } },
       ],
     });
   }
@@ -247,7 +247,7 @@ export async function getEventById(id: string) {
   const event = await events.findOne({ _id: toObjectId(id) });
 
   if (!event) {
-    throw createAppError("NotFoundError", "Event not found", 404);
+    throw createAppError('NotFoundError', 'Event not found', 404);
   }
 
   return mapEventDetail(event);
@@ -262,19 +262,19 @@ export async function updateEventStatus(id: string, status: string, comment?: st
   const existingEvent = await events.findOne({ _id: objectId });
 
   if (!existingEvent) {
-    throw createAppError("NotFoundError", "Event not found", 404);
+    throw createAppError('NotFoundError', 'Event not found', 404);
   }
 
   const currentStatus = normalizeEventStatus(existingEvent.status);
   const normalizedStatus = status.trim().toLowerCase();
-  const allowedStatuses = ["approved", "rejected", "changes_requested"];
+  const allowedStatuses = ['approved', 'rejected', 'changes_requested'];
 
   if (!allowedStatuses.includes(normalizedStatus)) {
-    throw createAppError("ValidationError", "Invalid event status", 400);
+    throw createAppError('ValidationError', 'Invalid event status', 400);
   }
 
-  if (currentStatus === "approved") {
-    throw createAppError("ValidationError", "Moderation actions are disabled for approved events", 400);
+  if (currentStatus === 'approved') {
+    throw createAppError('ValidationError', 'Moderation actions are disabled for approved events', 400);
   }
 
   const updateOperation: Record<string, unknown> = {
@@ -313,7 +313,7 @@ export async function updateEventTemplate(
   const existingEvent = await events.findOne({ _id: objectId });
 
   if (!existingEvent) {
-    throw createAppError("NotFoundError", "Event not found", 404);
+    throw createAppError('NotFoundError', 'Event not found', 404);
   }
 
   await events.updateOne(
@@ -335,7 +335,7 @@ export async function updateEventTemplate(
  */
 export async function postAdminComment(id: string, comment: string) {
   if (!comment.trim()) {
-    throw createAppError("ValidationError", "comment is required", 400);
+    throw createAppError('ValidationError', 'comment is required', 400);
   }
 
   const events = await getEventsCollection();
@@ -355,7 +355,7 @@ export async function postAdminComment(id: string, comment: string) {
   const result = await events.updateOne({ _id: objectId }, commentUpdate);
 
   if (result.matchedCount === 0) {
-    throw createAppError("NotFoundError", "Event not found", 404);
+    throw createAppError('NotFoundError', 'Event not found', 404);
   }
 
   const updatedEvent = await events.findOne({ _id: objectId });

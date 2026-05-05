@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 export function OrganizeForm() {
   const courseRef = useRef<HTMLSelectElement>(null);
@@ -13,21 +13,21 @@ export function OrganizeForm() {
       const org = orgRef.current;
       const combined = combinedRef.current;
       if (!course || !org || !combined) return;
-      const c = (course.value || "").trim();
-      const o = (org.value || "").trim().replace(/^[\s—-]+|[\s—-]+$/g, "");
-      combined.value = c && o ? `${c}-${o}` : c || o || "";
+      const c = (course.value || '').trim();
+      const o = (org.value || '').trim().replace(/^[\s—-]+|[\s—-]+$/g, '');
+      combined.value = c && o ? `${c}-${o}` : c || o || '';
     }
 
     const course = courseRef.current;
     const org = orgRef.current;
     if (!course || !org) return;
 
-    course.addEventListener("change", syncCombined);
-    org.addEventListener("input", syncCombined);
+    course.addEventListener('change', syncCombined);
+    org.addEventListener('input', syncCombined);
     syncCombined();
     return () => {
-      course.removeEventListener("change", syncCombined);
-      org.removeEventListener("input", syncCombined);
+      course.removeEventListener('change', syncCombined);
+      org.removeEventListener('input', syncCombined);
     };
   }, []);
 

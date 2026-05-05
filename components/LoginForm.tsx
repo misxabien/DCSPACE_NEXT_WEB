@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export function LoginForm() {
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
-  const [role, setRole] = useState<"student" | "faculty">("student");
+  const [role, setRole] = useState<'student' | 'faculty'>('student');
 
   return (
     <main className="page">
@@ -61,7 +61,7 @@ export function LoginForm() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              router.push("/dashboard");
+              router.push('/dashboard');
             }}
             autoComplete="on"
           >
@@ -110,7 +110,7 @@ export function LoginForm() {
                 id="password"
                 className="input"
                 name="password"
-                type={showPw ? "text" : "password"}
+                type={showPw ? 'text' : 'password'}
                 placeholder="Password"
                 autoComplete="current-password"
                 required
@@ -119,7 +119,7 @@ export function LoginForm() {
               <button
                 className="btn eye"
                 type="button"
-                aria-label={showPw ? "Hide password" : "Show password"}
+                aria-label={showPw ? 'Hide password' : 'Show password'}
                 onClick={() => setShowPw((s) => !s)}
               >
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -160,8 +160,8 @@ export function LoginForm() {
             <button
               className="btn role__btn"
               type="button"
-              aria-pressed={role === "student"}
-              onClick={() => setRole("student")}
+              aria-pressed={role === 'student'}
+              onClick={() => setRole('student')}
             >
               <svg viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path
@@ -182,8 +182,8 @@ export function LoginForm() {
             <button
               className="btn role__btn"
               type="button"
-              aria-pressed={role === "faculty"}
-              onClick={() => setRole("faculty")}
+              aria-pressed={role === 'faculty'}
+              onClick={() => setRole('faculty')}
             >
               <svg viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" strokeWidth="1.8" />
