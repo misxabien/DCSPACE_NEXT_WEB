@@ -53,7 +53,6 @@ body {
 }
 
 body {
-  /* Primary font from next/font montserrat.className; keep below for any overrides */
   font-family: var(--font);
   background: var(--page-gradient);
   color: #2a2118;

@@ -40,6 +40,19 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "DC Space",
   description: "TAP. ATTEND. GET CERTIFIED.",
+  icons: {
+    icon: {
+      url: "/dcspace-logo.png",
+      type: "image/png",
+      sizes: "32x32",
+    },
+    shortcut: "/dcspace-logo.png",
+    apple: {
+      url: "/dcspace-logo.png",
+      type: "image/png",
+      sizes: "180x180",
+    },
+  },
 };
 
 export default function RootLayout({
