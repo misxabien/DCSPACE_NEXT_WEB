@@ -9,7 +9,7 @@
       }
 
       .main__header {
-        padding: var(--main-pad-y) var(--main-pad-x) 12px;
+        padding: 24px 38px 14px;
         flex-shrink: 0;
         border-bottom: 1px solid rgba(92, 64, 51, 0.55);
       }
@@ -18,16 +18,17 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 16px;
+        gap: 36px;
       }
 
       .main__title {
-        font-size: clamp(2rem, 4.2vw, 2.75rem);
-        font-weight: 800;
-        color: #fffef8;
-        letter-spacing: 0.02em;
+        margin: 0;
+        color: #604d18;
+        font-size: clamp(34px, 4vw, 46px);
+        font-weight: 900;
+        letter-spacing: 0;
         line-height: 1.1;
-        text-shadow: 3px 3px 0 var(--brown-shadow), 2px 2px 0 var(--brown-shadow), 1px 1px 0 rgba(60, 40, 28, 0.35);
+        text-shadow: none;
       }
 
       .main__tools {

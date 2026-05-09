@@ -1,32 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ObjectId } from "mongodb";
-import { getAdminCollection } from "./mongo";
+import { MongoClient } from "mongodb";
 
-function createAppError(name: string, message: string, status: number) {
-  const error = new Error(message) as Error & { status: number };
-  error.name = name;
-  error.status = status;
-  return error;
-}
+const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
+const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
 
-async function getFeedbackCollection() {
-  return getAdminCollection<any>("feedback");
-}
+const globalForMongo = globalThis as unknown as {
+  adminFeedbackMongoClient?: MongoClient;
+  adminFeedbackMongoPromise?: Promise<MongoClient>;
+};
 
-async function getUsersCollection() {
-  return getAdminCollection<any>("users");
-}
-
-async function getEventsCollection() {
-  return getAdminCollection<any>("events");
-}
-
-function toObjectId(id: string) {
-  if (!ObjectId.isValid(id)) {
-    throw createAppError("ValidationError", "Invalid identifier", 400);
+async function getMongoClient() {
+  if (globalForMongo.adminFeedbackMongoClient) {
+    return globalForMongo.adminFeedbackMongoClient;
   }
 
-  return new ObjectId(id);
+  if (!globalForMongo.adminFeedbackMongoPromise) {
+    const client = new MongoClient(mongoUri);
+    globalForMongo.adminFeedbackMongoPromise = client.connect();
+  }
+
+  globalForMongo.adminFeedbackMongoClient = await globalForMongo.adminFeedbackMongoPromise;
+  return globalForMongo.adminFeedbackMongoClient;
+}
+
+async function getDatabase() {
+  const client = await getMongoClient();
+  return client.db(mongoDbName);
 }
 
 function toNumericRating(value: unknown) {
@@ -98,16 +97,6 @@ function normalizeCertificateStatus(value: unknown) {
   return value?.toString() ?? "-";
 }
 
-function normalizeStatus(value: unknown) {
-  const normalized = (value ?? "New").toString().trim();
-
-  if (["New", "Actioned", "Reviewed"].includes(normalized)) {
-    return normalized as "New" | "Actioned" | "Reviewed";
-  }
-
-  return "New";
-}
-
 function getEventRating(record: any) {
   return toNumericRating(record.eventRating ?? record.rating ?? record.score);
 }
@@ -124,10 +113,6 @@ function getAverage(values: number[]) {
   const total = values.reduce((sum, value) => sum + value, 0);
   return roundAverage(total / values.length);
 }
-
-/* ------------------------------------------------------------------ */
-/*  V1 feedback row (backward compat)                                 */
-/* ------------------------------------------------------------------ */
 
 function mapFeedbackRow(record: any) {
   const registrationType = normalizeRegistrationType(record);
@@ -146,38 +131,12 @@ function mapFeedbackRow(record: any) {
   };
 }
 
-/* ------------------------------------------------------------------ */
-/*  V2 feedback list item                                             */
-/* ------------------------------------------------------------------ */
-
-function mapFeedbackListItem(record: any) {
-  const category = normalizeRegistrationType(record);
-  const rating = category === "System" ? getSystemRating(record) : getEventRating(record);
-
-  return {
-    id: String(record._id),
-    rating: rating ?? 0,
-    category,
-    user: {
-      name: record.userName ?? record.user?.name ?? record.submitterName ?? "Unknown",
-      email: record.userEmail ?? record.user?.email ?? record.submitterEmail ?? "",
-      avatarUrl: record.userAvatar ?? record.user?.avatarUrl ?? null,
-    },
-    event: record.eventName ?? record.event?.title ?? record.eventTitle ?? "N/A",
-    facility: record.facility ?? record.venue ?? record.location ?? "N/A",
-    status: normalizeStatus(record.status),
-  };
-}
-
-/* ------------------------------------------------------------------ */
-/*  Public API                                                        */
-/* ------------------------------------------------------------------ */
-
 /**
  * Returns the feedback overview stats and table rows for the admin feedback screen.
  */
 export async function getFeedbackOverview() {
-  const feedback = await getFeedbackCollection();
+  const db = await getDatabase();
+  const feedback = db.collection<any>("feedback");
   const records = await feedback.find({}).sort({ createdAt: -1, updatedAt: -1 }).limit(500).toArray();
 
   const eventRatings: number[] = [];
@@ -204,16 +163,6 @@ export async function getFeedbackOverview() {
   }
 
   return {
-    summary: {
-      averageEventRating: getAverage(eventRatings),
-      eventRatingMax: 5,
-      eventRatingCount: eventRatings.length,
-      averageSystemRating: getAverage(systemRatings),
-      systemRatingMax: 5,
-      systemRatingCount: systemRatings.length,
-    },
-    feedbacks: records.map(mapFeedbackListItem),
-    /* Backward-compat fields */
     averageEventRating: getAverage(eventRatings),
     averageEventRatingOutOf: 5,
     averageEventRatingCount: eventRatings.length,
@@ -224,162 +173,3 @@ export async function getFeedbackOverview() {
   };
 }
 
-/**
- * Returns the full feedback detail including user info and event details.
- */
-export async function getFeedbackById(id: string) {
-  const feedback = await getFeedbackCollection();
-  const objectId = toObjectId(id);
-  const record = await feedback.findOne({ _id: objectId });
-
-  if (!record) {
-    throw createAppError("NotFoundError", "Feedback not found", 404);
-  }
-
-  /* Try to enrich with user and event data. */
-  let userDetail: any = null;
-  let eventDetail: any = null;
-
-  if (record.userId || record.user?._id || record.submitterId) {
-    const users = await getUsersCollection();
-    const userId = record.userId ?? record.user?._id ?? record.submitterId;
-
-    if (userId && ObjectId.isValid(String(userId))) {
-      userDetail = await users.findOne({ _id: new ObjectId(String(userId)) });
-    }
-  }
-
-  if (record.eventId || record.event?._id) {
-    const events = await getEventsCollection();
-    const eventId = record.eventId ?? record.event?._id;
-
-    if (eventId && ObjectId.isValid(String(eventId))) {
-      eventDetail = await events.findOne({ _id: new ObjectId(String(eventId)) });
-    }
-  }
-
-  const category = normalizeRegistrationType(record);
-  const rating = category === "System" ? getSystemRating(record) : getEventRating(record);
-
-  return {
-    feedback: {
-      id: String(record._id),
-      submittedAt: record.createdAt ?? record.submittedAt ?? null,
-      rating: rating ?? 0,
-      comment: record.comment ?? record.message ?? record.feedback ?? "",
-      category,
-      status: normalizeStatus(record.status),
-      adminNote: record.adminNote ?? null,
-      user: {
-        name: userDetail?.name ?? record.userName ?? record.user?.name ?? "Unknown",
-        email: userDetail?.email ?? record.userEmail ?? record.user?.email ?? "",
-        avatarUrl: userDetail?.avatarUrl ?? record.userAvatar ?? null,
-        studentNumber: String(userDetail?.studentId ?? userDetail?.idNumber ?? record.studentNumber ?? "N/A"),
-        course: userDetail?.course ?? record.course ?? "N/A",
-        yearAndSection: userDetail?.yearAndSection ?? record.yearAndSection ?? "N/A",
-        organization: userDetail?.organizationName ?? userDetail?.organization?.name ?? record.organization ?? "N/A",
-        role: userDetail?.role?.toUpperCase() ?? "STUDENT",
-      },
-      eventDetails: {
-        category: eventDetail?.type ?? eventDetail?.eventType ?? category,
-        eventName: eventDetail?.title ?? eventDetail?.name ?? record.eventName ?? "N/A",
-        location: eventDetail?.venue ?? eventDetail?.location ?? record.venue ?? "N/A",
-        date: eventDetail?.startTime ?? eventDetail?.eventDate ?? record.eventDate ?? "N/A",
-      },
-      certificateUrl: record.certificateUrl ?? null,
-    },
-  };
-}
-
-/**
- * Updates the status and/or admin note of a feedback record.
- */
-export async function updateFeedback(
-  id: string,
-  input: { status?: string; adminNote?: string },
-) {
-  const feedback = await getFeedbackCollection();
-  const objectId = toObjectId(id);
-  const existing = await feedback.findOne({ _id: objectId });
-
-  if (!existing) {
-    throw createAppError("NotFoundError", "Feedback not found", 404);
-  }
-
-  const updates: Record<string, unknown> = {
-    updatedAt: new Date(),
-  };
-
-  if (input.status !== undefined) {
-    const validStatuses = ["New", "Actioned", "Reviewed"];
-
-    if (!validStatuses.includes(input.status)) {
-      throw createAppError("ValidationError", `status must be one of: ${validStatuses.join(", ")}`, 400);
-    }
-
-    updates.status = input.status;
-  }
-
-  if (input.adminNote !== undefined) {
-    updates.adminNote = input.adminNote;
-  }
-
-  await feedback.updateOne({ _id: objectId }, { $set: updates });
-
-  return {
-    success: true,
-    feedback: {
-      id,
-      status: (updates.status ?? existing.status ?? "New") as string,
-      adminNote: (updates.adminNote ?? existing.adminNote ?? null) as string | null,
-    },
-  };
-}
-
-/**
- * Stubbed email handler for follow-up emails to feedback submitters.
- * Logs the intent and returns success — wire to a real provider later.
- */
-export async function sendFeedbackEmail(id: string, message?: string) {
-  const feedback = await getFeedbackCollection();
-  const objectId = toObjectId(id);
-  const record = await feedback.findOne({ _id: objectId });
-
-  if (!record) {
-    throw createAppError("NotFoundError", "Feedback not found", 404);
-  }
-
-  const recipientEmail =
-    record.userEmail ?? record.user?.email ?? record.submitterEmail ?? null;
-
-  if (!recipientEmail) {
-    throw createAppError("ValidationError", "No email address found for this feedback submitter", 400);
-  }
-
-  /* TODO: Replace with real email provider (Resend, Nodemailer, etc.) */
-  console.log(
-    `[FeedbackEmail] Would send follow-up to ${recipientEmail} for feedback ${id}`,
-    message ? `Message: ${message}` : "(no custom message)",
-  );
-
-  /* Record that we attempted the email. */
-  await feedback.updateOne(
-    { _id: objectId },
-    {
-      $set: { updatedAt: new Date() },
-      $push: {
-        emailHistory: {
-          sentAt: new Date(),
-          recipient: recipientEmail,
-          message: message ?? null,
-          status: "stub",
-        },
-      },
-    } as any,
-  );
-
-  return {
-    success: true,
-    sentTo: recipientEmail,
-  };
-}

@@ -1,13 +1,40 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getAdminCollection } from "./mongo";
+import { MongoClient } from "mongodb";
+
+const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
+const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
+
+const globalForMongo = globalThis as unknown as {
+  adminNotificationsMongoClient?: MongoClient;
+  adminNotificationsMongoPromise?: Promise<MongoClient>;
+};
+
+async function getMongoClient() {
+  if (globalForMongo.adminNotificationsMongoClient) {
+    return globalForMongo.adminNotificationsMongoClient;
+  }
+
+  if (!globalForMongo.adminNotificationsMongoPromise) {
+    const client = new MongoClient(mongoUri);
+    globalForMongo.adminNotificationsMongoPromise = client.connect();
+  }
+
+  globalForMongo.adminNotificationsMongoClient = await globalForMongo.adminNotificationsMongoPromise;
+  return globalForMongo.adminNotificationsMongoClient;
+}
+
+async function getDatabase() {
+  const client = await getMongoClient();
+  return client.db(mongoDbName);
+}
+
 /**
  * Returns the merged event and report notification feed for the admin panel.
  */
 export async function getNotifications() {
-  const [events, reports] = await Promise.all([
-    getAdminCollection<any>("events"),
-    getAdminCollection<any>("reports"),
-  ]);
+  const db = await getDatabase();
+  const events = db.collection<any>("events");
+  const reports = db.collection<any>("reports");
 
   const [eventItems, reportItems] = await Promise.all([
     events
@@ -57,9 +84,6 @@ export async function getNotifications() {
     total: feed.length,
   };
 }
-
-
-
 
 
 
