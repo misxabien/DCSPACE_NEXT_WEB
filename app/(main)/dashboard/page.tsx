@@ -3,7 +3,7 @@ import { DashboardPageContent } from "@/components/DashboardPageContent";
 import "@/styles/pages/dashboard.css";
 
 export const metadata: Metadata = {
-  title: "Dashboard — DC Space",
+  title: "Dashboard",
 };
 
 export default function DashboardPage() {

@@ -38,7 +38,10 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "DC Space",
+  title: {
+    default: "DC Space",
+    template: "DC Space | %s",
+  },
   description: "TAP. ATTEND. GET CERTIFIED.",
   icons: {
     icon: {

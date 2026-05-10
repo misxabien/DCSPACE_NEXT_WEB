@@ -3,7 +3,7 @@ import { EventsPageContent } from "@/components/EventsPageContent";
 import "@/styles/pages/events.css";
 
 export const metadata: Metadata = {
-  title: "Browse Events — DC Space",
+  title: "Browse Events",
 };
 
 export default function EventsPage() {

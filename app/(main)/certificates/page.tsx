@@ -4,7 +4,7 @@ import { SearchWithClear } from "@/components/SearchWithClear";
 import "@/styles/pages/certificates.css";
 
 export const metadata: Metadata = {
-  title: "Certificates - DC Space",
+  title: "Certificates",
 };
 
 const CERTIFICATE_GROUPS = [
