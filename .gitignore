@@ -21,6 +21,9 @@
 /build
 
 # misc
+# Avoid nesting a second clone of the same GitHub repo inside this project
+ADMIN_BACKUP/
+
 .DS_Store
 *.pem
 
