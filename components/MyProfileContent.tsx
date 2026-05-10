@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import type { RegisteredEvent } from "@/lib/attendance";
-import { useEffect, useMemo, useState } from "react";import {
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import {
   getCurrentAttendanceUser,
   readRegisteredEvents,
   readUserAttendanceRecords,
@@ -77,6 +79,7 @@ export function MyProfileContent() {
             onClick={() => {
               signOutAttendanceUser();
               window.sessionStorage.removeItem("dcspacePrivacySeen");
+              toast.success("Signed out", { description: "You can sign in again anytime." });
             }}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>

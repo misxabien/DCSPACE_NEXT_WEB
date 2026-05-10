@@ -1,0 +1,38 @@
+/* Sonner toasts aligned with DC Space palette (see app/globals.css :root) */
+
+.dc-toast {
+  background: var(--card-cream) !important;
+  border: 2px solid rgba(96, 77, 24, 0.35) !important;
+  color: #2a2118 !important;
+  border-radius: var(--card-radius) !important;
+  box-shadow: 0 6px 24px rgba(60, 40, 28, 0.18) !important;
+  font-family: var(--font), sans-serif !important;
+}
+
+.dc-toast[data-type="success"] {
+  border-left: 4px solid var(--btn-green) !important;
+}
+
+.dc-toast[data-type="error"] {
+  border-left: 4px solid var(--profile-red) !important;
+}
+
+.dc-toast[data-type="info"],
+.dc-toast[data-type="warning"] {
+  border-left: 4px solid var(--nav-active) !important;
+}
+
+.dc-toast-title {
+  font-family: var(--font-ui), "Poppins", system-ui, sans-serif !important;
+  font-weight: 600 !important;
+  color: var(--brown-icon) !important;
+}
+
+.dc-toast-description {
+  color: rgba(42, 33, 24, 0.78) !important;
+}
+
+.dc-toast-close {
+  color: var(--brown-icon) !important;
+  border-color: rgba(96, 77, 24, 0.35) !important;
+}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Lato, Montserrat, Poppins } from "next/font/google";
+import { DcSpaceToaster } from "@/components/DcSpaceToaster";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -64,6 +65,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${dmSans.variable} ${lato.variable} ${montserrat.variable} ${poppins.variable} ${lato.className}`}>
         {children}
+        <DcSpaceToaster />
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { type FrontendEvent, readSelectedBrowseEvent, registerEventForCurrentUser } from "@/lib/dc-events";
 
 const fallbackEventDetails: FrontendEvent = {
@@ -69,6 +70,9 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
     if (!fileAdded) return;
 
     registerEventForCurrentUser(selectedEvent);
+    toast.success("Registration complete", {
+      description: `You're signed up for ${selectedEvent.name || "this event"}.`,
+    });
 
     setIsRedirecting(true);
 
