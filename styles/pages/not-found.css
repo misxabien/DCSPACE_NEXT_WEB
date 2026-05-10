@@ -1,0 +1,44 @@
+/* 404 — full-viewport, no app shell; uses root body gradient + DC Space palette */
+
+.not-found {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--main-pad-y) var(--main-pad-x);
+  min-height: 100dvh;
+  min-height: 100vh;
+}
+
+.not-found__inner {
+  width: min(520px, 100%);
+  text-align: center;
+}
+
+.not-found__code {
+  font-family: var(--font-display), "Montserrat", system-ui, sans-serif;
+  font-size: clamp(4rem, 12vw, 6.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--nav-active);
+  text-shadow: 0 3px 0 rgba(92, 136, 229, 0.22);
+  margin: 0 0 8px;
+}
+
+.not-found__title {
+  font-family: var(--font-display), "Montserrat", system-ui, sans-serif;
+  font-size: clamp(1.35rem, 3.2vw, 1.75rem);
+  font-weight: 700;
+  color: var(--brown-icon);
+  margin: 0 0 14px;
+  line-height: 1.25;
+}
+
+.not-found__lede {
+  font-family: var(--font), sans-serif;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: rgba(42, 33, 24, 0.78);
+  margin: 0 auto;
+  max-width: 38ch;
+}
