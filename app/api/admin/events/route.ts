@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+"app/api/admin/events/[id]/route.ts" \import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { requireAdmin } from "../../../../lib/admin/auth/roleGuard";
-import { getEvents } from "../../../../lib/admin/db/events";
+import { requireAdmin } from "@/lib/admin/auth/roleGuard";
+import { getEvents } from "@/lib/admin/db/events";
 
 function toErrorResponse(error: unknown) {
   if (error instanceof Error && error.name === "AdminAuthorizationError") {

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { requireAdmin } from "../../../../../lib/admin/auth/roleGuard";
+import { requireAdmin } from "@/lib/admin/auth/roleGuard";
 import {
   getEventById,
   postAdminComment,
   updateEventStatus,
-} from "../../../../../lib/admin/db/events";
+} from "@/lib/admin/db/events";
 
 function toErrorResponse(error: unknown) {
   if (error instanceof Error && error.name === "AdminAuthorizationError") {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { buildSessionPayload } from "../../../../../lib/admin/auth/authOptions";
-import { loginUser } from "../../../../../lib/admin/db/users";
+import { buildSessionPayload } from "@/lib/admin/auth/authOptions";
+import { loginUser } from "@/lib/admin/db/users";
 
 function toErrorResponse(error: unknown) {
   if (error instanceof Error && error.name === "AuthenticationError") {

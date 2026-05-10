@@ -4,8 +4,8 @@ import {
   buildSessionPayload,
   getGoogleSsoConfig,
   isAllowedGoogleEmail,
-} from "../../../../../lib/admin/auth/authOptions";
-import { findUserByEmail } from "../../../../../lib/admin/db/users";
+} from "@/lib/admin/auth/authOptions";
+import { findUserByEmail } from "@/lib/admin/db/users";
 
 /**
  * Handles Google SSO registration checks before creating an admin session payload.
