@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
+import { useAppLoading } from "@/components/AppLoadingProvider";
 import { EmptyState } from "@/components/EmptyState";
 import { canOrganizeEvents, saveOrganizedEvent } from "@/lib/dc-events";
 
@@ -35,7 +35,7 @@ const emptyReviewDetails: ReviewDetails = {
 };
 
 export function OrganizeForm() {
-  const router = useRouter();
+  const { navigateWithLoading } = useAppLoading();
   const formRef = useRef<HTMLFormElement>(null);
   const courseRef = useRef<HTMLSelectElement>(null);
   const orgRef = useRef<HTMLInputElement>(null);
@@ -123,7 +123,7 @@ export function OrganizeForm() {
 
     saveOrganizedEvent(getReviewDetails());
     setShowReview(false);
-    router.push("/events");
+    navigateWithLoading("/events");
   };
 
   if (canCreate === null) {

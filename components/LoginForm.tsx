@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
+import { useAppLoading } from "@/components/AppLoadingProvider";
 import { signInAttendanceUser } from "@/lib/attendance";
 
 export function LoginForm() {
-  const router = useRouter();
+  const { navigateWithLoading } = useAppLoading();
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<"student" | "faculty">("student");
 
@@ -18,7 +18,7 @@ export function LoginForm() {
     const email = formData.get("email");
 
     signInAttendanceUser(typeof email === "string" ? email : "");
-    router.push("/dashboard");
+    navigateWithLoading("/dashboard");
   };
 
   return (

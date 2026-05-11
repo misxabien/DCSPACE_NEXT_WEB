@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
+import { useAppLoading } from "@/components/AppLoadingProvider";
 import { type FrontendEvent, readSelectedBrowseEvent, registerEventForCurrentUser } from "@/lib/dc-events";
 
 const fallbackEventDetails: FrontendEvent = {
@@ -53,7 +53,7 @@ function getRegisteredEventStatusLabel(eventDate?: EventDetailsPageContentProps[
 }
 
 export function EventDetailsPageContent({ source = "events", eventDate }: EventDetailsPageContentProps) {
-  const router = useRouter();
+  const { backWithLoading, navigateWithLoading } = useAppLoading();
   const isDashboardSource = source === "dashboard";
   const registeredEventStatus = getRegisteredEventStatusLabel(eventDate);
   const [showRequirements, setShowRequirements] = useState(false);
@@ -74,7 +74,7 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
 
     window.setTimeout(() => {
       startTransition(() => {
-        router.push("/dashboard");
+        navigateWithLoading("/dashboard");
       });
     }, 180);
   };
@@ -146,7 +146,7 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
 
       {!isDashboardSource && (
         <div className="event-actions">
-          <button className="go-back-button" type="button" onClick={() => router.back()}>
+          <button className="go-back-button" type="button" onClick={backWithLoading}>
             Go Back
           </button>
           <button className="register-button" type="button" onClick={() => setShowRequirements(true)}>
