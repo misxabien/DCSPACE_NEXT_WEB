@@ -44,6 +44,7 @@ export function RegisterAccountContent() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [validationError, setValidationError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const passwordChecks = [
     { label: "At least 8 characters", valid: password.length >= 8 },
@@ -56,13 +57,81 @@ export function RegisterAccountContent() {
 
   const passwordIsValid = passwordChecks.every((check) => check.valid);
 
+  const requiredFields = [
+    { name: "first_name", label: "First name" },
+    { name: "last_name", label: "Last name" },
+    { name: "student_number", label: "Student number" },
+    { name: "rfid_number", label: "RFID tag number" },
+    { name: "organization_part", label: "Organization" },
+    { name: "organization_role", label: "Position" },
+    { name: "course", label: "Course" },
+    { name: "school", label: "School" },
+    { name: "student_email", label: "Student email" },
+    { name: "password", label: "Password" },
+    { name: "confirm_password", label: "Re-enter password" },
+  ];
+
   const getValue = (formData: FormData, key: string) => {
     const value = formData.get(key);
     return typeof value === "string" && value.trim() ? value.trim() : "Not provided";
   };
 
+  const validateRequiredFields = () => {
+    if (!formRef.current) return false;
+
+    const formData = new FormData(formRef.current);
+    const errors: Record<string, string> = {};
+
+    requiredFields.forEach((field) => {
+      const value = formData.get(field.name);
+
+      if (typeof value !== "string" || !value.trim()) {
+        errors[field.name] = `${field.label} is required.`;
+      }
+    });
+
+    requiredFields.forEach((field) => {
+      const value = formData.get(field.name);
+
+      if (typeof value !== "string" || !value.trim()) {
+        errors[field.name] = `${field.label} is required.`;
+      }
+
+      if (
+        field.name === "student_email" &&
+        typeof value === "string" &&
+        value.trim() &&
+        !value.trim().toLowerCase().endsWith("@sdca.edu.ph")
+      ) {
+        errors[field.name] = "Please provide a valid SDCA email (@sdca.edu.ph).";
+      }
+    });
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      setValidationError("Please fill in all required fields before continuing.");
+      return false;
+    }
+
+    setValidationError("");
+    return true;
+  };
+
+  const clearFieldError = (fieldName: string) => {
+    setFieldErrors((current) => {
+      const updated = { ...current };
+      delete updated[fieldName];
+      return updated;
+    });
+
+    setValidationError("");
+  };
+
   const handleReview = () => {
     if (!formRef.current) return;
+
+    if (!validateRequiredFields()) return;
 
     if (!passwordIsValid) {
       setValidationError("Please complete all password requirements before reviewing.");
@@ -81,8 +150,8 @@ export function RegisterAccountContent() {
       organizationRole: getValue(formData, "organization_role"),
       course: getValue(formData, "course"),
       school: getValue(formData, "school"),
-      password: getValue(formData, "password") === "Not provided" ? "Not provided" : "********",
-      confirmPassword: getValue(formData, "confirm_password") === "Not provided" ? "Not provided" : "********",
+      password: "********",
+      confirmPassword: "********",
     });
 
     setValidationError("");
@@ -91,6 +160,11 @@ export function RegisterAccountContent() {
 
   const handleSignUp = () => {
     if (!formRef.current) return;
+
+    if (!validateRequiredFields()) {
+      setShowReview(false);
+      return;
+    }
 
     if (!passwordIsValid) {
       setValidationError("Please complete all password requirements before signing up.");
@@ -122,144 +196,224 @@ export function RegisterAccountContent() {
 
           <form ref={formRef} className="register-form">
             <div className="register-two-col">
-              <input name="first_name" type="text" placeholder="First Name:" aria-label="First Name" />
-              <input name="last_name" type="text" placeholder="Last Name:" aria-label="Last Name" />
+              <div className="register-field">
+                <input
+                  name="first_name"
+                  type="text"
+                  placeholder="First Name:"
+                  aria-label="First Name"
+                  aria-invalid={!!fieldErrors.first_name}
+                  onChange={() => clearFieldError("first_name")}
+                />
+                {fieldErrors.first_name && <p className="auth-field-error">{fieldErrors.first_name}</p>}
+              </div>
+
+              <div className="register-field">
+                <input
+                  name="last_name"
+                  type="text"
+                  placeholder="Last Name:"
+                  aria-label="Last Name"
+                  aria-invalid={!!fieldErrors.last_name}
+                  onChange={() => clearFieldError("last_name")}
+                />
+                {fieldErrors.last_name && <p className="auth-field-error">{fieldErrors.last_name}</p>}
+              </div>
             </div>
 
             <div className="register-two-col">
-              <input name="student_number" type="text" placeholder="Student Number:" aria-label="Student Number" />
+              <div className="register-field">
+                <input
+                  name="student_number"
+                  type="text"
+                  placeholder="Student Number:"
+                  aria-label="Student Number"
+                  aria-invalid={!!fieldErrors.student_number}
+                  onChange={() => clearFieldError("student_number")}
+                />
+                {fieldErrors.student_number && <p className="auth-field-error">{fieldErrors.student_number}</p>}
+              </div>
 
-              <input
-                name="rfid_number"
-                type="text"
-                placeholder="RFID Tag No.:"
-                aria-label="RFID Number"
-                autoFocus
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    handleReview();
-                  }
-                }}
-              />
+              <div className="register-field">
+                <input
+                  name="rfid_number"
+                  type="text"
+                  placeholder="RFID Tag No.:"
+                  aria-label="RFID Number"
+                  aria-invalid={!!fieldErrors.rfid_number}
+                  autoFocus
+                  onChange={() => clearFieldError("rfid_number")}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      handleReview();
+                    }
+                  }}
+                />
+                {fieldErrors.rfid_number && <p className="auth-field-error">{fieldErrors.rfid_number}</p>}
+              </div>
             </div>
 
             <div className="register-two-col">
-              <input
-                name="organization_part"
-                type="text"
-                placeholder="Organization:"
-                aria-label="Organization or Part of Organization"
-              />
+              <div className="register-field">
+                <input
+                  name="organization_part"
+                  type="text"
+                  placeholder="Organization:"
+                  aria-label="Organization or Part of Organization"
+                  aria-invalid={!!fieldErrors.organization_part}
+                  onChange={() => clearFieldError("organization_part")}
+                />
+                {fieldErrors.organization_part && <p className="auth-field-error">{fieldErrors.organization_part}</p>}
+              </div>
 
-              <select name="organization_role" aria-label="Organization Role" defaultValue="">
-                <option value="" disabled>
-                  Position:
-                </option>
-                <option value="Organization Member">Organization Member</option>
-                <option value="Officer">Organization Officer</option>
-              </select>
+              <div className="register-field">
+                <select
+                  name="organization_role"
+                  aria-label="Organization Role"
+                  defaultValue=""
+                  aria-invalid={!!fieldErrors.organization_role}
+                  onChange={() => clearFieldError("organization_role")}
+                >
+                  <option value="" disabled>
+                    Position:
+                  </option>
+                  <option value="Organization Member">Organization Member</option>
+                  <option value="Officer">Organization Officer</option>
+                </select>
+                {fieldErrors.organization_role && <p className="auth-field-error">{fieldErrors.organization_role}</p>}
+              </div>
             </div>
 
             <div className="register-two-col">
-              <select name="course" aria-label="Course" defaultValue="">
-                <option value="" disabled>
-                  Course:
-                </option>
-                <option value="BSN">BSN – Bachelor of Science in Nursing</option>
-                <option value="BSRT">BSRT – Bachelor of Science in Radiologic Technology</option>
-                <option value="BSPT">BSPT – Bachelor of Science in Physical Therapy</option>
-                <option value="BS Bio">BS Bio – Bachelor of Science in Biology</option>
-                <option value="BS Pharm">BS Pharm – Bachelor of Science in Pharmacy</option>
-                <option value="BS MLS">BS MLS – Bachelor of Science in Medical Laboratory Science</option>
-                <option value="BSA">BSA – Bachelor of Science in Accountancy</option>
-                <option value="BSAT">BSAT – Bachelor of Science in Accounting Technology</option>
-                <option value="BS Psych">BS Psych – Bachelor of Science in Psychology</option>
-                <option value="BEEd">BEEd – Bachelor of Elementary Education</option>
-                <option value="BSEd">BSEd – Bachelor of Secondary Education</option>
-                <option value="BSBA-FM">BSBA-FM – Bachelor of Science in Business Administration (Financial Management)</option>
-                <option value="BSBA-MM">BSBA-MM – Bachelor of Science in Business Administration (Marketing Management)</option>
-                <option value="BSBA-HRDM">BSBA-HRDM – Bachelor of Science in Business Administration (Human Resource Development Management)</option>
-                <option value="BSBA-OM">BSBA-OM – Bachelor of Science in Business Administration (Operations Management)</option>
-                <option value="BSTM">BSTM – Bachelor of Science in Tourism Management</option>
-                <option value="BSHM (CAKO)">BSHM (CAKO) – Bachelor of Science in Hospitality Management (Culinary Arts & Kitchen Operations)</option>
-                <option value="BSHM (CO)">BSHM (CO) – Bachelor of Science in Hospitality Management (Cruiseline Operations)</option>
-                <option value="BA Comm">BA Comm – Bachelor of Arts in Communication</option>
-                <option value="BMA">BMA – Bachelor of Multimedia Arts</option>
-                <option value="BSIT">BSIT – Bachelor of Science in Information Technology</option>
-              </select>
+              <div className="register-field">
+                <select
+                  name="course"
+                  aria-label="Course"
+                  defaultValue=""
+                  aria-invalid={!!fieldErrors.course}
+                  onChange={() => clearFieldError("course")}
+                >
+                  <option value="" disabled>
+                    Course:
+                  </option>
+                  <option value="BSN">BSN – Bachelor of Science in Nursing</option>
+                  <option value="BSRT">BSRT – Bachelor of Science in Radiologic Technology</option>
+                  <option value="BSPT">BSPT – Bachelor of Science in Physical Therapy</option>
+                  <option value="BS Bio">BS Bio – Bachelor of Science in Biology</option>
+                  <option value="BS Pharm">BS Pharm – Bachelor of Science in Pharmacy</option>
+                  <option value="BS MLS">BS MLS – Bachelor of Science in Medical Laboratory Science</option>
+                  <option value="BSA">BSA – Bachelor of Science in Accountancy</option>
+                  <option value="BSAT">BSAT – Bachelor of Science in Accounting Technology</option>
+                  <option value="BS Psych">BS Psych – Bachelor of Science in Psychology</option>
+                  <option value="BEEd">BEEd – Bachelor of Elementary Education</option>
+                  <option value="BSEd">BSEd – Bachelor of Secondary Education</option>
+                  <option value="BSBA-FM">BSBA-FM – Bachelor of Science in Business Administration (Financial Management)</option>
+                  <option value="BSBA-MM">BSBA-MM – Bachelor of Science in Business Administration (Marketing Management)</option>
+                  <option value="BSBA-HRDM">BSBA-HRDM – Bachelor of Science in Business Administration (Human Resource Development Management)</option>
+                  <option value="BSBA-OM">BSBA-OM – Bachelor of Science in Business Administration (Operations Management)</option>
+                  <option value="BSTM">BSTM – Bachelor of Science in Tourism Management</option>
+                  <option value="BSHM (CAKO)">BSHM (CAKO) – Bachelor of Science in Hospitality Management (Culinary Arts & Kitchen Operations)</option>
+                  <option value="BSHM (CO)">BSHM (CO) – Bachelor of Science in Hospitality Management (Cruiseline Operations)</option>
+                  <option value="BA Comm">BA Comm – Bachelor of Arts in Communication</option>
+                  <option value="BMA">BMA – Bachelor of Multimedia Arts</option>
+                  <option value="BSIT">BSIT – Bachelor of Science in Information Technology</option>
+                </select>
+                {fieldErrors.course && <p className="auth-field-error">{fieldErrors.course}</p>}
+              </div>
 
-              <select name="school" aria-label="School" defaultValue="">
-                <option value="" disabled>
-                  School:
-                </option>
-                <option value="SNAHS">SNAHS – School of Nursing and Allied Health Studies</option>
-                <option value="SMLS">SMLS – School of Medical Laboratory Sciences</option>
-                <option value="SASE">SASE – School of Accountancy, Science, and Education</option>
-                <option value="SIHTM">SIHTM – School of International Hospitality, Tourism, and Management</option>
-                <option value="SCMCS">SCMCS – School of Communication, Multimedia, and Computer Studies</option>
-              </select>
+              <div className="register-field">
+                <select
+                  name="school"
+                  aria-label="School"
+                  defaultValue=""
+                  aria-invalid={!!fieldErrors.school}
+                  onChange={() => clearFieldError("school")}
+                >
+                  <option value="" disabled>
+                    School:
+                  </option>
+                  <option value="SNAHS">SNAHS – School of Nursing and Allied Health Studies</option>
+                  <option value="SMLS">SMLS – School of Medical Laboratory Sciences</option>
+                  <option value="SASE">SASE – School of Accountancy, Science, and Education</option>
+                  <option value="SIHTM">SIHTM – School of International Hospitality, Tourism, and Management</option>
+                  <option value="SCMCS">SCMCS – School of Communication, Multimedia, and Computer Studies</option>
+                </select>
+                {fieldErrors.school && <p className="auth-field-error">{fieldErrors.school}</p>}
+              </div>
             </div>
 
-            <input
-              name="student_email"
-              type="email"
-              placeholder="Student Email:"
-              aria-label="Student Email"
-              value={studentEmail}
-              onChange={(event) => {
-                setStudentEmail(event.target.value);
-                setValidationError("");
-              }}
-            />
-
-            <label className="register-password-wrap">
-              <span className="register-sr-only">Password</span>
+            <div className="register-field">
               <input
-                name="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Password:"
-                aria-label="Password"
-                autoComplete="new-password"
-                value={password}
+                name="student_email"
+                type="email"
+                placeholder="Student Email:"
+                aria-label="Student Email"
+                aria-invalid={!!fieldErrors.student_email}
+                value={studentEmail}
                 onChange={(event) => {
-                  setPassword(event.target.value);
-                  setValidationError("");
+                  setStudentEmail(event.target.value);
+                  clearFieldError("student_email");
                 }}
               />
-              <button
-                className="register-eye-toggle"
-                type="button"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                onClick={() => setShowPassword((current) => !current)}
-              >
-                {showPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
-              </button>
-            </label>
+              {fieldErrors.student_email && <p className="auth-field-error">{fieldErrors.student_email}</p>}
+            </div>
 
-            <label className="register-password-wrap">
-              <span className="register-sr-only">Re-enter password</span>
-              <input
-                name="confirm_password"
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Re-enter password:"
-                aria-label="Re-enter password"
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(event) => {
-                  setConfirmPassword(event.target.value);
-                  setValidationError("");
-                }}
-              />
-              <button
-                className="register-eye-toggle"
-                type="button"
-                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                onClick={() => setShowConfirmPassword((current) => !current)}
-              >
-                {showConfirmPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
-              </button>
-            </label>
+            <div className="register-field">
+              <label className="register-password-wrap">
+                <span className="register-sr-only">Password</span>
+                <input
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password:"
+                  aria-label="Password"
+                  autoComplete="new-password"
+                  aria-invalid={!!fieldErrors.password}
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    clearFieldError("password");
+                  }}
+                />
+                <button
+                  className="register-eye-toggle"
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword((current) => !current)}
+                >
+                  {showPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
+                </button>
+              </label>
+              {fieldErrors.password && <p className="auth-field-error">{fieldErrors.password}</p>}
+            </div>
+
+            <div className="register-field">
+              <label className="register-password-wrap">
+                <span className="register-sr-only">Re-enter password</span>
+                <input
+                  name="confirm_password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Re-enter password:"
+                  aria-label="Re-enter password"
+                  autoComplete="new-password"
+                  aria-invalid={!!fieldErrors.confirm_password}
+                  value={confirmPassword}
+                  onChange={(event) => {
+                    setConfirmPassword(event.target.value);
+                    clearFieldError("confirm_password");
+                  }}
+                />
+                <button
+                  className="register-eye-toggle"
+                  type="button"
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowConfirmPassword((current) => !current)}
+                >
+                  {showConfirmPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
+                </button>
+              </label>
+              {fieldErrors.confirm_password && <p className="auth-field-error">{fieldErrors.confirm_password}</p>}
+            </div>
 
             <ul className="password-requirements" aria-label="Password requirements">
               {passwordChecks.map((check) => (

@@ -11,13 +11,44 @@ export function LoginForm() {
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<"student" | "faculty">("student");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const clearFieldError = (fieldName: string) => {
+    setFieldErrors((current) => {
+      const updated = { ...current };
+      delete updated[fieldName];
+      return updated;
+    });
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email");
+    const password = formData.get("password");
 
-    signInAttendanceUser(typeof email === "string" ? email : "");
+    const errors: Record<string, string> = {};
+    const emailValue = typeof email === "string" ? email.trim() : "";
+    const passwordValue = typeof password === "string" ? password.trim() : "";
+
+    if (!emailValue) {
+      errors.email = "Email is required.";
+    } else if (!emailValue.toLowerCase().endsWith("@sdca.edu.ph")) {
+      errors.email = "Please provide a valid SDCA email (@sdca.edu.ph).";
+    }
+
+    if (!passwordValue) {
+      errors.password = "Password is required.";
+    }
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
+    signInAttendanceUser(emailValue);
     router.push("/dashboard");
   };
 
@@ -37,8 +68,7 @@ export function LoginForm() {
           </div>
           <div className="brand__headline">TAP. ATTEND. GET CERTIFIED.</div>
           <div className="brand__sub">
-            An AI-assisted RFID system designed to simplify event tracking and automate certificate
-            issuance.
+            An AI-assisted RFID system designed to simplify event tracking and automate certificate issuance.
           </div>
         </aside>
 
@@ -69,10 +99,7 @@ export function LoginForm() {
             OR
           </div>
 
-          <form
-            onSubmit={handleSubmit}
-            autoComplete="on"
-          >
+          <form onSubmit={handleSubmit} autoComplete="on">
             <label className="field field--password">
               <span className="sr-only">Email</span>
               <span className="icon-left" aria-hidden>
@@ -92,14 +119,18 @@ export function LoginForm() {
                   />
                 </svg>
               </span>
+
               <input
                 className="input"
                 name="email"
                 type="email"
                 placeholder="Email"
-                required
+                aria-invalid={!!fieldErrors.email}
+                onChange={() => clearFieldError("email")}
               />
             </label>
+
+            {fieldErrors.email && <p className="auth-field-error">{fieldErrors.email}</p>}
 
             <label className="field">
               <span className="sr-only">Password</span>
@@ -127,7 +158,8 @@ export function LoginForm() {
                 type={showPw ? "text" : "password"}
                 placeholder="Password"
                 autoComplete="current-password"
-                required
+                aria-invalid={!!fieldErrors.password}
+                onChange={() => clearFieldError("password")}
               />
 
               <button
@@ -139,6 +171,8 @@ export function LoginForm() {
                 {showPw ? <EyeOpenIcon /> : <EyeClosedIcon />}
               </button>
             </label>
+
+            {fieldErrors.password && <p className="auth-field-error">{fieldErrors.password}</p>}
 
             <div className="actions">
               <Link className="link" href="/forgot-password" aria-label="Forgot password">
@@ -166,21 +200,12 @@ export function LoginForm() {
               onClick={() => setRole("student")}
             >
               <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path
-                  d="M12 3 2.5 8l9.5 5 9.5-5L12 3Z"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M5.5 10.5V16c0 1.4 3 3.5 6.5 3.5s6.5-2.1 6.5-3.5v-5.5"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
+                <path d="M12 3 2.5 8l9.5 5 9.5-5L12 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                <path d="M5.5 10.5V16c0 1.4 3 3.5 6.5 3.5s6.5-2.1 6.5-3.5v-5.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
               Student
             </button>
+
             <button
               className="btn role__btn"
               type="button"
@@ -189,23 +214,9 @@ export function LoginForm() {
             >
               <svg viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" stroke="currentColor" strokeWidth="1.8" />
-                <path
-                  d="M16.6 10.2a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2Z"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                />
-                <path
-                  d="M4 20v-1.2c0-2.1 3-4 5-4s5 1.9 5 4V20"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-                <path
-                  d="M14.4 20v-1c0-1.7 2.1-3.2 3.6-3.2S22 17.3 22 19v1"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
+                <path d="M16.6 10.2a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2Z" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M4 20v-1.2c0-2.1 3-4 5-4s5 1.9 5 4V20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M14.4 20v-1c0-1.7 2.1-3.2 3.6-3.2S22 17.3 22 19v1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
               Faculty
             </button>

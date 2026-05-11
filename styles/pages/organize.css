@@ -523,6 +523,20 @@
         margin-top: 26px;
       }
 
+      .auth-field-error {
+        margin: 4px 0 0;
+        color: #e3342f;
+        font-size: 0.82rem;
+        font-weight: 800;
+        line-height: 1.3;
+      }
+
+      .input-text[aria-invalid="true"],
+      .input-inline[aria-invalid="true"],
+      .time-row input[aria-invalid="true"] {
+        border-color: #e3342f;
+      }
+
       /* Only collapse the main form to one column on narrow phones - keeps
          School | Department and paired times side-by-side on tablets/laptops. */
       @media (max-width: 640px) {
