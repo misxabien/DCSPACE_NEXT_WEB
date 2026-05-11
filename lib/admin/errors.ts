@@ -13,10 +13,7 @@ const ERROR_MAP: Record<string, number> = {
 };
 
 /**
- * Maps a thrown error to a standardised JSON error response.
- *
- * Use this instead of per-route `toErrorResponse` helpers so every admin
- * API route returns the same `{ error, code }` shape.
+ * Maps a thrown error to a standard JSON error response.
  */
 export function toErrorResponse(error: unknown): NextResponse {
   if (!(error instanceof Error)) {
@@ -27,8 +24,7 @@ export function toErrorResponse(error: unknown): NextResponse {
   }
 
   const appError = error as AppError;
-  const status =
-    appError.status ?? ERROR_MAP[appError.name] ?? 500;
+  const status = appError.status ?? ERROR_MAP[appError.name] ?? 500;
 
   return NextResponse.json(
     { error: appError.message || 'Internal Server Error', code: status },
