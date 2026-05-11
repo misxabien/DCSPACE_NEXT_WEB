@@ -40,9 +40,12 @@ export function OrganizeForm() {
   const courseRef = useRef<HTMLSelectElement>(null);
   const orgRef = useRef<HTMLInputElement>(null);
   const combinedRef = useRef<HTMLInputElement>(null);
+
   const [canCreate, setCanCreate] = useState<boolean | null>(null);
   const [showReview, setShowReview] = useState(false);
   const [reviewDetails, setReviewDetails] = useState<ReviewDetails>(emptyReviewDetails);
+  const [validationError, setValidationError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setCanCreate(canOrganizeEvents());
@@ -53,19 +56,24 @@ export function OrganizeForm() {
       const course = courseRef.current;
       const org = orgRef.current;
       const combined = combinedRef.current;
+
       if (!course || !org || !combined) return;
+
       const c = (course.value || "").trim();
       const o = (org.value || "").trim().replace(/^[\s—-]+|[\s—-]+$/g, "");
+
       combined.value = c && o ? `${c}-${o}` : c || o || "";
     }
 
     const course = courseRef.current;
     const org = orgRef.current;
+
     if (!course || !org) return;
 
     course.addEventListener("change", syncCombined);
     org.addEventListener("input", syncCombined);
     syncCombined();
+
     return () => {
       course.removeEventListener("change", syncCombined);
       org.removeEventListener("input", syncCombined);
@@ -81,6 +89,7 @@ export function OrganizeForm() {
     if (combinedRef.current && courseRef.current && orgRef.current) {
       const course = (courseRef.current.value || "").trim();
       const org = (orgRef.current.value || "").trim().replace(/^[\s—-]+|[\s—-]+$/g, "");
+
       combinedRef.current.value = course && org ? `${course}-${org}` : course || org || "";
     }
   };
@@ -109,7 +118,61 @@ export function OrganizeForm() {
     };
   };
 
+  const requiredFields = [
+    { name: "event_name", label: "Event name" },
+    { name: "event_date", label: "Event date" },
+    { name: "venue", label: "Venue" },
+    { name: "course_code", label: "Course" },
+    { name: "organizer_name", label: "Requesting organizer" },
+    { name: "school", label: "School" },
+    { name: "department", label: "Department" },
+    { name: "start_time", label: "Start time" },
+    { name: "end_time", label: "End time" },
+    { name: "event_type", label: "Type of event" },
+    { name: "duration", label: "Total time duration" },
+    { name: "min_attendance", label: "Minimum attendance time" },
+  ];
+
+  const validateRequiredFields = () => {
+    syncCourseOrganizer();
+
+    if (!formRef.current) return false;
+
+    const formData = new FormData(formRef.current);
+    const errors: Record<string, string> = {};
+
+    requiredFields.forEach((field) => {
+      const value = formData.get(field.name);
+
+      if (typeof value !== "string" || !value.trim()) {
+        errors[field.name] = `${field.label} is required.`;
+      }
+    });
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      setValidationError("Please fill in all required fields before continuing.");
+      return false;
+    }
+
+    setValidationError("");
+    return true;
+  };
+
+  const clearFieldError = (fieldName: string) => {
+  setFieldErrors((current) => {
+    const updated = { ...current };
+    delete updated[fieldName];
+    return updated;
+  });
+
+  setValidationError("");
+};
+
   const handleReview = () => {
+    if (!validateRequiredFields()) return;
+
     setReviewDetails(getReviewDetails());
     setShowReview(true);
   };
@@ -118,6 +181,11 @@ export function OrganizeForm() {
     event.preventDefault();
 
     if (!canCreate) {
+      return;
+    }
+
+    if (!validateRequiredFields()) {
+      setShowReview(false);
       return;
     }
 
@@ -141,6 +209,7 @@ export function OrganizeForm() {
       <label className="form-section-label" htmlFor="event-name">
         Event Name
       </label>
+
       <div className="form-panel">
         <div className="field-event-name">
           <input
@@ -150,8 +219,10 @@ export function OrganizeForm() {
             type="text"
             placeholder="Enter event name"
             autoComplete="off"
-            required
+            aria-invalid={!!fieldErrors.event_name}
+            onChange={() => clearFieldError("event_name")}
           />
+          {fieldErrors.event_name && <p className="auth-field-error">{fieldErrors.event_name}</p>}
         </div>
 
         <div className="form-flow">
@@ -163,21 +234,24 @@ export function OrganizeForm() {
               </svg>
               Date:
             </span>
-            <input className="input-inline" type="date" name="event_date" />
+            <input className="input-inline" type="date" name="event_date" 
+            aria-invalid={!!fieldErrors.event_date} 
+            onChange={() => clearFieldError("event_date")} />
+            {fieldErrors.event_date && <p className="auth-field-error">{fieldErrors.event_date}</p>}
           </div>
 
           <div className="form-row">
             <span className="form-row__label">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path
-                  d="M12 21s7-4.35 7-10a7 7 0 10-14 0c0 5.65 7 10 7 10Z"
-                  strokeLinejoin="round"
-                />
+                <path d="M12 21s7-4.35 7-10a7 7 0 10-14 0c0 5.65 7 10 7 10Z" strokeLinejoin="round" />
                 <circle cx="12" cy="11" r="2.5" />
               </svg>
               Venue:
             </span>
-            <input className="input-inline" type="text" name="venue" placeholder="Location" />
+            <input className="input-inline" type="text" name="venue" placeholder="Location" 
+            aria-invalid={!!fieldErrors.venue} 
+            onChange={() => clearFieldError("venue")} />
+            {fieldErrors.venue && <p className="auth-field-error">{fieldErrors.venue}</p>}
           </div>
 
           <div className="form-row form-row--span2">
@@ -192,6 +266,7 @@ export function OrganizeForm() {
               </svg>
               Course &amp; Requesting Organizer:
             </span>
+
             <div className="course-org-inputs">
               <select
                 ref={courseRef}
@@ -200,6 +275,8 @@ export function OrganizeForm() {
                 name="course_code"
                 aria-label="Course program"
                 defaultValue=""
+                aria-invalid={!!fieldErrors.course_code}
+                onChange={() => clearFieldError("course_code")}
               >
                 <option value="">Select course</option>
                 <option value="BSIT">BSIT — BS Information Technology</option>
@@ -218,9 +295,11 @@ export function OrganizeForm() {
                 <option value="BSED">BSED — Bachelor of Secondary Education</option>
                 <option value="BEED">BEED — Bachelor of Elementary Education</option>
               </select>
+
               <span className="course-org-sep" aria-hidden>
                 —
               </span>
+
               <input
                 ref={orgRef}
                 className="input-inline"
@@ -230,11 +309,18 @@ export function OrganizeForm() {
                 placeholder="Org name e.g. DOMINIXODE"
                 autoComplete="organization"
                 aria-label="Requesting organizer or organization name"
+                aria-invalid={!!fieldErrors.organizer_name}
+                onChange={() => clearFieldError("organizer_name")}
               />
             </div>
+
+            {fieldErrors.course_code && <p className="auth-field-error">{fieldErrors.course_code}</p>}
+            {fieldErrors.organizer_name && <p className="auth-field-error">{fieldErrors.organizer_name}</p>}
+
             <span className="muted-hint">
               Displays together as <strong>BSIT-DOMINIXODE</strong> (course code + organizer).
             </span>
+
             <input ref={combinedRef} type="hidden" id="course-organizer-combined" name="course_organizer_combined" defaultValue="" />
           </div>
 
@@ -246,11 +332,14 @@ export function OrganizeForm() {
               </svg>
               School:
             </span>
-            <select className="input-inline" name="school" defaultValue="">
+            <select className="input-inline" name="school" defaultValue="" 
+            aria-invalid={!!fieldErrors.school} 
+            onChange={() => clearFieldError("school")}>
               <option value="">Select school</option>
               <option value="main">Main campus</option>
               <option value="annex">Annex</option>
             </select>
+            {fieldErrors.school && <p className="auth-field-error">{fieldErrors.school}</p>}
           </div>
 
           <div className="form-row">
@@ -260,7 +349,7 @@ export function OrganizeForm() {
               </svg>
               Department:
             </span>
-            <select className="input-inline" name="department" aria-label="Department" defaultValue="">
+            <select className="input-inline" name="department" aria-label="Department" defaultValue="" aria-invalid={!!fieldErrors.department} onChange={() => clearFieldError("department")}>
               <option value="">Select department</option>
               <option value="SASE">SASE</option>
               <option value="SCMCS">SCMCS</option>
@@ -268,6 +357,7 @@ export function OrganizeForm() {
               <option value="SMLS">SMLS</option>
               <option value="SNAHS">SNAHS</option>
             </select>
+            {fieldErrors.department && <p className="auth-field-error">{fieldErrors.department}</p>}
           </div>
 
           <div className="form-row form-row--span2">
@@ -281,9 +371,11 @@ export function OrganizeForm() {
                   Start Time:
                 </span>
                 <div className="time-row">
-                  <input type="time" name="start_time" />
+                  <input type="time" name="start_time" aria-invalid={!!fieldErrors.start_time} onChange={() => clearFieldError("start_time")} />
+                  {fieldErrors.start_time && <p className="auth-field-error">{fieldErrors.start_time}</p>}
                 </div>
               </div>
+
               <div className="form-row">
                 <span className="form-row__label">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -293,7 +385,8 @@ export function OrganizeForm() {
                   End Time:
                 </span>
                 <div className="time-row">
-                  <input type="time" name="end_time" />
+                  <input type="time" name="end_time" aria-invalid={!!fieldErrors.end_time} onChange={() => clearFieldError("end_time")} />
+                  {fieldErrors.end_time && <p className="auth-field-error">{fieldErrors.end_time}</p>}
                 </div>
               </div>
             </div>
@@ -308,7 +401,8 @@ export function OrganizeForm() {
               </svg>
               Type of Event:
             </span>
-            <input className="input-inline" type="text" name="event_type" placeholder="Workshop, seminar..." />
+            <input className="input-inline" type="text" name="event_type" placeholder="Workshop, seminar..." aria-invalid={!!fieldErrors.event_type} onChange={() => clearFieldError("event_type")} />
+            {fieldErrors.event_type && <p className="auth-field-error">{fieldErrors.event_type}</p>}
           </div>
 
           <div className="form-row form-row--span2">
@@ -319,7 +413,8 @@ export function OrganizeForm() {
               </svg>
               Total Time Duration:
             </span>
-            <input className="input-inline" type="text" name="duration" placeholder="e.g. 3 hours" />
+            <input className="input-inline" type="text" name="duration" placeholder="e.g. 3 hours" aria-invalid={!!fieldErrors.duration} onChange={() => clearFieldError("duration")} />
+            {fieldErrors.duration && <p className="auth-field-error">{fieldErrors.duration}</p>}
           </div>
 
           <div className="form-row form-row--span2">
@@ -335,7 +430,10 @@ export function OrganizeForm() {
               type="text"
               name="min_attendance"
               defaultValue="None / 0 Hours / TBA"
+              aria-invalid={!!fieldErrors.min_attendance}
+              onChange={() => clearFieldError("min_attendance")}
             />
+            {fieldErrors.min_attendance && <p className="auth-field-error">{fieldErrors.min_attendance}</p>}
             <span className="muted-hint">Edit as needed (None, 0 Hours, or TBA).</span>
           </div>
         </div>
@@ -348,20 +446,25 @@ export function OrganizeForm() {
             <span className="upload-tile__text">Add Poster/Pubmat</span>
             <input type="file" name="poster" accept="image/*,.pdf" />
           </label>
+
           <label className="upload-tile">
             <svg className="upload-tile__plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
               <path strokeLinecap="round" d="M12 5v14M5 12h14" />
             </svg>
             <span className="upload-tile__text">Add Registration Form</span>
-            <input type="file" name="registration" accept=".pdf,.doc,.docx" />
+            <input type="file" name="registration" accept=".pdf,.doc,.docx" aria-invalid={!!fieldErrors.registration}
+              onChange={() => clearFieldError("registration")}/>
           </label>
+
           <label className="upload-tile">
             <svg className="upload-tile__plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
               <path strokeLinecap="round" d="M12 5v14M5 12h14" />
             </svg>
             <span className="upload-tile__text">Add Survey Form</span>
-            <input type="file" name="survey" accept=".pdf,.doc,.docx" />
+            <input type="file" name="survey" accept=".pdf,.doc,.docx" aria-invalid={!!fieldErrors.survey}
+              onChange={() => clearFieldError("survey")}/>
           </label>
+
           <label className="upload-tile">
             <svg className="upload-tile__plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
               <path strokeLinecap="round" d="M12 5v14M5 12h14" />
@@ -371,21 +474,18 @@ export function OrganizeForm() {
           </label>
         </div>
 
+        {validationError && <p className="auth-field-error">{validationError}</p>}
+
         <div className="form-actions">
           <button type="button" className="btn-review" onClick={handleReview}>
             Review
           </button>
+
           <button type="submit" className="btn-submit">
             Submit
             <svg viewBox="0 0 24 24" fill="none" aria-hidden>
               <circle cx="12" cy="12" r="9" stroke="#fff" strokeWidth="2" />
-              <path
-                d="M8 12l2.5 3L16 10"
-                stroke="#fff"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M8 12l2.5 3L16 10" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
@@ -395,6 +495,7 @@ export function OrganizeForm() {
             <section className="review-modal" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
               <div className="review-modal__header">
                 <h2 id="review-modal-title">Review Event Details</h2>
+
                 <button className="review-modal__close" type="button" aria-label="Close review" onClick={() => setShowReview(false)}>
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden>
                     <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
@@ -407,40 +508,49 @@ export function OrganizeForm() {
                   <dt>Event Name</dt>
                   <dd>{reviewDetails.eventName}</dd>
                 </div>
+
                 <div>
                   <dt>Date</dt>
                   <dd>{reviewDetails.eventDate}</dd>
                 </div>
+
                 <div>
                   <dt>Venue</dt>
                   <dd>{reviewDetails.venue}</dd>
                 </div>
+
                 <div>
                   <dt>Course &amp; Organizer</dt>
                   <dd>{reviewDetails.courseOrganizer}</dd>
                 </div>
+
                 <div>
                   <dt>School</dt>
                   <dd>{reviewDetails.school}</dd>
                 </div>
+
                 <div>
                   <dt>Department</dt>
                   <dd>{reviewDetails.department}</dd>
                 </div>
+
                 <div>
                   <dt>Time</dt>
                   <dd>
                     {reviewDetails.startTime} to {reviewDetails.endTime}
                   </dd>
                 </div>
+
                 <div>
                   <dt>Type of Event</dt>
                   <dd>{reviewDetails.eventType}</dd>
                 </div>
+
                 <div>
                   <dt>Total Duration</dt>
                   <dd>{reviewDetails.duration}</dd>
                 </div>
+
                 <div>
                   <dt>Minimum Attendance</dt>
                   <dd>{reviewDetails.minAttendance}</dd>
@@ -451,17 +561,12 @@ export function OrganizeForm() {
                 <button className="btn-review" type="button" onClick={() => setShowReview(false)}>
                   Edit
                 </button>
+
                 <button className="btn-submit" type="submit">
                   Submit
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden>
                     <circle cx="12" cy="12" r="9" stroke="#fff" strokeWidth="2" />
-                    <path
-                      d="M8 12l2.5 3L16 10"
-                      stroke="#fff"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
+                    <path d="M8 12l2.5 3L16 10" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
               </div>
