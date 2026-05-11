@@ -209,8 +209,12 @@
   color: #e33e33;
   font-family: var(--font-poppins), sans-serif;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.35;
+}
+
+.login-scope .input[aria-invalid="true"] {
+  border-color: #e3342f;
 }
 
 .login-scope .link {
@@ -846,6 +850,26 @@
 .login-scope .forgot-form button:hover {
   transform: translateY(-1px);
   filter: brightness(1.04);
+}
+
+.login-scope .register-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.login-scope .register-field .auth-field-error {
+  margin: 0 2px;
+  color: #e3342f;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.login-scope .register-form input[aria-invalid="true"],
+.login-scope .register-form select[aria-invalid="true"] {
+  border-color: #e3342f;
 }
 
 @keyframes registerCardIn {
