@@ -1,8 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type RegisterReview = {
   firstName: string;
@@ -33,9 +33,9 @@ const emptyReview: RegisterReview = {
 };
 
 export function RegisterAccountContent() {
-  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
 
+  const [creationState, setCreationState] = useState<"form" | "creating" | "created">("form");
   const [showReview, setShowReview] = useState(false);
   const [review, setReview] = useState<RegisterReview>(emptyReview);
   const [showPassword, setShowPassword] = useState(false);
@@ -60,6 +60,18 @@ export function RegisterAccountContent() {
     const value = formData.get(key);
     return typeof value === "string" && value.trim() ? value.trim() : "Not provided";
   };
+
+  useEffect(() => {
+    if (creationState !== "creating") {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setCreationState("created");
+    }, 1400);
+
+    return () => window.clearTimeout(timeout);
+  }, [creationState]);
 
   const handleReview = () => {
     if (!formRef.current) return;
@@ -111,8 +123,45 @@ export function RegisterAccountContent() {
     window.localStorage.setItem("dcspaceOrganizationRole", getValue(formData, "organization_role"));
     window.sessionStorage.removeItem("dcspacePrivacySeen");
 
-    router.push("/login");
+    setShowReview(false);
+    setCreationState("creating");
   };
+
+  if (creationState !== "form") {
+    const isCreated = creationState === "created";
+
+    return (
+      <div className="login-scope">
+        <main className={`register-status-page${isCreated ? " is-created" : ""}`}>
+          <div className="register-status-stage">
+            <Image
+              className="register-status-logo"
+              src="/register-status-logo.png"
+              alt="DC Space"
+              width={198}
+              height={198}
+              priority
+            />
+
+            <section className="register-status-card" aria-live="polite" aria-label="Account creation status">
+              <PersonCircleIcon />
+              <p>{isCreated ? "Account Created!" : "Creating your account..."}</p>
+              {isCreated ? <CheckCircleIcon /> : <span className="register-status-progress" aria-hidden="true" />}
+            </section>
+          </div>
+
+          {isCreated && (
+            <Link href="/login" className="register-status-back">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M15 5L9.66939 11.2191C9.2842 11.6684 9.2842 12.3316 9.66939 12.7809L15 19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              Back to Login
+            </Link>
+          )}
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="login-scope">
@@ -384,6 +433,23 @@ function EyeOpenIcon() {
     <svg viewBox="0 0 24 24" fill="none" aria-hidden>
       <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function PersonCircleIcon() {
+  return (
+    <svg className="register-status-person" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
+      <path fillRule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1" />
+    </svg>
+  );
+}
+
+function CheckCircleIcon() {
+  return (
+    <svg className="register-status-check" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
     </svg>
   );
 }

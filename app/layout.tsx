@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Lato, Montserrat, Poppins } from "next/font/google";
+import { AppLoadingProvider } from "@/components/AppLoadingProvider";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -63,7 +64,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${dmSans.variable} ${lato.variable} ${montserrat.variable} ${poppins.variable} ${lato.className}`}>
-        {children}
+        <AppLoadingProvider>{children}</AppLoadingProvider>
       </body>
     </html>
   );

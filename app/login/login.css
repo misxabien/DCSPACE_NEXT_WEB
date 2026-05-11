@@ -388,6 +388,109 @@
   overflow-y: auto;
 }
 
+.login-scope .register-status-page {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, 5vw, 42px) 20px;
+  background:
+    radial-gradient(720px 360px at 50% 100%, rgba(255, 255, 255, 0.42), transparent 68%),
+    linear-gradient(180deg, #dbeaff 0%, #3f82f5 47%, #bcd8ff 100%);
+  overflow: hidden;
+}
+
+.login-scope .register-status-stage {
+  width: min(100%, 320px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  transform: translateY(-10px);
+}
+
+.login-scope .register-status-logo {
+  width: clamp(108px, 22vw, 152px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 11px 18px rgba(43, 63, 108, 0.18));
+}
+
+.login-scope .register-status-card {
+  width: min(100%, 276px);
+  min-height: 204px;
+  border-radius: 8px;
+  background: #fffef4;
+  box-shadow: 0 10px 0 rgba(43, 63, 108, 0.18), 0 24px 42px rgba(43, 63, 108, 0.16);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 30px 24px;
+  color: #448aff;
+  animation: registerStatusCardIn 0.32s cubic-bezier(0.2, 0.85, 0.22, 1) both;
+}
+
+.login-scope .register-status-person {
+  width: 66px;
+  height: 66px;
+  color: #448aff;
+}
+
+.login-scope .register-status-card p {
+  margin: 0;
+  color: #2f7dff;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.login-scope .register-status-progress {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: conic-gradient(#448aff 0deg, #448aff 72deg, rgba(68, 138, 255, 0.18) 72deg);
+  animation: registerStatusProgress 0.9s linear infinite;
+}
+
+.login-scope .register-status-check {
+  width: 34px;
+  height: 34px;
+  color: #3acb68;
+  animation: registerStatusCheckIn 0.36s cubic-bezier(0.2, 0.9, 0.2, 1.25) both;
+}
+
+.login-scope .register-status-back {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(24px, 7vw, 42px);
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #2b3f6c;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(16px, 3vw, 20px);
+  font-weight: 300;
+  text-decoration: none;
+  animation: registerStatusBackIn 0.32s ease 0.08s both;
+}
+
+.login-scope .register-status-back svg {
+  width: 48px;
+  height: 48px;
+}
+
+.login-scope .register-status-back:hover {
+  color: #1b2f5a;
+}
+
 .login-scope .register-card {
   width: min(100%, 930px);
   min-height: auto;
@@ -869,6 +972,61 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes registerStatusCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes registerStatusProgress {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes registerStatusCheckIn {
+  from {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes registerStatusBackIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (max-height: 560px) {
+  .login-scope .register-status-stage {
+    gap: 14px;
+    transform: translateY(0);
+  }
+
+  .login-scope .register-status-logo {
+    width: 92px;
+  }
+
+  .login-scope .register-status-card {
+    min-height: 170px;
+    padding: 22px 20px;
   }
 }
 
