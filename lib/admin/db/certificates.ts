@@ -1,8 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ObjectId } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import { promises as fs } from "fs";
 import path from "path";
-import { getAdminCollection } from "./mongo";
+
+const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
+const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
+
+const globalForMongo = globalThis as unknown as {
+  adminCertificatesMongoClient?: MongoClient;
+  adminCertificatesMongoPromise?: Promise<MongoClient>;
+};
 import { generateCertificatePdf } from "@/lib/admin/certificates/generate";
 import type { CertificateData } from "@/lib/admin/certificates/generate";
 
@@ -13,17 +20,40 @@ function createAppError(name: string, message: string, status: number) {
   return error;
 }
 
+async function getMongoClient() {
+  if (globalForMongo.adminCertificatesMongoClient) {
+    return globalForMongo.adminCertificatesMongoClient;
+  }
+
+  if (!globalForMongo.adminCertificatesMongoPromise) {
+    const client = new MongoClient(mongoUri);
+    globalForMongo.adminCertificatesMongoPromise = client.connect();
+  }
+
+  globalForMongo.adminCertificatesMongoClient = await globalForMongo.adminCertificatesMongoPromise;
+  return globalForMongo.adminCertificatesMongoClient;
+}
+
+async function getDatabase() {
+  const client = await getMongoClient();
+  return client.db(mongoDbName);
+}
+
 async function getEventsCollection() {
-  return getAdminCollection<any>("events");
+  const db = await getDatabase();
+  return db.collection<any>("events");
 }
 
 async function getUsersCollection() {
-  return getAdminCollection<any>("users");
+  const db = await getDatabase();
+  return db.collection<any>("users");
 }
 
 async function getAttendanceCollection() {
-  return getAdminCollection<any>("attendance");
+  const db = await getDatabase();
+  return db.collection<any>("attendance");
 }
+
 function toObjectId(id: string, label: string) {
   if (!ObjectId.isValid(id)) {
     throw createAppError("ValidationError", `Invalid ${label} id`, 400);
@@ -217,7 +247,7 @@ export async function getAttendeesByEvent(eventId: string, search?: string | nul
       : { _id: { $in: [] } };
 
   const userRows = await users.find(userQuery).toArray();
-  const usersById = new Map(userRows.map((user: any) => [String(user._id), user]));
+  const usersById = new Map(userRows.map((user) => [String(user._id), user]));
 
   const rows: ReturnType<typeof mapAttendeeRow>[] = [];
 
@@ -232,7 +262,7 @@ export async function getAttendeesByEvent(eventId: string, search?: string | nul
   }
 
   for (const user of userRows) {
-    if (attendanceRows.some((attendanceRow: any) => String(attendanceRow.userId) === String(user._id))) {
+    if (attendanceRows.some((attendanceRow) => String(attendanceRow.userId) === String(user._id))) {
       continue;
     }
 
