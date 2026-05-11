@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getAdminCollection } from './mongo';
+
 /**
  * Returns the merged event and report notification feed for the admin panel.
  */
@@ -57,9 +58,3 @@ export async function getNotifications() {
     total: feed.length,
   };
 }
-
-
-
-
-
-

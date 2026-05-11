@@ -532,6 +532,3 @@ export async function assignToEvent(id: string, input: AssignToEventInput) {
     assignedEvent: mapAssignedEvent(eventRecord),
   };
 }
-
-
-

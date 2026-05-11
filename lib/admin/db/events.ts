@@ -362,5 +362,3 @@ export async function postAdminComment(id: string, comment: string) {
   return mapEventDetail(updatedEvent);
 }
 
-
-
