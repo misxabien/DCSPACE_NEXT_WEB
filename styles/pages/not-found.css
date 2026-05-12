@@ -39,6 +39,37 @@
   font-size: 1.05rem;
   line-height: 1.55;
   color: rgba(42, 33, 24, 0.78);
-  margin: 0 auto;
+  margin: 0 auto 28px;
   max-width: 38ch;
+}
+
+.not-found__actions {
+  display: flex;
+  justify-content: center;
+}
+
+.not-found__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 24px;
+  border-radius: var(--card-radius);
+  font-family: var(--font-ui), "Poppins", system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: 2px solid var(--btn-gold-border);
+  background: linear-gradient(180deg, var(--btn-gold) 0%, #d4b24f 100%);
+  color: var(--btn-brown);
+  box-shadow: 0 2px 0 var(--brown-shadow);
+}
+
+.not-found__btn:hover {
+  filter: brightness(1.04);
+  box-shadow: 0 3px 8px rgba(60, 40, 28, 0.2);
+}
+
+.not-found__btn:focus-visible {
+  outline: 2px solid var(--nav-active);
+  outline-offset: 3px;
 }

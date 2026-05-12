@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import "@/styles/pages/not-found.css";
 
 export const metadata: Metadata = {
@@ -17,6 +18,11 @@ export default function NotFound() {
           We couldn&apos;t find that page
         </h1>
         <p className="not-found__lede">The link may be broken or the page was removed.</p>
+        <div className="not-found__actions">
+          <Link href="/" className="not-found__btn">
+            Back to home
+          </Link>
+        </div>
       </div>
     </section>
   );
