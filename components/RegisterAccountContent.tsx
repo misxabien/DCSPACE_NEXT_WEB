@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useRef, useState } from "react";
 
 type RegisterReview = {
@@ -93,8 +94,10 @@ export function RegisterAccountContent() {
     if (!formRef.current) return;
 
     if (!passwordIsValid) {
-      setValidationError("Please complete all password requirements before signing up.");
+      const message = "Please complete all password requirements before signing up.";
+      setValidationError(message);
       setShowReview(false);
+      toast.error("Could not create account", { description: message });
       return;
     }
 
@@ -111,6 +114,9 @@ export function RegisterAccountContent() {
     window.localStorage.setItem("dcspaceOrganizationRole", getValue(formData, "organization_role"));
     window.sessionStorage.removeItem("dcspacePrivacySeen");
 
+    toast.success("Account created", {
+      description: "Sign in with your student email to continue.",
+    });
     router.push("/login");
   };
 

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
 import { canOrganizeEvents, saveOrganizedEvent } from "@/lib/dc-events";
 
@@ -121,8 +122,12 @@ export function OrganizeForm() {
       return;
     }
 
-    saveOrganizedEvent(getReviewDetails());
+    const details = getReviewDetails();
+    saveOrganizedEvent(details);
     setShowReview(false);
+    toast.success("Event created", {
+      description: details.eventName ? `"${details.eventName}" was saved.` : "Your event was saved.",
+    });
     router.push("/events");
   };
 

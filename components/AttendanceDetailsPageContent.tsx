@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   ATTENDANCE_UPDATED_EVENT,
   REGISTERED_EVENTS_KEY,
@@ -15,6 +16,7 @@ import {
   getRegisteredEventId,
   getRequirementStatus,
   getSelectedAttendanceEventId,
+  isAttendanceComplete,
   readRegisteredEvents,
   readUserAttendanceRecords,
   recordRfidAttendanceTap,
@@ -145,7 +147,16 @@ export function AttendanceDetailsPageContent() {
 
   const handleDownload = () => {
     if (!user) return;
+    if (!isAttendanceComplete(record)) {
+      toast.error("Certificate not ready", {
+        description: "Complete the attendance requirement for this event first.",
+      });
+      return;
+    }
     downloadAttendanceCertificate(event, user, record);
+    toast.success("Certificate ready", {
+      description: "Your download should start shortly.",
+    });
   };
 
   const handleRfidSubmit = (submitEvent: FormEvent<HTMLFormElement>) => {
@@ -162,6 +173,11 @@ export function AttendanceDetailsPageContent() {
     const result = recordRfidAttendanceTap(scannedRfid, registeredEvents);
 
     setScanMessage(result.message);
+    if (result.ok) {
+      toast.success("Attendance updated", { description: result.message });
+    } else {
+      toast.error("Could not record tap", { description: result.message });
+    }
     setRfidInput("");
     refreshDetail();
     focusScanner();

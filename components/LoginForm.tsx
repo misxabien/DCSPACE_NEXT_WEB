@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { signInAttendanceUser } from "@/lib/attendance";
 
 export function LoginForm() {
@@ -18,6 +19,9 @@ export function LoginForm() {
     const email = formData.get("email");
 
     signInAttendanceUser(typeof email === "string" ? email : "");
+    toast.success("Signed in successfully", {
+      description: "Welcome back to DC Space.",
+    });
     router.push("/dashboard");
   };
 

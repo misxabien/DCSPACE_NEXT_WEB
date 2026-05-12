@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SearchWithClear } from "@/components/SearchWithClear";
+import { toast } from "sonner";
 import {
   ATTENDANCE_UPDATED_EVENT,
   REGISTERED_EVENTS_KEY,
@@ -17,6 +18,7 @@ import {
   getCurrentAttendanceUser,
   getEventStatus,
   getRegisteredEventId,
+  isAttendanceComplete,
   readRegisteredEvents,
   readUserAttendanceRecords,
   recordRfidAttendanceTap,
@@ -119,9 +121,11 @@ export function AttendancePageContent() {
 
         const result = recordRfidAttendanceTap(scannedRfid, registeredEventsRef.current);
         setScanMessage(result.message);
-
         if (result.ok) {
+          toast.success("Attendance updated", { description: result.message });
           loadAttendanceEvents();
+        } else {
+          toast.error("Could not record tap", { description: result.message });
         }
 
         return;
@@ -148,7 +152,16 @@ export function AttendancePageContent() {
 
   const handleDownload = (event: AttendanceEvent) => {
     if (!currentUser) return;
+    if (!isAttendanceComplete(event.record)) {
+      toast.error("Certificate not ready", {
+        description: "Complete the attendance requirement for this event first.",
+      });
+      return;
+    }
     downloadAttendanceCertificate(event.registeredEvent, currentUser, event.record);
+    toast.success("Certificate ready", {
+      description: "Your download should start shortly.",
+    });
   };
 
   return (
