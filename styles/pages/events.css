@@ -176,6 +176,10 @@
   border: 1.5px solid #634b05;
   border-radius: 12px;
   background: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M6 8L0 0H12L6 8Z' fill='%23634b05'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  background-size: 12px 8px;
   color: #634b05;
   font-family: inherit;
   font-size: 18px;
