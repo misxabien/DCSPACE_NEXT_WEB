@@ -31,7 +31,7 @@ export function Sidebar() {
     <header className="topbar" aria-label="Primary navigation">
       <Link className="topbar__brand" href="/dashboard" aria-label="DC Space dashboard">
         <span className="topbar__logo" aria-hidden="true">
-          Logo
+          <Image src="/dcspace-logo-circle.png" width={54} height={54} alt="" priority />
         </span>
         <span className="topbar__brand-name">DC Space</span>
       </Link>

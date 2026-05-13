@@ -42,13 +42,13 @@ export const metadata: Metadata = {
   description: "TAP. ATTEND. GET CERTIFIED.",
   icons: {
     icon: {
-      url: "/dcspace-logo.png",
+      url: "/dcspace-logo-circle.png",
       type: "image/png",
       sizes: "32x32",
     },
-    shortcut: "/dcspace-logo.png",
+    shortcut: "/dcspace-logo-circle.png",
     apple: {
-      url: "/dcspace-logo.png",
+      url: "/dcspace-logo-circle.png",
       type: "image/png",
       sizes: "180x180",
     },
