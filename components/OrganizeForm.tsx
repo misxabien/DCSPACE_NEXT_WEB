@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import type { FormEvent } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { canOrganizeEvents, saveOrganizedEvent } from "@/lib/dc-events";
@@ -9,6 +9,8 @@ import { canOrganizeEvents, saveOrganizedEvent } from "@/lib/dc-events";
 type ReviewDetails = {
   eventName: string;
   eventDate: string;
+  eventEndDate: string;
+  requiredFiles: string[];
   venue: string;
   courseOrganizer: string;
   school: string;
@@ -23,6 +25,8 @@ type ReviewDetails = {
 const emptyReviewDetails: ReviewDetails = {
   eventName: "",
   eventDate: "",
+  eventEndDate: "",
+  requiredFiles: [],
   venue: "",
   courseOrganizer: "",
   school: "",
@@ -40,12 +44,25 @@ export function OrganizeForm() {
   const courseRef = useRef<HTMLSelectElement>(null);
   const orgRef = useRef<HTMLInputElement>(null);
   const combinedRef = useRef<HTMLInputElement>(null);
+  const requiredFileToastRef = useRef<number | null>(null);
   const [canCreate, setCanCreate] = useState<boolean | null>(null);
   const [showReview, setShowReview] = useState(false);
   const [reviewDetails, setReviewDetails] = useState<ReviewDetails>(emptyReviewDetails);
+  const [requiredFiles, setRequiredFiles] = useState<string[]>([]);
+  const [requiredFileDraft, setRequiredFileDraft] = useState("");
+  const [showRequiredFileInput, setShowRequiredFileInput] = useState(true);
+  const [showRequiredFileToast, setShowRequiredFileToast] = useState(false);
 
   useEffect(() => {
     setCanCreate(canOrganizeEvents());
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (requiredFileToastRef.current) {
+        window.clearTimeout(requiredFileToastRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -97,6 +114,8 @@ export function OrganizeForm() {
     return {
       eventName: getFormValue(formData, "event_name"),
       eventDate: getFormValue(formData, "event_date"),
+      eventEndDate: getFormValue(formData, "event_end_date"),
+      requiredFiles,
       venue: getFormValue(formData, "venue"),
       courseOrganizer: getFormValue(formData, "course_organizer_combined"),
       school: getFormValue(formData, "school"),
@@ -112,6 +131,46 @@ export function OrganizeForm() {
   const handleReview = () => {
     setReviewDetails(getReviewDetails());
     setShowReview(true);
+  };
+
+  const handleFormKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    const target = event.target;
+
+    if (target instanceof HTMLTextAreaElement) {
+      return;
+    }
+
+    event.preventDefault();
+    handleReview();
+  };
+
+  const showAddedRequiredFileToast = () => {
+    setShowRequiredFileToast(true);
+
+    if (requiredFileToastRef.current) {
+      window.clearTimeout(requiredFileToastRef.current);
+    }
+
+    requiredFileToastRef.current = window.setTimeout(() => {
+      setShowRequiredFileToast(false);
+    }, 1800);
+  };
+
+  const addRequiredFile = () => {
+    const nextFile = requiredFileDraft.trim();
+
+    if (!nextFile) {
+      return;
+    }
+
+    setRequiredFiles((files) => [...files, nextFile]);
+    setRequiredFileDraft("");
+    setShowRequiredFileInput(false);
+    showAddedRequiredFileToast();
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -137,7 +196,13 @@ export function OrganizeForm() {
   }
 
   return (
-    <form ref={formRef} className="organize-form-shell" onSubmit={handleSubmit} aria-label="Create new event">
+    <form
+      ref={formRef}
+      className="organize-form-shell"
+      onSubmit={handleSubmit}
+      onKeyDown={handleFormKeyDown}
+      aria-label="Create new event"
+    >
       <label className="form-section-label" htmlFor="event-name">
         Event Name
       </label>
@@ -163,7 +228,16 @@ export function OrganizeForm() {
               </svg>
               Date:
             </span>
-            <input className="input-inline" type="date" name="event_date" />
+            <div className="date-fields date-fields--range">
+              <label className="date-field">
+                <span>Start date</span>
+                <input className="input-inline" type="date" name="event_date" />
+              </label>
+              <label className="date-field">
+                <span>End date</span>
+                <input className="input-inline" type="date" name="event_end_date" />
+              </label>
+            </div>
           </div>
 
           <div className="form-row">
@@ -371,6 +445,47 @@ export function OrganizeForm() {
           </label>
         </div>
 
+        <section className="required-files" aria-labelledby="required-files-title">
+          <h2 id="required-files-title">
+            <span className="required-files__icon" aria-hidden="true" />
+            Required files:
+          </h2>
+
+          <div className="required-files__list">
+            {requiredFiles.map((fileName, index) => (
+              <div className="required-files__saved" key={`${fileName}-${index}`}>
+                {fileName}
+              </div>
+            ))}
+
+            {showRequiredFileInput && (
+              <div className="required-files__row">
+                <input
+                  className="required-files__input"
+                  type="text"
+                  value={requiredFileDraft}
+                  placeholder="Required file name"
+                  autoComplete="off"
+                  onChange={(event) => setRequiredFileDraft(event.target.value)}
+                />
+                <button className="required-files__add" type="button" onClick={addRequiredFile}>
+                  Add
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button className="required-files__more" type="button" onClick={() => setShowRequiredFileInput(true)}>
+            Click to add another required file
+          </button>
+
+          {showRequiredFileToast && (
+            <div className="required-files__toast" role="status" aria-live="polite">
+              added required file
+            </div>
+          )}
+        </section>
+
         <div className="form-actions">
           <button type="button" className="btn-review" onClick={handleReview}>
             Review
@@ -409,7 +524,11 @@ export function OrganizeForm() {
                 </div>
                 <div>
                   <dt>Date</dt>
-                  <dd>{reviewDetails.eventDate}</dd>
+                  <dd>
+                    {reviewDetails.eventEndDate && reviewDetails.eventEndDate !== "Not provided"
+                      ? `${reviewDetails.eventDate} to ${reviewDetails.eventEndDate}`
+                      : reviewDetails.eventDate}
+                  </dd>
                 </div>
                 <div>
                   <dt>Venue</dt>
@@ -444,6 +563,10 @@ export function OrganizeForm() {
                 <div>
                   <dt>Minimum Attendance</dt>
                   <dd>{reviewDetails.minAttendance}</dd>
+                </div>
+                <div>
+                  <dt>Required Files</dt>
+                  <dd>{reviewDetails.requiredFiles.length > 0 ? reviewDetails.requiredFiles.join(", ") : "None"}</dd>
                 </div>
               </dl>
 

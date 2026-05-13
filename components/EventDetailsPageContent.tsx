@@ -3,14 +3,19 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ChangeEvent } from "react";
-import { startTransition, useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import {
   getRegisteredEventId,
   readRegisteredEvents,
   type RegisteredEvent,
   type UploadedRequirementFile,
 } from "@/lib/attendance";
-import { type FrontendEvent, readSelectedBrowseEvent, registerEventForCurrentUser } from "@/lib/dc-events";
+import {
+  deleteOrganizedEvent,
+  type FrontendEvent,
+  readSelectedBrowseEvent,
+  registerEventForCurrentUser,
+} from "@/lib/dc-events";
 
 const fallbackEventDetails: FrontendEvent = {
   id: "fallback-event",
@@ -26,7 +31,7 @@ const fallbackEventDetails: FrontendEvent = {
   requirements: ["Parent's Consent Form"],
 };
 
-type EventDetailsSource = "events" | "dashboard";
+type EventDetailsSource = "events" | "dashboard" | "organized";
 
 type EventDetailsPageContentProps = {
   source?: EventDetailsSource;
@@ -102,21 +107,22 @@ function toEventDetails(event: RegisteredEvent, fallback: FrontendEvent): Fronte
     venue: event.venue || fallback.venue,
     organizer: event.organizer || fallback.organizer,
     overview: fallback.overview,
-    requirements: fallback.requirements,
+    requirements: event.requirements || fallback.requirements,
   };
 }
 
 export function EventDetailsPageContent({ source = "events", eventDate }: EventDetailsPageContentProps) {
   const router = useRouter();
   const isDashboardSource = source === "dashboard";
+  const isOrganizedSource = source === "organized";
   const registeredEventStatus = getRegisteredEventStatusLabel(eventDate);
   const [showRequirements, setShowRequirements] = useState(false);
-  const [selectedRequirementFile, setSelectedRequirementFile] = useState<File | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedRequirementFiles, setSelectedRequirementFiles] = useState<Record<string, File>>({});
   const [showRequirementWarning, setShowRequirementWarning] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<FrontendEvent>(fallbackEventDetails);
-  const requirementFileInputRef = useRef<HTMLInputElement>(null);
-  const fileAdded = Boolean(selectedRequirementFile);
+  const eventRequirements = selectedEvent.requirements || [];
 
   useEffect(() => {
     const browseEvent = readSelectedBrowseEvent();
@@ -134,15 +140,29 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
     setSelectedEvent(registeredEvent ? toEventDetails(registeredEvent, browseEvent) : browseEvent);
   }, [eventDate, isDashboardSource, source]);
 
+  const handleDeleteEvent = () => {
+    deleteOrganizedEvent(selectedEvent.id);
+    setShowDeleteConfirm(false);
+    window.sessionStorage.setItem("dcspaceDashboardView", "organized");
+    router.push("/dashboard");
+  };
+
   const handleConfirm = async () => {
-    if (!selectedRequirementFile) {
+    const missingRequirements = eventRequirements.some((requirement) => !selectedRequirementFiles[requirement]);
+
+    if (missingRequirements) {
       setShowRequirementWarning(true);
       return;
     }
 
-    const requirementFile = await readRequirementFile(selectedRequirementFile);
+    const requirementFiles = await Promise.all(
+      eventRequirements.map(async (requirementName) => ({
+        ...(await readRequirementFile(selectedRequirementFiles[requirementName])),
+        requirementName,
+      })),
+    );
 
-    registerEventForCurrentUser(selectedEvent, requirementFile);
+    registerEventForCurrentUser(selectedEvent, requirementFiles);
 
     setIsRedirecting(true);
 
@@ -163,8 +183,17 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
     setShowRequirements(false);
   };
 
-  const handleRequirementFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSelectedRequirementFile(event.target.files?.[0] ?? null);
+  const handleRequirementFileChange = (requirement: string, event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    setSelectedRequirementFiles((files) => ({
+      ...files,
+      [requirement]: file,
+    }));
     setShowRequirementWarning(false);
   };
 
@@ -177,6 +206,15 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
           <Link className="registered-details-back" href="/dashboard">
             Events Registered
           </Link>
+        </section>
+      ) : isOrganizedSource ? (
+        <section className="organized-details-header" aria-label="Organized event details">
+          <Link className="organized-details-back" href="/dashboard">
+            Events Organized
+          </Link>
+          <button className="delete-event-button" type="button" onClick={() => setShowDeleteConfirm(true)}>
+            Delete event
+          </button>
         </section>
       ) : (
         <section className="details-header">
@@ -222,15 +260,22 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
 
         <h3>Requirements</h3>
         <ul>
-          {eventDetails.requirements.map((requirement) => (
-            <li key={requirement}>
-              {isDashboardSource && eventDetails.requirementFile ? (
-                <SubmittedRequirementLink requirement={requirement} file={eventDetails.requirementFile} />
-              ) : (
-                requirement
-              )}
-            </li>
-          ))}
+          {eventDetails.requirements.map((requirement, index) => {
+            const submittedFile =
+              eventDetails.requirementFiles?.find((file) => file.requirementName === requirement) ||
+              eventDetails.requirementFiles?.[index] ||
+              eventDetails.requirementFile;
+
+            return (
+              <li key={requirement}>
+                {isDashboardSource && submittedFile ? (
+                  <SubmittedRequirementLink requirement={requirement} file={submittedFile} />
+                ) : (
+                  requirement
+                )}
+              </li>
+            );
+          })}
 
           <li>
             Minimum Attendance Time Required: {eventDetails.minAttendance || "TBA"}
@@ -262,23 +307,34 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
               </button>
             </div>
 
-            <div className={`file-requirement${fileAdded ? " is-added" : ""}`}>
-              <button className="file-row" type="button" onClick={() => requirementFileInputRef.current?.click()}>
-                <span>Parent&apos;s Consent Form</span>
-                <FilePlusIcon />
-              </button>
-              <input
-                ref={requirementFileInputRef}
-                className="requirement-file-input"
-                type="file"
-                onChange={handleRequirementFileChange}
-                aria-label="Upload Parent's Consent Form"
-                required
-              />
-              <div className="file-added-strip" aria-hidden={!fileAdded}>
-                {selectedRequirementFile?.name || "File Added!"}
+            {eventRequirements.length > 0 ? (
+              <div className="requirements-list">
+                {eventRequirements.map((requirement) => {
+                  const selectedFile = selectedRequirementFiles[requirement];
+
+                  return (
+                    <div className={`file-requirement${selectedFile ? " is-added" : ""}`} key={requirement}>
+                      <label className="file-row">
+                        <span>{requirement}</span>
+                        <FilePlusIcon />
+                        <input
+                          className="requirement-file-input"
+                          type="file"
+                          onChange={(event) => handleRequirementFileChange(requirement, event)}
+                          aria-label={`Upload ${requirement}`}
+                          required
+                        />
+                      </label>
+                      <div className="file-added-strip" aria-hidden={!selectedFile}>
+                        {selectedFile?.name || "File Added!"}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            ) : (
+              <p className="requirements-empty">No required files for this event.</p>
+            )}
 
             {showRequirementWarning && (
               <p className="requirements-warning" role="alert">
@@ -293,6 +349,24 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
             >
               Confirm
             </button>
+          </section>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="delete-confirm-overlay">
+          <section className="delete-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+            <h2 id="delete-confirm-title">
+              Are you sure you want to delete &quot;{eventDetails.name}&quot;?
+            </h2>
+            <div className="delete-confirm-actions">
+              <button className="delete-confirm-no" type="button" onClick={() => setShowDeleteConfirm(false)}>
+                No
+              </button>
+              <button className="delete-confirm-yes" type="button" onClick={handleDeleteEvent}>
+                Yes
+              </button>
+            </div>
           </section>
         </div>
       )}

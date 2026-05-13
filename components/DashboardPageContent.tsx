@@ -99,9 +99,15 @@ export function DashboardPageContent() {
   useEffect(() => {
     const refreshDashboardEvents = () => {
       const saved = JSON.parse(localStorage.getItem("dcspaceRegisteredEvents") || "[]");
+      const requestedView = window.sessionStorage.getItem("dcspaceDashboardView");
       setRegisteredEvents(saved);
       setOrganizedEvents(readOrganizedEvents());
       setCanViewOrganizedEvents(canOrganizeEvents());
+
+      if (requestedView === "organized" && canOrganizeEvents()) {
+        setActiveDashboardView("organized");
+        window.sessionStorage.removeItem("dcspaceDashboardView");
+      }
     };
 
     refreshDashboardEvents();
@@ -227,7 +233,7 @@ export function DashboardPageContent() {
                   <span>{getRegisteredEventSection(event) === "today" ? "Ongoing" : getRegisteredEventSection(event) === "passed" ? "Passed" : "Upcoming"}</span>
                   <span>{event.certificate || "Processing"}</span>
 
-                  <Link className="details-button" href="/events/details" onClick={() => setSelectedBrowseEventId(event.id)}>
+                  <Link className="details-button" href="/dashboard/organized-event" onClick={() => setSelectedBrowseEventId(event.id)}>
                     View Details
                     <svg viewBox="0 0 14 13" fill="none" aria-hidden="true">
                       <path
