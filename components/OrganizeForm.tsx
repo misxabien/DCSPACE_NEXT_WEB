@@ -38,6 +38,42 @@ const emptyReviewDetails: ReviewDetails = {
   minAttendance: "",
 };
 
+function getDurationFromTimes(startTime: string, endTime: string) {
+  if (!startTime || !endTime) {
+    return "";
+  }
+
+  const [startHour, startMinute] = startTime.split(":").map(Number);
+  const [endHour, endMinute] = endTime.split(":").map(Number);
+
+  if ([startHour, startMinute, endHour, endMinute].some(Number.isNaN)) {
+    return "";
+  }
+
+  const startTotal = startHour * 60 + startMinute;
+  let endTotal = endHour * 60 + endMinute;
+
+  if (endTotal < startTotal) {
+    endTotal += 24 * 60;
+  }
+
+  const totalMinutes = endTotal - startTotal;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const hourText = hours > 0 ? `${hours} ${hours === 1 ? "hour" : "hours"}` : "";
+  const minuteText = minutes > 0 ? `${minutes} ${minutes === 1 ? "minute" : "minutes"}` : "";
+
+  return [hourText, minuteText].filter(Boolean).join(" ") || "0 minutes";
+}
+
+function getDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 export function OrganizeForm() {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -52,6 +88,12 @@ export function OrganizeForm() {
   const [requiredFileDraft, setRequiredFileDraft] = useState("");
   const [showRequiredFileInput, setShowRequiredFileInput] = useState(true);
   const [showRequiredFileToast, setShowRequiredFileToast] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+
+  const todayDate = getDateInputValue(new Date());
+  const totalDuration = getDurationFromTimes(startTime, endTime);
 
   useEffect(() => {
     setCanCreate(canOrganizeEvents());
@@ -231,11 +273,18 @@ export function OrganizeForm() {
             <div className="date-fields date-fields--range">
               <label className="date-field">
                 <span>Start date</span>
-                <input className="input-inline" type="date" name="event_date" />
+                <input
+                  className="input-inline"
+                  type="date"
+                  name="event_date"
+                  min={todayDate}
+                  value={startDate}
+                  onChange={(event) => setStartDate(event.target.value)}
+                />
               </label>
               <label className="date-field">
                 <span>End date</span>
-                <input className="input-inline" type="date" name="event_end_date" />
+                <input className="input-inline" type="date" name="event_end_date" min={startDate || todayDate} />
               </label>
             </div>
           </div>
@@ -355,7 +404,12 @@ export function OrganizeForm() {
                   Start Time:
                 </span>
                 <div className="time-row">
-                  <input type="time" name="start_time" />
+                  <input
+                    type="time"
+                    name="start_time"
+                    value={startTime}
+                    onChange={(event) => setStartTime(event.target.value)}
+                  />
                 </div>
               </div>
               <div className="form-row">
@@ -367,7 +421,12 @@ export function OrganizeForm() {
                   End Time:
                 </span>
                 <div className="time-row">
-                  <input type="time" name="end_time" />
+                  <input
+                    type="time"
+                    name="end_time"
+                    value={endTime}
+                    onChange={(event) => setEndTime(event.target.value)}
+                  />
                 </div>
               </div>
             </div>
@@ -393,7 +452,14 @@ export function OrganizeForm() {
               </svg>
               Total Time Duration:
             </span>
-            <input className="input-inline" type="text" name="duration" placeholder="e.g. 3 hours" />
+            <input
+              className="input-inline"
+              type="text"
+              name="duration"
+              value={totalDuration}
+              placeholder="Auto-calculated from start and end time"
+              readOnly
+            />
           </div>
 
           <div className="form-row form-row--span2">
@@ -408,9 +474,8 @@ export function OrganizeForm() {
               className="input-inline"
               type="text"
               name="min_attendance"
-              defaultValue="None / 0 Hours / TBA"
+              placeholder="None / 0 Hours / TBA"
             />
-            <span className="muted-hint">Edit as needed (None, 0 Hours, or TBA).</span>
           </div>
         </div>
 
