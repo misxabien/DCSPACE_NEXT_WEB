@@ -15,6 +15,11 @@
   transform: translateY(6px);
 }
 
+.event-details-page.is-delete-confirming > :not(.delete-confirm-overlay) {
+  opacity: 0.22;
+  transition: opacity 0.18s ease;
+}
+
 .details-header {
   display: grid;
   grid-template-columns: minmax(260px, 1fr) minmax(280px, 470px);
@@ -453,6 +458,7 @@
   justify-content: center;
   padding: 24px;
   background: transparent;
+  animation: overlay-in 0.18s ease both;
 }
 
 .delete-confirm-modal {
@@ -468,6 +474,7 @@
   background: #fff8e8;
   box-shadow: 0 4px 8px rgba(64, 54, 23, 0.3);
   padding: 28px 30px 22px;
+  animation: modal-in 0.24s ease both;
 }
 
 .delete-confirm-modal h2 {

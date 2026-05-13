@@ -200,7 +200,7 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
   const eventDetails = selectedEvent;
 
   return (
-    <section className={`event-details-page${isRedirecting ? " is-exiting" : ""}`}>
+    <section className={`event-details-page${isRedirecting ? " is-exiting" : ""}${showDeleteConfirm ? " is-delete-confirming" : ""}`}>
       {isDashboardSource ? (
         <section className="registered-details-tabs" aria-label="Dashboard sections">
           <Link className="registered-details-back" href="/dashboard">

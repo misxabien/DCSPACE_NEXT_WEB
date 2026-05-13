@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
 import {
@@ -235,16 +236,7 @@ export function DashboardPageContent() {
 
                   <Link className="details-button" href="/dashboard/organized-event" onClick={() => setSelectedBrowseEventId(event.id)}>
                     View Details
-                    <svg viewBox="0 0 14 13" fill="none" aria-hidden="true">
-                      <path
-                        d="M0.262209 11.7641C-0.0942397 12.0519 -0.0861691 12.5132 0.281041 12.7935C0.646905 13.0739 1.23336 13.0675 1.58981 12.7787L8.73493 6.98223L8.0718 6.47548L8.73762 6.98329C9.09407 6.69341 9.086 6.23109 8.71745 5.95074C8.70669 5.94227 8.69593 5.93487 8.68516 5.92746L1.58847 0.220919C1.23202 -0.0678991 0.646905 -0.0742467 0.279695 0.206108C-0.0861691 0.486463 -0.0942397 0.946668 0.262209 1.23549L6.78052 6.47759L0.262209 11.7641Z"
-                        fill="currentColor"
-                      />
-                      <path
-                        d="M5.26221 11.7641C4.90576 12.0519 4.91383 12.5132 5.28104 12.7935C5.64691 13.0739 6.23336 13.0675 6.58981 12.7787L13.7349 6.98223L13.0718 6.47548L13.7376 6.98329C14.0941 6.69341 14.086 6.23109 13.7174 5.95074C13.7067 5.94227 13.6959 5.93487 13.6852 5.92746L6.58847 0.220919C6.23202 -0.0678991 5.64691 -0.0742467 5.2797 0.206108C4.91383 0.486463 4.90576 0.946668 5.26221 1.23549L11.7805 6.47759L5.26221 11.7641Z"
-                        fill="currentColor"
-                      />
-                    </svg>
+                    <Image src="/assets/chevron-double-right.svg" alt="" width={16} height={16} aria-hidden="true" />
                   </Link>
                 </div>
               ))}
