@@ -387,11 +387,12 @@ a.open-btn {
   border-left: 1px solid var(--att-border-tan);
 }
 
+.segmented img,
 .segmented svg {
-  width: 14px;
-  height: 14px;
-  opacity: 0.9;
-}
+    width: 14px;
+    height: 14px;
+    opacity: 0.9;
+  }
 
 .event-grid {
   display: grid;

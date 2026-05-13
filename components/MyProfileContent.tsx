@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import type { RegisteredEvent } from "@/lib/attendance";
-import { useEffect, useMemo, useState } from "react";import {
+import { useEffect, useMemo, useState } from "react";
+import {
   getCurrentAttendanceUser,
   readRegisteredEvents,
   readUserAttendanceRecords,
@@ -40,7 +42,7 @@ export function MyProfileContent() {
     return getCertificateStatus(record) === "Download";
   });
 
-  const organizedEvents: RegisteredEvent[] = [];
+  const organizedEvents = useMemo<RegisteredEvent[]>(() => [], []);
 
   const visibleEvents = useMemo(() => {
     const events: typeof attendedEvents =
@@ -200,6 +202,7 @@ export function MyProfileContent() {
                 aria-pressed={sortAsc}
                 onClick={() => setSortAsc(true)}
               >
+                <Image src="/assets/ascending-arrow.svg" alt="" width={16} height={16} aria-hidden="true" />
                 Ascending
               </button>
 
@@ -209,6 +212,7 @@ export function MyProfileContent() {
                 aria-pressed={!sortAsc}
                 onClick={() => setSortAsc(false)}
               >
+                <Image src="/assets/descending-arrow.svg" alt="" width={16} height={16} aria-hidden="true" />
                 Descending
               </button>
             </div>

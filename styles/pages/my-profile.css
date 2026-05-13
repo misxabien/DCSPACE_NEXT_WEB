@@ -304,14 +304,17 @@
         color: var(--hamburger);
       }
 
+      .profile-sort__btn:not(.is-active) img,
       .profile-sort__btn:not(.is-active) svg {
         color: var(--profile-brown);
       }
 
+      .profile-sort__btn.is-active img,
       .profile-sort__btn.is-active svg {
         color: var(--hamburger);
       }
 
+      .profile-sort__btn img,
       .profile-sort__btn svg {
         width: 16px;
         height: 16px;
