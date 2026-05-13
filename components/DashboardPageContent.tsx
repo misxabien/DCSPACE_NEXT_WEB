@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
-import { type FrontendEvent, readOrganizedEvents, setSelectedBrowseEventId } from "@/lib/dc-events";
+import {
+  canOrganizeEvents,
+  type FrontendEvent,
+  readOrganizedEvents,
+  setSelectedBrowseEventId,
+} from "@/lib/dc-events";
 
 type RegisteredEvent = {
   id?: string;
@@ -70,6 +75,7 @@ function sortRegisteredEventsByDate(events: RegisteredEvent[], direction: "ascen
 export function DashboardPageContent() {
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
   const [organizedEvents, setOrganizedEvents] = useState<FrontendEvent[]>([]);
+  const [canViewOrganizedEvents, setCanViewOrganizedEvents] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [activeDashboardView, setActiveDashboardView] = useState<"registered" | "organized">("registered");
   const [consentChecked, setConsentChecked] = useState(false);
@@ -95,6 +101,7 @@ export function DashboardPageContent() {
       const saved = JSON.parse(localStorage.getItem("dcspaceRegisteredEvents") || "[]");
       setRegisteredEvents(saved);
       setOrganizedEvents(readOrganizedEvents());
+      setCanViewOrganizedEvents(canOrganizeEvents());
     };
 
     refreshDashboardEvents();
@@ -110,6 +117,12 @@ export function DashboardPageContent() {
       window.removeEventListener("dcspace-registered-events-updated", refreshDashboardEvents);
     };
   }, []);
+
+  useEffect(() => {
+    if (!canViewOrganizedEvents && activeDashboardView === "organized") {
+      setActiveDashboardView("registered");
+    }
+  }, [activeDashboardView, canViewOrganizedEvents]);
 
   useEffect(() => {
     setShowPrivacyModal(window.sessionStorage.getItem("dcspacePrivacySeen") !== "true");
@@ -145,13 +158,15 @@ export function DashboardPageContent() {
             >
               Events Registered
             </button>
-            <button
-              className={`dashboard-tab${!isRegisteredView ? " is-active" : ""}`}
-              type="button"
-              onClick={() => setActiveDashboardView("organized")}
-            >
-              Events Organized
-            </button>
+            {canViewOrganizedEvents && (
+              <button
+                className={`dashboard-tab${!isRegisteredView ? " is-active" : ""}`}
+                type="button"
+                onClick={() => setActiveDashboardView("organized")}
+              >
+                Events Organized
+              </button>
+            )}
           </div>
 
           {isRegisteredView ? (

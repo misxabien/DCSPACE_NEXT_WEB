@@ -88,7 +88,6 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
           <Link className="registered-details-back" href="/dashboard">
             Events Registered
           </Link>
-          <span>Events Organized</span>
         </section>
       ) : (
         <section className="details-header">

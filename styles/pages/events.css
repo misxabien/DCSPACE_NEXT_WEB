@@ -72,9 +72,9 @@
   display: grid;
   grid-template-columns: 220px 1fr;
   gap: 18px;
-  border: 1.5px solid #634b05;
+  border: 1.5px solid #705615;
   border-radius: 4px;
-  background: rgba(255, 254, 244, 0.45);
+  background: #fdf4e3;
   box-shadow: 0 3px 4px rgba(99, 75, 5, 0.35);
   padding: 10px 24px 10px 16px;
 }
