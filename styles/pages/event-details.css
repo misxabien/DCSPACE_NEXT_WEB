@@ -169,6 +169,55 @@
   font-size: 20px;
 }
 
+.submitted-requirement {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.submitted-requirement__link {
+  color: #448aff;
+  font-weight: 800;
+  text-decoration: none;
+  text-underline-offset: 4px;
+}
+
+.submitted-requirement__link:hover,
+.submitted-requirement__link:focus-visible {
+  text-decoration: underline;
+}
+
+.submitted-requirement__tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  z-index: 5;
+  max-width: min(320px, 72vw);
+  padding: 8px 12px;
+  border: 1px solid rgba(112, 86, 21, 0.24);
+  border-radius: 6px;
+  background: #fdf4e3;
+  box-shadow: 0 6px 16px rgba(64, 54, 23, 0.16);
+  color: #604d18;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  text-align: center;
+  text-overflow: ellipsis;
+  transform: translate(-50%, 4px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  white-space: nowrap;
+}
+
+.submitted-requirement__link:hover + .submitted-requirement__tooltip,
+.submitted-requirement__link:focus-visible + .submitted-requirement__tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
 .event-actions {
   display: flex;
   align-items: center;
@@ -288,6 +337,14 @@
   color: #604d18;
 }
 
+.requirement-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .file-added-strip {
   height: 0;
   display: flex;
@@ -300,6 +357,9 @@
   font-style: italic;
   font-weight: 600;
   padding: 0 38px;
+  text-align: right;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   transform: translateY(-100%);
   opacity: 0;
   transition: height 0.3s ease, transform 0.3s ease, opacity 0.22s ease;
@@ -311,6 +371,14 @@
   opacity: 1;
 }
 
+.requirements-warning {
+  margin: auto auto 14px;
+  color: #e33e33;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+}
+
 .confirm-button {
   min-width: 130px;
   height: 58px;
@@ -318,6 +386,10 @@
   font-size: 28px;
   background: #36d866;
   box-shadow: 0 3px 4px rgba(17, 102, 42, 0.3);
+}
+
+.confirm-button.has-warning {
+  margin: 0 auto;
 }
 
 @keyframes overlay-in {

@@ -17,6 +17,13 @@ export type RequirementStatus =
 
 export type CertificateStatus = "Download" | "Processing" | "Invalid";
 
+export type UploadedRequirementFile = {
+  name: string;
+  type: string;
+  size: number;
+  dataUrl: string;
+};
+
 export type RegisteredEvent = {
   id?: string;
   month?: string;
@@ -30,6 +37,7 @@ export type RegisteredEvent = {
   certificate?: string;
   minAttendance?: string;
   duration?: string;
+  requirementFile?: UploadedRequirementFile;
 };
 
 export type AttendanceUser = {

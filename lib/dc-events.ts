@@ -1,4 +1,4 @@
-import { REGISTERED_EVENTS_KEY, type RegisteredEvent } from "@/lib/attendance";
+import { REGISTERED_EVENTS_KEY, type RegisteredEvent, type UploadedRequirementFile } from "@/lib/attendance";
 
 export const ORGANIZED_EVENTS_KEY = "dcspaceOrganizedEvents";
 export const SELECTED_BROWSE_EVENT_KEY = "dcspaceSelectedBrowseEventId";
@@ -198,12 +198,24 @@ export function readSelectedBrowseEvent() {
   return events.find((event) => event.id === selectedId) || events[0] || fallbackEvents[0];
 }
 
-export function registerEventForCurrentUser(event: FrontendEvent) {
+export function registerEventForCurrentUser(event: FrontendEvent, requirementFile?: UploadedRequirementFile) {
   const registeredEvents = readJson<RegisteredEvent[]>(window.localStorage, REGISTERED_EVENTS_KEY, []);
   const alreadyRegistered = registeredEvents.some((registeredEvent) => registeredEvent.id === event.id);
 
   if (alreadyRegistered) {
-    return registeredEvents;
+    const updatedEvents = registeredEvents.map((registeredEvent) =>
+      registeredEvent.id === event.id
+        ? {
+            ...registeredEvent,
+            requirementFile: requirementFile || registeredEvent.requirementFile,
+          }
+        : registeredEvent,
+    );
+
+    window.localStorage.setItem(REGISTERED_EVENTS_KEY, JSON.stringify(updatedEvents));
+    window.dispatchEvent(new CustomEvent("dcspace-registered-events-updated"));
+
+    return updatedEvents;
   }
 
   const nextRegisteredEvents = [
@@ -212,6 +224,7 @@ export function registerEventForCurrentUser(event: FrontendEvent) {
       ...event,
       status: "Registered",
       certificate: "Pending",
+      requirementFile,
     },
   ];
 
