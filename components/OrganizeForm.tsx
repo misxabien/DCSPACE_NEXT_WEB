@@ -1,11 +1,111 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import type { FormEvent, KeyboardEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
+import { canOrganizeEvents, saveOrganizedEvent } from "@/lib/dc-events";
+
+type ReviewDetails = {
+  eventName: string;
+  eventDate: string;
+  eventEndDate: string;
+  requiredFiles: string[];
+  venue: string;
+  courseOrganizer: string;
+  school: string;
+  department: string;
+  startTime: string;
+  endTime: string;
+  eventType: string;
+  duration: string;
+  minAttendance: string;
+};
+
+const emptyReviewDetails: ReviewDetails = {
+  eventName: "",
+  eventDate: "",
+  eventEndDate: "",
+  requiredFiles: [],
+  venue: "",
+  courseOrganizer: "",
+  school: "",
+  department: "",
+  startTime: "",
+  endTime: "",
+  eventType: "",
+  duration: "",
+  minAttendance: "",
+};
+
+function getDurationFromTimes(startTime: string, endTime: string) {
+  if (!startTime || !endTime) {
+    return "";
+  }
+
+  const [startHour, startMinute] = startTime.split(":").map(Number);
+  const [endHour, endMinute] = endTime.split(":").map(Number);
+
+  if ([startHour, startMinute, endHour, endMinute].some(Number.isNaN)) {
+    return "";
+  }
+
+  const startTotal = startHour * 60 + startMinute;
+  let endTotal = endHour * 60 + endMinute;
+
+  if (endTotal < startTotal) {
+    endTotal += 24 * 60;
+  }
+
+  const totalMinutes = endTotal - startTotal;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const hourText = hours > 0 ? `${hours} ${hours === 1 ? "hour" : "hours"}` : "";
+  const minuteText = minutes > 0 ? `${minutes} ${minutes === 1 ? "minute" : "minutes"}` : "";
+
+  return [hourText, minuteText].filter(Boolean).join(" ") || "0 minutes";
+}
+
+function getDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
 
 export function OrganizeForm() {
+  const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const courseRef = useRef<HTMLSelectElement>(null);
   const orgRef = useRef<HTMLInputElement>(null);
   const combinedRef = useRef<HTMLInputElement>(null);
+  const requiredFileToastRef = useRef<number | null>(null);
+  const [canCreate, setCanCreate] = useState<boolean | null>(null);
+  const [showReview, setShowReview] = useState(false);
+  const [reviewDetails, setReviewDetails] = useState<ReviewDetails>(emptyReviewDetails);
+  const [requiredFiles, setRequiredFiles] = useState<string[]>([]);
+  const [requiredFileDraft, setRequiredFileDraft] = useState("");
+  const [showRequiredFileInput, setShowRequiredFileInput] = useState(true);
+  const [showRequiredFileToast, setShowRequiredFileToast] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+
+  const todayDate = getDateInputValue(new Date());
+  const totalDuration = getDurationFromTimes(startTime, endTime);
+
+  useEffect(() => {
+    setCanCreate(canOrganizeEvents());
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (requiredFileToastRef.current) {
+        window.clearTimeout(requiredFileToastRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     function syncCombined() {
@@ -31,8 +131,120 @@ export function OrganizeForm() {
     };
   }, []);
 
+  const getFormValue = (formData: FormData, key: string) => {
+    const value = formData.get(key);
+    return typeof value === "string" && value.trim() ? value.trim() : "Not provided";
+  };
+
+  const syncCourseOrganizer = () => {
+    if (combinedRef.current && courseRef.current && orgRef.current) {
+      const course = (courseRef.current.value || "").trim();
+      const org = (orgRef.current.value || "").trim().replace(/^[\s—-]+|[\s—-]+$/g, "");
+      combinedRef.current.value = course && org ? `${course}-${org}` : course || org || "";
+    }
+  };
+
+  const getReviewDetails = () => {
+    syncCourseOrganizer();
+
+    if (!formRef.current) {
+      return emptyReviewDetails;
+    }
+
+    const formData = new FormData(formRef.current);
+
+    return {
+      eventName: getFormValue(formData, "event_name"),
+      eventDate: getFormValue(formData, "event_date"),
+      eventEndDate: getFormValue(formData, "event_end_date"),
+      requiredFiles,
+      venue: getFormValue(formData, "venue"),
+      courseOrganizer: getFormValue(formData, "course_organizer_combined"),
+      school: getFormValue(formData, "school"),
+      department: getFormValue(formData, "department"),
+      startTime: getFormValue(formData, "start_time"),
+      endTime: getFormValue(formData, "end_time"),
+      eventType: getFormValue(formData, "event_type"),
+      duration: getFormValue(formData, "duration"),
+      minAttendance: getFormValue(formData, "min_attendance"),
+    };
+  };
+
+  const handleReview = () => {
+    setReviewDetails(getReviewDetails());
+    setShowReview(true);
+  };
+
+  const handleFormKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    const target = event.target;
+
+    if (target instanceof HTMLTextAreaElement) {
+      return;
+    }
+
+    event.preventDefault();
+    handleReview();
+  };
+
+  const showAddedRequiredFileToast = () => {
+    setShowRequiredFileToast(true);
+
+    if (requiredFileToastRef.current) {
+      window.clearTimeout(requiredFileToastRef.current);
+    }
+
+    requiredFileToastRef.current = window.setTimeout(() => {
+      setShowRequiredFileToast(false);
+    }, 1800);
+  };
+
+  const addRequiredFile = () => {
+    const nextFile = requiredFileDraft.trim();
+
+    if (!nextFile) {
+      return;
+    }
+
+    setRequiredFiles((files) => [...files, nextFile]);
+    setRequiredFileDraft("");
+    setShowRequiredFileInput(false);
+    showAddedRequiredFileToast();
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!canCreate) {
+      return;
+    }
+
+    saveOrganizedEvent(getReviewDetails());
+    setShowReview(false);
+    router.push("/events");
+  };
+
+  if (canCreate === null) {
+    return null;
+  }
+
+  if (!canCreate) {
+    return (
+      <EmptyState message="Only organization officers can organize and create events. Organization members can browse events, register, and track attendance." />
+    );
+  }
+
   return (
-    <form className="organize-form-shell" action="#" method="post" aria-label="Create new event">
+    <form
+      ref={formRef}
+      className="organize-form-shell"
+      onSubmit={handleSubmit}
+      onKeyDown={handleFormKeyDown}
+      aria-label="Create new event"
+    >
       <label className="form-section-label" htmlFor="event-name">
         Event Name
       </label>
@@ -58,7 +270,23 @@ export function OrganizeForm() {
               </svg>
               Date:
             </span>
-            <input className="input-inline" type="date" name="event_date" />
+            <div className="date-fields date-fields--range">
+              <label className="date-field">
+                <span>Start date</span>
+                <input
+                  className="input-inline"
+                  type="date"
+                  name="event_date"
+                  min={todayDate}
+                  value={startDate}
+                  onChange={(event) => setStartDate(event.target.value)}
+                />
+              </label>
+              <label className="date-field">
+                <span>End date</span>
+                <input className="input-inline" type="date" name="event_end_date" min={startDate || todayDate} />
+              </label>
+            </div>
           </div>
 
           <div className="form-row">
@@ -176,7 +404,12 @@ export function OrganizeForm() {
                   Start Time:
                 </span>
                 <div className="time-row">
-                  <input type="time" name="start_time" />
+                  <input
+                    type="time"
+                    name="start_time"
+                    value={startTime}
+                    onChange={(event) => setStartTime(event.target.value)}
+                  />
                 </div>
               </div>
               <div className="form-row">
@@ -188,7 +421,12 @@ export function OrganizeForm() {
                   End Time:
                 </span>
                 <div className="time-row">
-                  <input type="time" name="end_time" />
+                  <input
+                    type="time"
+                    name="end_time"
+                    value={endTime}
+                    onChange={(event) => setEndTime(event.target.value)}
+                  />
                 </div>
               </div>
             </div>
@@ -214,7 +452,14 @@ export function OrganizeForm() {
               </svg>
               Total Time Duration:
             </span>
-            <input className="input-inline" type="text" name="duration" placeholder="e.g. 3 hours" />
+            <input
+              className="input-inline"
+              type="text"
+              name="duration"
+              value={totalDuration}
+              placeholder="Auto-calculated from start and end time"
+              readOnly
+            />
           </div>
 
           <div className="form-row form-row--span2">
@@ -229,9 +474,8 @@ export function OrganizeForm() {
               className="input-inline"
               type="text"
               name="min_attendance"
-              defaultValue="None / 0 Hours / TBA"
+              placeholder="None / 0 Hours / TBA"
             />
-            <span className="muted-hint">Edit as needed (None, 0 Hours, or TBA).</span>
           </div>
         </div>
 
@@ -266,7 +510,51 @@ export function OrganizeForm() {
           </label>
         </div>
 
+        <section className="required-files" aria-labelledby="required-files-title">
+          <h2 id="required-files-title">
+            <span className="required-files__icon" aria-hidden="true" />
+            Required files:
+          </h2>
+
+          <div className="required-files__list">
+            {requiredFiles.map((fileName, index) => (
+              <div className="required-files__saved" key={`${fileName}-${index}`}>
+                {fileName}
+              </div>
+            ))}
+
+            {showRequiredFileInput && (
+              <div className="required-files__row">
+                <input
+                  className="required-files__input"
+                  type="text"
+                  value={requiredFileDraft}
+                  placeholder="Required file name"
+                  autoComplete="off"
+                  onChange={(event) => setRequiredFileDraft(event.target.value)}
+                />
+                <button className="required-files__add" type="button" onClick={addRequiredFile}>
+                  Add
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button className="required-files__more" type="button" onClick={() => setShowRequiredFileInput(true)}>
+            Click to add another required file
+          </button>
+
+          {showRequiredFileToast && (
+            <div className="required-files__toast" role="status" aria-live="polite">
+              added required file
+            </div>
+          )}
+        </section>
+
         <div className="form-actions">
+          <button type="button" className="btn-review" onClick={handleReview}>
+            Review
+          </button>
           <button type="submit" className="btn-submit">
             Submit
             <svg viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -281,6 +569,93 @@ export function OrganizeForm() {
             </svg>
           </button>
         </div>
+
+        {showReview && (
+          <div className="review-overlay">
+            <section className="review-modal" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
+              <div className="review-modal__header">
+                <h2 id="review-modal-title">Review Event Details</h2>
+                <button className="review-modal__close" type="button" aria-label="Close review" onClick={() => setShowReview(false)}>
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+
+              <dl className="review-list">
+                <div>
+                  <dt>Event Name</dt>
+                  <dd>{reviewDetails.eventName}</dd>
+                </div>
+                <div>
+                  <dt>Date</dt>
+                  <dd>
+                    {reviewDetails.eventEndDate && reviewDetails.eventEndDate !== "Not provided"
+                      ? `${reviewDetails.eventDate} to ${reviewDetails.eventEndDate}`
+                      : reviewDetails.eventDate}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Venue</dt>
+                  <dd>{reviewDetails.venue}</dd>
+                </div>
+                <div>
+                  <dt>Course &amp; Organizer</dt>
+                  <dd>{reviewDetails.courseOrganizer}</dd>
+                </div>
+                <div>
+                  <dt>School</dt>
+                  <dd>{reviewDetails.school}</dd>
+                </div>
+                <div>
+                  <dt>Department</dt>
+                  <dd>{reviewDetails.department}</dd>
+                </div>
+                <div>
+                  <dt>Time</dt>
+                  <dd>
+                    {reviewDetails.startTime} to {reviewDetails.endTime}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Type of Event</dt>
+                  <dd>{reviewDetails.eventType}</dd>
+                </div>
+                <div>
+                  <dt>Total Duration</dt>
+                  <dd>{reviewDetails.duration}</dd>
+                </div>
+                <div>
+                  <dt>Minimum Attendance</dt>
+                  <dd>{reviewDetails.minAttendance}</dd>
+                </div>
+                <div>
+                  <dt>Required Files</dt>
+                  <dd>{reviewDetails.requiredFiles.length > 0 ? reviewDetails.requiredFiles.join(", ") : "None"}</dd>
+                </div>
+              </dl>
+
+              <div className="review-modal__actions">
+                <button className="btn-review" type="button" onClick={() => setShowReview(false)}>
+                  Edit
+                </button>
+                <button className="btn-submit" type="submit">
+                  Submit
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <circle cx="12" cy="12" r="9" stroke="#fff" strokeWidth="2" />
+                    <path
+                      d="M8 12l2.5 3L16 10"
+                      stroke="#fff"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
       </div>
     </form>
   );
