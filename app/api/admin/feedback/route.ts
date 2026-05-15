@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "../../../../lib/admin/auth/roleGuard";
 import { getFeedbackOverview } from "../../../../lib/admin/db/feedback";
-import { toErrorResponse } from "../../../../lib/admin/errors";
+
+function toErrorResponse(error: unknown) {
+  if (error instanceof Error && error.name === "AdminAuthorizationError") {
+    return NextResponse.json({ error: error.message }, { status: 403 });
+  }
+
+  return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+}
 
 /**
  * Returns the feedback overview stats and table rows for the admin feedback screen.
