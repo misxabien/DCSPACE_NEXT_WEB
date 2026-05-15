@@ -37,14 +37,17 @@
   width: 54px;
   height: 54px;
   border-radius: 50%;
-  display: inline-grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: 0 0 auto;
-  background: #8ab6ff;
-  color: white;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0;
+  overflow: hidden;
+}
+
+.topbar__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .topbar__brand-name {
@@ -150,14 +153,231 @@
   padding: 0;
 }
 
-.topbar__icon-button:hover {
+.topbar__icon-button:hover,
+.topbar__icon-button.is-active {
   background: rgba(68, 138, 255, 0.12);
   color: #448aff;
+}
+
+.topbar__notification-wrap {
+  position: relative;
+}
+
+.topbar__notification-wrap::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 120px;
+  height: 22px;
+  transform: translateX(-50%);
+}
+
+.topbar__notification-button {
+  position: relative;
+}
+
+.topbar__notification-button.is-active {
+  background: #1f73ed;
+  color: white;
+}
+
+.topbar__notification-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #634b05;
 }
 
 .topbar__icon-button svg {
   width: 21px;
   height: 21px;
+}
+
+.notification-popover {
+  position: absolute;
+  top: calc(100% + 18px);
+  left: 50%;
+  right: auto;
+  z-index: 80;
+  width: min(372px, calc(100vw - 32px));
+  min-height: 238px;
+  transform: translateX(-50%) translateY(8px);
+  border: 1.5px solid #111111;
+  border-radius: 8px;
+  background: #faf6ec;
+  color: #634b05;
+  box-shadow: 0 12px 30px rgba(37, 28, 8, 0.12);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+}
+
+.notification-popover::before {
+  content: "";
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  transform: translateX(-50%) rotate(45deg);
+  background: #faf6ec;
+  border-left: 1.5px solid #111111;
+  border-top: 1.5px solid #111111;
+  border-top-left-radius: 2px;
+  z-index: -1;
+}
+
+.topbar__notification-wrap:hover .notification-popover,
+.topbar__notification-wrap:focus-within .notification-popover {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.notification-popover__header {
+  min-height: 36px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(99, 75, 5, 0.24);
+  padding: 7px 8px;
+}
+
+.notification-popover__header h2 {
+  margin: 0;
+  color: #634b05;
+  font-family: var(--font-dm), sans-serif;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.notification-popover__header button {
+  border: none;
+  background: transparent;
+  color: #634b05;
+  cursor: pointer;
+  font-family: var(--font-dm), sans-serif;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.notification-popover__header span {
+  color: #634b05;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.notification-popover__list {
+  display: grid;
+}
+
+.notification-popover__item {
+  min-height: 40px;
+  display: grid;
+  grid-template-columns: 32px 1fr 12px;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(99, 75, 5, 0.18);
+  padding: 6px 9px;
+}
+
+.notification-popover__icon {
+  width: 31px;
+  height: 31px;
+  display: inline-block;
+  background: #634b05;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
+
+.notification-popover__icon--archive {
+  mask-image: url("/assets/archive.svg");
+  -webkit-mask-image: url("/assets/archive.svg");
+}
+
+.notification-popover__icon--calendar-week {
+  mask-image: url("/assets/calendar-week.svg");
+  -webkit-mask-image: url("/assets/calendar-week.svg");
+}
+
+.notification-popover__icon--calendar-check-fill {
+  mask-image: url("/assets/calendar-check-fill.svg");
+  -webkit-mask-image: url("/assets/calendar-check-fill.svg");
+}
+
+.notification-popover__icon--patch-check-fill {
+  mask-image: url("/assets/patch-check-fill.svg");
+  -webkit-mask-image: url("/assets/patch-check-fill.svg");
+}
+
+.notification-popover__item h3 {
+  margin: 0 0 2px;
+  color: #634b05;
+  font-family: var(--font-dm), sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+  font-optical-sizing: auto;
+  font-variation-settings: "opsz" 40;
+}
+
+.notification-popover__item h3 small {
+  font-size: 7px;
+  font-weight: 400;
+}
+
+.notification-popover__item p {
+  margin: 0;
+  color: #634b05;
+  font-family: var(--font-dm), sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.notification-popover__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #705615;
+}
+
+.notification-popover__empty {
+  min-height: 200px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 18px;
+  padding: 24px;
+  text-align: center;
+}
+
+.notification-popover__empty .notification-popover__icon {
+  width: 42px;
+  height: 42px;
+}
+
+.notification-popover__empty p {
+  max-width: 360px;
+  margin: 0;
+  color: #786c5f;
+  font-family: var(--font-dm), sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.18;
+  font-optical-sizing: auto;
+  font-variation-settings: "opsz" 40;
 }
 
 .topbar__account {
@@ -204,6 +424,17 @@
   .topbar__links {
     flex-wrap: wrap;
     gap: 10px 20px;
+  }
+
+  .notification-popover {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(8px);
+  }
+
+  .topbar__notification-wrap:hover .notification-popover,
+  .topbar__notification-wrap:focus-within .notification-popover {
+    transform: translateX(-50%) translateY(0);
   }
 }
 

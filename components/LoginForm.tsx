@@ -28,10 +28,10 @@ export function LoginForm() {
           <div className="brand__logo-wrap">
             <Image
               className="brand__logo"
-              src="/assets/logo-dc-space.png"
+              src="/assets/white-dcspacelogo-transparent.svg"
               alt="DC Space logo"
-              width={430}
-              height={200}
+              width={568}
+              height={568}
               priority
             />
           </div>
@@ -73,7 +73,7 @@ export function LoginForm() {
             onSubmit={handleSubmit}
             autoComplete="on"
           >
-            <label className="field field--password">
+            <label className="field">
               <span className="sr-only">Email</span>
               <span className="icon-left" aria-hidden>
                 <svg viewBox="0 0 24 24" fill="none">
@@ -101,7 +101,7 @@ export function LoginForm() {
               />
             </label>
 
-            <label className="field">
+            <label className="field field--password">
               <span className="sr-only">Password</span>
               <span className="icon-left" aria-hidden>
                 <svg viewBox="0 0 24 24" fill="none">

@@ -1,4 +1,4 @@
-import { REGISTERED_EVENTS_KEY, type RegisteredEvent } from '@/lib/attendance';
+import { REGISTERED_EVENTS_KEY, type RegisteredEvent, type UploadedRequirementFile } from "@/lib/attendance";
 
 export const ORGANIZED_EVENTS_KEY = 'dcspaceOrganizedEvents';
 export const SELECTED_BROWSE_EVENT_KEY = 'dcspaceSelectedBrowseEventId';
@@ -25,6 +25,8 @@ export type FrontendEvent = RegisteredEvent & {
 export type OrganizedEventInput = {
   eventName: string;
   eventDate: string;
+  eventEndDate?: string;
+  requiredFiles?: string[];
   venue: string;
   courseOrganizer: string;
   school: string;
@@ -122,6 +124,24 @@ function datePartsFromInput(dateValue: string) {
   };
 }
 
+function getEventDateDisplay(input: OrganizedEventInput, startDate: ReturnType<typeof datePartsFromInput>) {
+  if (!input.eventEndDate || input.eventEndDate === "Not provided") {
+    return startDate.longDate;
+  }
+
+  const endDate = datePartsFromInput(input.eventEndDate);
+
+  if (
+    startDate.month === endDate.month &&
+    startDate.day === endDate.day &&
+    startDate.year === endDate.year
+  ) {
+    return startDate.longDate;
+  }
+
+  return `${startDate.longDate} - ${endDate.longDate}`;
+}
+
 export function getCurrentOrganizationRole() {
   return present(window.localStorage.getItem('dcspaceOrganizationRole')) || 'Organization Member';
 }
@@ -139,6 +159,21 @@ export function writeOrganizedEvents(events: FrontendEvent[]) {
   window.dispatchEvent(new CustomEvent('dcspace-events-updated'));
 }
 
+export function deleteOrganizedEvent(eventId: string) {
+  const organizedEvents = readOrganizedEvents().filter((event) => event.id !== eventId);
+  const registeredEvents = readJson<RegisteredEvent[]>(window.localStorage, REGISTERED_EVENTS_KEY, []).filter(
+    (event) => event.id !== eventId,
+  );
+
+  writeOrganizedEvents(organizedEvents);
+  window.localStorage.setItem(REGISTERED_EVENTS_KEY, JSON.stringify(registeredEvents));
+  window.dispatchEvent(new CustomEvent("dcspace-registered-events-updated"));
+
+  if (window.localStorage.getItem(SELECTED_BROWSE_EVENT_KEY) === eventId) {
+    window.localStorage.removeItem(SELECTED_BROWSE_EVENT_KEY);
+  }
+}
+
 export function readBrowseEvents() {
   const organized = readOrganizedEvents();
   const eventMap = new Map<string, FrontendEvent>();
@@ -152,9 +187,10 @@ export function readBrowseEvents() {
 
 export function saveOrganizedEvent(input: OrganizedEventInput) {
   const dateParts = datePartsFromInput(input.eventDate);
-  const eventName = present(input.eventName) || 'Event Name';
-  const venue = present(input.venue) || 'Event Venue';
-  const organizer = present(input.courseOrganizer) || 'Event Organizer';
+  const eventDateDisplay = getEventDateDisplay(input, dateParts);
+  const eventName = present(input.eventName) || "Event Name";
+  const venue = present(input.venue) || "Event Venue";
+  const organizer = present(input.courseOrganizer) || "Event Organizer";
   const startTime = formatTime(present(input.startTime));
   const endTime = formatTime(present(input.endTime));
   const id = normalizeKey(`${eventName}-${dateParts.year}-${dateParts.month}-${dateParts.day}-${organizer}`);
@@ -164,20 +200,20 @@ export function saveOrganizedEvent(input: OrganizedEventInput) {
     month: dateParts.month,
     day: dateParts.day,
     year: dateParts.year,
-    dateTime: `${dateParts.longDate}, ${startTime} - ${endTime}`,
+    dateTime: `${eventDateDisplay}, ${startTime} - ${endTime}`,
     venue,
     organizer,
     overview:
-      'This event was created from the frontend organize-event flow. The backend can later replace this local record with a saved database event.',
-    requirements: ["Parent's Consent Form"],
-    school: present(input.school) || 'School',
-    department: present(input.department) || 'Department',
-    eventType: present(input.eventType) || 'Event',
-    duration: present(input.duration) || 'TBA',
-    minAttendance: present(input.minAttendance) || 'TBA',
-    createdBy: present(window.localStorage.getItem('dcspaceStudentEmail')) || 'local-frontend-user',
-    status: 'Created',
-    certificate: 'Processing',
+      "This event was created from the frontend organize-event flow. The backend can later replace this local record with a saved database event.",
+    requirements: input.requiredFiles || [],
+    school: present(input.school) || "School",
+    department: present(input.department) || "Department",
+    eventType: present(input.eventType) || "Event",
+    duration: present(input.duration) || "TBA",
+    minAttendance: present(input.minAttendance) || "TBA",
+    createdBy: present(window.localStorage.getItem("dcspaceStudentEmail")) || "local-frontend-user",
+    status: "Created",
+    certificate: "Processing",
   };
   const existing = readOrganizedEvents().filter((item) => item.id !== id);
 
@@ -198,20 +234,36 @@ export function readSelectedBrowseEvent() {
   return events.find((event) => event.id === selectedId) || events[0] || fallbackEvents[0];
 }
 
-export function registerEventForCurrentUser(event: FrontendEvent) {
+export function registerEventForCurrentUser(event: FrontendEvent, requirementFiles: UploadedRequirementFile[] = []) {
   const registeredEvents = readJson<RegisteredEvent[]>(window.localStorage, REGISTERED_EVENTS_KEY, []);
   const alreadyRegistered = registeredEvents.some((registeredEvent) => registeredEvent.id === event.id);
+  const firstRequirementFile = requirementFiles[0];
 
   if (alreadyRegistered) {
-    return registeredEvents;
+    const updatedEvents = registeredEvents.map((registeredEvent) =>
+      registeredEvent.id === event.id
+        ? {
+            ...registeredEvent,
+            requirementFile: firstRequirementFile || registeredEvent.requirementFile,
+            requirementFiles: requirementFiles.length > 0 ? requirementFiles : registeredEvent.requirementFiles,
+          }
+        : registeredEvent,
+    );
+
+    window.localStorage.setItem(REGISTERED_EVENTS_KEY, JSON.stringify(updatedEvents));
+    window.dispatchEvent(new CustomEvent("dcspace-registered-events-updated"));
+
+    return updatedEvents;
   }
 
   const nextRegisteredEvents = [
     ...registeredEvents,
     {
       ...event,
-      status: 'Registered',
-      certificate: 'Pending',
+      status: "Registered",
+      certificate: "Pending",
+      requirementFile: firstRequirementFile,
+      requirementFiles,
     },
   ];
 

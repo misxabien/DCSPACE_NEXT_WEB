@@ -76,6 +76,9 @@
 }
 
 .certificate-sort button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   height: 100%;
   border: none;
   background: transparent;
@@ -85,6 +88,12 @@
   font-size: 12px;
   font-weight: 800;
   padding: 0 12px;
+}
+
+.certificate-sort img {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
 }
 
 .certificate-sort button + button {
