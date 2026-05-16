@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Sidebar } from "@/components/Sidebar";
+import { Sidebar } from '@/components/Sidebar';
 
 interface AppShellProps {
   children: React.ReactNode;

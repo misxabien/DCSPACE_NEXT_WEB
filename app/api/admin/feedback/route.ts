@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "../../../../lib/admin/auth/roleGuard";
-import { getFeedbackOverview } from "../../../../lib/admin/db/feedback";
+import { requireAdmin } from "@/lib/admin/auth/roleGuard";
+import { getFeedbackOverview } from "@/lib/admin/db/feedback";
 
 function toErrorResponse(error: unknown) {
   if (error instanceof Error && error.name === "AdminAuthorizationError") {

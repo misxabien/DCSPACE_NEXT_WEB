@@ -1,11 +1,11 @@
-import { Poppins } from "next/font/google";
-import "./login.css";
+import { Poppins } from 'next/font/google';
+import './login.css';
 
 const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-poppins",
-  display: "swap",
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-poppins',
+  display: 'swap',
   adjustFontFallback: true,
 });
 

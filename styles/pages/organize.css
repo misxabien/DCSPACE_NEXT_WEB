@@ -42,7 +42,7 @@
       }
 
       .organize-header {
-        padding: 24px 38px 12px;
+        padding: clamp(18px, 3vw, 24px) clamp(16px, 4vw, 38px) 12px;
         flex-shrink: 0;
       }
 
@@ -56,11 +56,12 @@
       .organize-header__titles h1 {
         margin: 0;
         color: #604d18;
-        font-size: clamp(34px, 4vw, 46px);
+        font-size: clamp(28px, 5vw, 46px);
         font-weight: 900;
         letter-spacing: 0;
         line-height: 1.1;
         text-shadow: none;
+        overflow-wrap: anywhere;
       }
 
       .organize-header__titles p {
@@ -71,6 +72,7 @@
         color: #604d18;
         text-shadow: none;
         line-height: 1.35;
+        overflow-wrap: anywhere;
       }
 
       .main__tools {
@@ -106,18 +108,20 @@
         height: 1px;
         background: var(--brown-icon);
         opacity: 0.42;
-        margin: 18px 38px 0;
+        margin: 18px clamp(16px, 4vw, 38px) 0;
         max-width: none;
       }
 
       .main__grid-wrap {
-        padding: 22px 38px 56px;
+        padding: 22px clamp(16px, 4vw, 38px) clamp(34px, 7vw, 56px);
         flex: 1;
+        min-width: 0;
       }
 
       .organize-form-shell {
         max-width: 100%;
         width: 100%;
+        min-width: 0;
       }
 
       .form-section-label {
@@ -133,8 +137,9 @@
         border: 2px solid var(--input-border);
         border-radius: 14px;
         background: rgba(255, 253, 246, 0.75);
-        padding: 24px 28px 24px;
+        padding: clamp(16px, 3vw, 24px) clamp(14px, 3vw, 28px);
         box-shadow: 0 4px 18px rgba(30, 58, 95, 0.08);
+        min-width: 0;
       }
 
       .field-event-name {
@@ -162,7 +167,7 @@
       .form-flow {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 18px 44px;
+        gap: 18px clamp(18px, 4vw, 44px);
         align-items: start;
       }
 
@@ -178,6 +183,7 @@
         display: flex;
         flex-direction: column;
         gap: 6px;
+        min-width: 0;
       }
 
       .course-org-inputs {
@@ -217,6 +223,9 @@
         font-weight: 700;
         color: var(--form-blue);
         letter-spacing: 0.02em;
+        line-height: 1.25;
+        min-width: 0;
+        overflow-wrap: anywhere;
       }
 
       .form-row__label svg {
@@ -228,6 +237,7 @@
 
       .input-inline {
         width: 100%;
+        min-width: 0;
         font-family: inherit;
         font-size: 0.84rem;
         font-weight: 600;
@@ -241,6 +251,26 @@
 
       .input-inline:focus {
         border-color: var(--nav-active);
+      }
+
+      .date-fields {
+        display: grid;
+        gap: 8px;
+      }
+
+      .date-fields--range {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .date-field {
+        display: grid;
+        gap: 4px;
+      }
+
+      .date-field span {
+        color: #4a5568;
+        font-size: 0.72rem;
+        font-weight: 800;
       }
 
       select.input-inline {
@@ -276,7 +306,7 @@
       .time-pair {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 18px 44px;
+        gap: 18px clamp(18px, 4vw, 44px);
         width: 100%;
         align-items: start;
       }
@@ -346,6 +376,7 @@
         line-height: 1.3;
         letter-spacing: 0.03em;
         max-width: 100%;
+        overflow-wrap: anywhere;
       }
 
       .upload-tile input[type="file"] {
@@ -353,6 +384,152 @@
         inset: 0;
         opacity: 0;
         cursor: pointer;
+      }
+
+      .required-files {
+        margin-top: 26px;
+        color: #604d18;
+      }
+
+      .required-files h2 {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin: 0 0 14px;
+        color: #604d18;
+        font-size: clamp(20px, 3vw, 26px);
+        font-weight: 700;
+        letter-spacing: 0;
+      }
+
+      .required-files__icon {
+        width: 28px;
+        height: 28px;
+        flex: 0 0 28px;
+        background: #604d18;
+        mask: url("/assets/checkbox.svg") center / contain no-repeat;
+        -webkit-mask: url("/assets/checkbox.svg") center / contain no-repeat;
+      }
+
+      .required-files__list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .required-files__saved {
+        width: 100%;
+        min-height: 46px;
+        display: flex;
+        align-items: center;
+        border: 1px solid rgba(0, 0, 0, 0.42);
+        border-radius: 5px;
+        background: #fffbf2;
+        box-shadow: 2px 3px 4px rgba(64, 54, 23, 0.2);
+        color: #604d18;
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+        padding: 10px 30px;
+      }
+
+      .required-files__row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 156px;
+        gap: 18px;
+        align-items: center;
+      }
+
+      .required-files__input {
+        width: 100%;
+        min-width: 0;
+        height: 41px;
+        border: 1.5px solid #604d18;
+        border-radius: 4px;
+        background: #fffbf2;
+        box-shadow: 2px 3px 4px rgba(64, 54, 23, 0.24);
+        color: #604d18;
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        outline: none;
+        padding: 0 14px;
+      }
+
+      .required-files__input::placeholder {
+        color: #604d18;
+        opacity: 1;
+      }
+
+      .required-files__input:focus {
+        border-color: #448aff;
+        box-shadow:
+          0 0 0 3px rgba(68, 138, 255, 0.16),
+          2px 3px 4px rgba(64, 54, 23, 0.2);
+      }
+
+      .required-files__add {
+        height: 41px;
+        border: 1px solid #5c78ac;
+        border-radius: 6px;
+        background: #8eb5f4;
+        box-shadow: 2px 3px 4px rgba(64, 54, 23, 0.24);
+        color: #1f3d68;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 16px;
+        font-weight: 500;
+      }
+
+      .required-files__more {
+        width: 100%;
+        min-height: 40px;
+        margin-top: 20px;
+        border: 1px solid #000;
+        border-radius: 5px;
+        background: #f0ddac;
+        box-shadow: 2px 3px 4px rgba(64, 54, 23, 0.2);
+        color: #604d18;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        padding: 8px 14px;
+      }
+
+      .required-files__add:hover,
+      .required-files__more:hover {
+        filter: brightness(1.03);
+        transform: translateY(-1px);
+      }
+
+      .required-files__toast {
+        position: fixed;
+        right: clamp(16px, 4vw, 38px);
+        bottom: 24px;
+        z-index: 60;
+        min-width: 210px;
+        border: 1px solid rgba(96, 77, 24, 0.24);
+        border-radius: 8px;
+        background: #604d18;
+        box-shadow: 0 10px 24px rgba(64, 54, 23, 0.24);
+        color: #fff8e8;
+        font-size: 14px;
+        font-weight: 800;
+        padding: 12px 16px;
+        text-align: center;
+        animation: required-file-toast-in 0.18s ease both;
+      }
+
+      @keyframes required-file-toast-in {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
 
       .form-actions {
@@ -440,14 +617,14 @@
 
       .review-modal {
         width: min(100%, 720px);
-        max-height: min(88vh, 760px);
+        max-height: min(88dvh, 760px);
         overflow-y: auto;
         border: 1.5px solid #9d7705;
         border-radius: 10px;
         background: #fff8e8;
         color: #604d18;
         box-shadow: 0 18px 42px rgba(64, 51, 20, 0.25);
-        padding: 24px 28px 26px;
+        padding: clamp(18px, 4vw, 24px) clamp(16px, 4vw, 28px) 26px;
       }
 
       .review-modal__header {
@@ -523,10 +700,29 @@
         margin-top: 26px;
       }
 
+      @media (max-width: 760px) {
+        .organize-header__row {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .main__tools {
+          align-self: flex-end;
+        }
+
+        .form-flow {
+          gap: 16px;
+        }
+      }
+
       /* Only collapse the main form to one column on narrow phones - keeps
          School | Department and paired times side-by-side on tablets/laptops. */
       @media (max-width: 640px) {
         .form-flow {
+          grid-template-columns: 1fr;
+        }
+
+        .date-fields--range {
           grid-template-columns: 1fr;
         }
 
@@ -538,6 +734,11 @@
         .review-modal__actions {
           align-items: stretch;
           flex-direction: column;
+        }
+
+        .required-files__row {
+          grid-template-columns: 1fr;
+          gap: 10px;
         }
 
         .btn-review,
@@ -611,3 +812,35 @@
         }
       }
 
+      @media (max-width: 420px) {
+        .organize-header {
+          padding-top: 16px;
+        }
+
+        .main__tools {
+          align-self: stretch;
+          justify-content: flex-end;
+        }
+
+        .main__tool {
+          width: 36px;
+          height: 36px;
+        }
+
+        .form-panel {
+          border-radius: 10px;
+        }
+
+        .form-row__label {
+          align-items: flex-start;
+        }
+
+        .form-actions,
+        .review-modal__actions {
+          gap: 12px;
+        }
+
+        .review-overlay {
+          padding: 12px;
+        }
+      }

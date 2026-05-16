@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { DC_SAVED_EVENTS_KEY } from "@/lib/dc-storage";
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { DC_SAVED_EVENTS_KEY } from '@/lib/dc-storage';
 
 function readIds(): string[] {
   try {
@@ -32,7 +32,7 @@ const EventsBookmarkContext = createContext<Ctx | null>(null);
 
 export function useEventBookmark() {
   const v = useContext(EventsBookmarkContext);
-  if (!v) throw new Error("useEventBookmark outside provider");
+  if (!v) throw new Error('useEventBookmark outside provider');
   return v;
 }
 
@@ -66,11 +66,11 @@ export function EventBookmarkButton({ eventId }: Readonly<EventBookmarkButtonPro
   return (
     <button
       type="button"
-      className={`bookmark ${isSaved ? "bookmark--solid" : "bookmark--outline"}`}
+      className={`bookmark ${isSaved ? 'bookmark--solid' : 'bookmark--outline'}`}
       data-event-id={eventId}
       aria-pressed={isSaved}
-      aria-label={isSaved ? "Remove from saved events" : "Save event to dashboard"}
-      title={isSaved ? "Remove from saved" : "Save event"}
+      aria-label={isSaved ? 'Remove from saved events' : 'Save event to dashboard'}
+      title={isSaved ? 'Remove from saved' : 'Save event'}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();

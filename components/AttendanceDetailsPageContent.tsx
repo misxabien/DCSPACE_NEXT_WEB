@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import Link from 'next/link';
+import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ATTENDANCE_UPDATED_EVENT,
   REGISTERED_EVENTS_KEY,
@@ -18,7 +18,7 @@ import {
   readRegisteredEvents,
   readUserAttendanceRecords,
   recordRfidAttendanceTap,
-} from "@/lib/attendance";
+} from '@/lib/attendance';
 
 function getTimeMinutes(time?: string) {
   if (!time) return null;
@@ -59,7 +59,7 @@ type AttendanceDetail = {
 };
 
 const placeholderEvent: RegisteredEvent = {
-  name: "Event Name",
+  name: 'Event Name',
 };
 
 function readSelectedAttendanceDetail(): AttendanceDetail {
@@ -81,8 +81,8 @@ function readSelectedAttendanceDetail(): AttendanceDetail {
 export function AttendanceDetailsPageContent() {
   const scannerInputRef = useRef<HTMLInputElement>(null);
 
-  const [rfidInput, setRfidInput] = useState("");
-  const [scanMessage, setScanMessage] = useState("");
+  const [rfidInput, setRfidInput] = useState('');
+  const [scanMessage, setScanMessage] = useState('');
   const [detail, setDetail] = useState<AttendanceDetail | null>(null);
 
   const refreshDetail = useCallback(() => {
@@ -100,23 +100,23 @@ export function AttendanceDetailsPageContent() {
     focusScanner();
 
     const handleStorage = (event: StorageEvent) => {
-      if (!event.key || event.key === REGISTERED_EVENTS_KEY || event.key.startsWith("dcspaceAttendanceRecords:")) {
+      if (!event.key || event.key === REGISTERED_EVENTS_KEY || event.key.startsWith('dcspaceAttendanceRecords:')) {
         refreshDetail();
       }
     };
 
-    window.addEventListener("pageshow", refreshDetail);
-    window.addEventListener("pageshow", focusScanner);
-    window.addEventListener("storage", handleStorage);
+    window.addEventListener('pageshow', refreshDetail);
+    window.addEventListener('pageshow', focusScanner);
+    window.addEventListener('storage', handleStorage);
     window.addEventListener(ATTENDANCE_UPDATED_EVENT, refreshDetail);
-    window.addEventListener("click", focusScanner);
+    window.addEventListener('click', focusScanner);
 
     return () => {
-      window.removeEventListener("pageshow", refreshDetail);
-      window.removeEventListener("pageshow", focusScanner);
-      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener('pageshow', refreshDetail);
+      window.removeEventListener('pageshow', focusScanner);
+      window.removeEventListener('storage', handleStorage);
       window.removeEventListener(ATTENDANCE_UPDATED_EVENT, refreshDetail);
-      window.removeEventListener("click", focusScanner);
+      window.removeEventListener('click', focusScanner);
     };
   }, [refreshDetail, focusScanner]);
 
@@ -133,13 +133,13 @@ export function AttendanceDetailsPageContent() {
       ? record.taps
       : record?.tapIn || record?.tapOut
       ? [{ tapIn: record.tapIn, tapOut: record.tapOut }]
-      : [{ tapIn: "00-00 AM/PM", tapOut: "00-00 AM/PM" }];
+      : [{ tapIn: '00-00 AM/PM', tapOut: '00-00 AM/PM' }];
 
   const tapRows = [
     ...savedTapRows,
     ...Array.from({ length: Math.max(0, 7 - savedTapRows.length) }, () => ({
-      tapIn: "",
-      tapOut: "",
+      tapIn: '',
+      tapOut: '',
     })),
   ];
 
@@ -162,7 +162,7 @@ export function AttendanceDetailsPageContent() {
     const result = recordRfidAttendanceTap(scannedRfid, registeredEvents);
 
     setScanMessage(result.message);
-    setRfidInput("");
+    setRfidInput('');
     refreshDetail();
     focusScanner();
   };
@@ -183,10 +183,10 @@ export function AttendanceDetailsPageContent() {
 
       <div className="details-top">
         <div className="event-block">
-          <h2 className="event-block__title">{event.name || "Event Name"}</h2>
+          <h2 className="event-block__title">{event.name || 'Event Name'}</h2>
 
           <p className="event-block__sub">
-            Required Attendance Time: {event.minAttendance || "TBA"}
+            Required Attendance Time: {event.minAttendance || 'TBA'}
           </p>
 
           {scanMessage && <p className="rfid-scan-message">{scanMessage}</p>}
@@ -210,7 +210,7 @@ export function AttendanceDetailsPageContent() {
 
           <div>
             <dt>Student No.</dt>
-            <dd>{user?.studentNumber || "2025-0000"}</dd>
+            <dd>{user?.studentNumber || '2025-0000'}</dd>
           </div>
 
           <div>
@@ -226,7 +226,7 @@ export function AttendanceDetailsPageContent() {
           <div>
             <dt>E-Certificate Status</dt>
             <dd>
-              {certificateStatus === "Download" ? (
+              {certificateStatus === 'Download' ? (
                 <button className="cert-download" type="button" onClick={handleDownload}>
                   Download
                 </button>
@@ -258,14 +258,14 @@ export function AttendanceDetailsPageContent() {
           <tbody>
             {savedTapRows.map((tap, index) => (
               <tr key={`${index}-${tap.tapIn}-${tap.tapOut}`}>
-                <td>{index === 0 ? formatEventDate(event) : ""}</td>
-                <td>{index === 0 ? user?.studentNumber || "2025-0000" : ""}</td>
-                <td>{tap.tapIn || ""}</td>
-                <td>{tap.tapOut || ""}</td>
-                <td className="col-status">{index === 0 ? requirementStatus : ""}</td>
+                <td>{index === 0 ? formatEventDate(event) : ''}</td>
+                <td>{index === 0 ? user?.studentNumber || '2025-0000' : ''}</td>
+                <td>{tap.tapIn || ''}</td>
+                <td>{tap.tapOut || ''}</td>
+                <td className="col-status">{index === 0 ? requirementStatus : ''}</td>
                 <td className="col-cert">
                   {index === 0 ? (
-                    certificateStatus === "Download" ? (
+                    certificateStatus === 'Download' ? (
                       <button className="cert-download" type="button" onClick={handleDownload}>
                         Download
                       </button>
@@ -273,7 +273,7 @@ export function AttendanceDetailsPageContent() {
                       certificateStatus
                     )
                   ) : (
-                    ""
+                    ''
                   )}
                 </td>
               </tr>
@@ -299,7 +299,7 @@ export function AttendanceDetailsPageContent() {
 
           <tbody>
             {tapRows.map((row, index) => (
-              <tr className={index === 0 ? undefined : "detail-empty-row"} key={`${index}-${row.tapIn}-${row.tapOut}`}>
+              <tr className={index === 0 ? undefined : 'detail-empty-row'} key={`${index}-${row.tapIn}-${row.tapOut}`}>
                 <td>{row.tapIn}</td>
                 <td>{row.tapOut}</td>
               </tr>

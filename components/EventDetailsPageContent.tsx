@@ -1,25 +1,37 @@
-"use client";
+'use client';
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { ChangeEvent } from "react";
 import { startTransition, useEffect, useState } from "react";
-import { type FrontendEvent, readSelectedBrowseEvent, registerEventForCurrentUser } from "@/lib/dc-events";
+import {
+  getRegisteredEventId,
+  readRegisteredEvents,
+  type RegisteredEvent,
+  type UploadedRequirementFile,
+} from "@/lib/attendance";
+import {
+  deleteOrganizedEvent,
+  type FrontendEvent,
+  readSelectedBrowseEvent,
+  registerEventForCurrentUser,
+} from "@/lib/dc-events";
 
 const fallbackEventDetails: FrontendEvent = {
-  id: "fallback-event",
-  name: "Event Name",
-  month: "MAR",
-  day: "15",
-  year: "2026",
-  dateTime: "Event Date, Time Start and End",
-  venue: "Event Venue",
-  organizer: "Event Organizer",
+  id: 'fallback-event',
+  name: 'Event Name',
+  month: 'MAR',
+  day: '15',
+  year: '2026',
+  dateTime: 'Event Date, Time Start and End',
+  venue: 'Event Venue',
+  organizer: 'Event Organizer',
   overview:
-    "Last week, our school held a successful technology seminar that brought together students and professionals to learn about the latest trends in innovation. The event featured several guest speakers who shared their experiences in the field of information technology, providing valuable insights and practical advice. Participants were actively engaged through interactive discussions and hands-on activities, making the seminar both informative and enjoyable.",
+    'Last week, our school held a successful technology seminar that brought together students and professionals to learn about the latest trends in innovation. The event featured several guest speakers who shared their experiences in the field of information technology, providing valuable insights and practical advice. Participants were actively engaged through interactive discussions and hands-on activities, making the seminar both informative and enjoyable.',
   requirements: ["Parent's Consent Form"],
 };
 
-type EventDetailsSource = "events" | "dashboard";
+type EventDetailsSource = "events" | "dashboard" | "organized";
 
 type EventDetailsPageContentProps = {
   source?: EventDetailsSource;
@@ -30,15 +42,15 @@ type EventDetailsPageContentProps = {
   };
 };
 
-function getRegisteredEventStatusLabel(eventDate?: EventDetailsPageContentProps["eventDate"]) {
+function getRegisteredEventStatusLabel(eventDate?: EventDetailsPageContentProps['eventDate']) {
   if (!eventDate?.month || !eventDate.day || !eventDate.year) {
-    return "Upcoming Event";
+    return 'Upcoming Event';
   }
 
   const parsedDate = new Date(`${eventDate.month} ${eventDate.day}, ${eventDate.year}`);
 
   if (Number.isNaN(parsedDate.getTime())) {
-    return "Upcoming Event";
+    return 'Upcoming Event';
   }
 
   const today = new Date();
@@ -49,46 +61,160 @@ function getRegisteredEventStatusLabel(eventDate?: EventDetailsPageContentProps[
     return "Today's Event";
   }
 
-  return parsedDate > today ? "Upcoming Event" : "Passed Event";
+  return parsedDate > today ? 'Upcoming Event' : 'Passed Event';
+}
+
+function readRequirementFile(file: File): Promise<UploadedRequirementFile> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.addEventListener("load", () => {
+      if (typeof reader.result !== "string") {
+        reject(new Error("Unable to read uploaded file."));
+        return;
+      }
+
+      resolve({
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: file.size,
+        dataUrl: reader.result,
+      });
+    });
+    reader.addEventListener("error", () => reject(reader.error || new Error("Unable to read uploaded file.")));
+    reader.readAsDataURL(file);
+  });
+}
+
+function registeredEventMatchesDate(event: RegisteredEvent, eventDate?: EventDetailsPageContentProps["eventDate"]) {
+  if (!eventDate?.month || !eventDate.day || !eventDate.year) {
+    return false;
+  }
+
+  return event.month === eventDate.month && event.day === eventDate.day && event.year === eventDate.year;
+}
+
+function toEventDetails(event: RegisteredEvent, fallback: FrontendEvent): FrontendEvent {
+  return {
+    ...fallback,
+    ...event,
+    id: getRegisteredEventId(event),
+    name: event.name || fallback.name,
+    month: event.month || fallback.month,
+    day: event.day || fallback.day,
+    year: event.year || fallback.year,
+    dateTime: event.dateTime || fallback.dateTime,
+    venue: event.venue || fallback.venue,
+    organizer: event.organizer || fallback.organizer,
+    overview: fallback.overview,
+    requirements: event.requirements || fallback.requirements,
+  };
 }
 
 export function EventDetailsPageContent({ source = "events", eventDate }: EventDetailsPageContentProps) {
   const router = useRouter();
   const isDashboardSource = source === "dashboard";
+  const isOrganizedSource = source === "organized";
   const registeredEventStatus = getRegisteredEventStatusLabel(eventDate);
   const [showRequirements, setShowRequirements] = useState(false);
-  const [fileAdded, setFileAdded] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedRequirementFiles, setSelectedRequirementFiles] = useState<Record<string, File>>({});
+  const [showRequirementWarning, setShowRequirementWarning] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<FrontendEvent>(fallbackEventDetails);
+  const eventRequirements = selectedEvent.requirements || [];
 
   useEffect(() => {
-    setSelectedEvent(readSelectedBrowseEvent());
-  }, [source]);
+    const browseEvent = readSelectedBrowseEvent();
 
-  const handleConfirm = () => {
-    if (!fileAdded) return;
+    if (!isDashboardSource) {
+      setSelectedEvent(browseEvent);
+      return;
+    }
 
-    registerEventForCurrentUser(selectedEvent);
+    const registeredEvents = readRegisteredEvents();
+    const registeredEvent =
+      registeredEvents.find((event) => event.id && event.id === browseEvent.id) ||
+      registeredEvents.find((event) => registeredEventMatchesDate(event, eventDate));
+
+    setSelectedEvent(registeredEvent ? toEventDetails(registeredEvent, browseEvent) : browseEvent);
+  }, [eventDate, isDashboardSource, source]);
+
+  const handleDeleteEvent = () => {
+    deleteOrganizedEvent(selectedEvent.id);
+    setShowDeleteConfirm(false);
+    window.sessionStorage.setItem("dcspaceDashboardView", "organized");
+    router.push("/dashboard");
+  };
+
+  const handleConfirm = async () => {
+    const missingRequirements = eventRequirements.some((requirement) => !selectedRequirementFiles[requirement]);
+
+    if (missingRequirements) {
+      setShowRequirementWarning(true);
+      return;
+    }
+
+    const requirementFiles = await Promise.all(
+      eventRequirements.map(async (requirementName) => ({
+        ...(await readRequirementFile(selectedRequirementFiles[requirementName])),
+        requirementName,
+      })),
+    );
+
+    registerEventForCurrentUser(selectedEvent, requirementFiles);
 
     setIsRedirecting(true);
 
     window.setTimeout(() => {
       startTransition(() => {
-        router.push("/dashboard");
+        router.push('/dashboard');
       });
     }, 180);
+  };
+
+  const handleOpenRequirements = () => {
+    setShowRequirementWarning(false);
+    setShowRequirements(true);
+  };
+
+  const handleCloseRequirements = () => {
+    setShowRequirementWarning(false);
+    setShowRequirements(false);
+  };
+
+  const handleRequirementFileChange = (requirement: string, event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    setSelectedRequirementFiles((files) => ({
+      ...files,
+      [requirement]: file,
+    }));
+    setShowRequirementWarning(false);
   };
 
   const eventDetails = selectedEvent;
 
   return (
-    <section className={`event-details-page${isRedirecting ? " is-exiting" : ""}`}>
+    <section className={`event-details-page${isRedirecting ? " is-exiting" : ""}${showDeleteConfirm ? " is-delete-confirming" : ""}`}>
       {isDashboardSource ? (
         <section className="registered-details-tabs" aria-label="Dashboard sections">
           <Link className="registered-details-back" href="/dashboard">
             Events Registered
           </Link>
-          <span>Events Organized</span>
+        </section>
+      ) : isOrganizedSource ? (
+        <section className="organized-details-header" aria-label="Organized event details">
+          <Link className="organized-details-back" href="/dashboard">
+            Events Organized
+          </Link>
+          <button className="delete-event-button" type="button" onClick={() => setShowDeleteConfirm(true)}>
+            Delete event
+          </button>
         </section>
       ) : (
         <section className="details-header">
@@ -134,12 +260,25 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
 
         <h3>Requirements</h3>
         <ul>
-          {eventDetails.requirements.map((requirement) => (
-            <li key={requirement}>{requirement}</li>
-          ))}
+          {eventDetails.requirements.map((requirement, index) => {
+            const submittedFile =
+              eventDetails.requirementFiles?.find((file) => file.requirementName === requirement) ||
+              eventDetails.requirementFiles?.[index] ||
+              eventDetails.requirementFile;
+
+            return (
+              <li key={requirement}>
+                {isDashboardSource && submittedFile ? (
+                  <SubmittedRequirementLink requirement={requirement} file={submittedFile} />
+                ) : (
+                  requirement
+                )}
+              </li>
+            );
+          })}
 
           <li>
-            Minimum Attendance Time Required: {eventDetails.minAttendance || "TBA"}
+            Minimum Attendance Time Required: {eventDetails.minAttendance || 'TBA'}
           </li>
         </ul>
       </section>
@@ -149,7 +288,7 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
           <button className="go-back-button" type="button" onClick={() => router.back()}>
             Go Back
           </button>
-          <button className="register-button" type="button" onClick={() => setShowRequirements(true)}>
+          <button className="register-button" type="button" onClick={handleOpenRequirements}>
             Register!
           </button>
         </div>
@@ -160,7 +299,7 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
           <section className="requirements-modal" role="dialog" aria-modal="true" aria-label="Event requirements">
             <div className="requirements-header">
               <h2>Requirements:</h2>
-              <button className="close-button" type="button" aria-label="Close requirements" onClick={() => setShowRequirements(false)}>
+              <button className="close-button" type="button" aria-label="Close requirements" onClick={handleCloseRequirements}>
                 <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
                   <path d="M6.67969 24.5977H20.8945C23.3555 24.5977 24.5742 23.3789 24.5742 20.9648V6.65625C24.5742 4.24219 23.3555 3.02344 20.8945 3.02344H6.67969C4.23047 3.02344 3 4.23047 3 6.65625V20.9648C3 23.3906 4.23047 24.5977 6.67969 24.5977ZM6.70312 22.7109C5.53125 22.7109 4.88672 22.0898 4.88672 20.8711V6.75C4.88672 5.53125 5.53125 4.91016 6.70312 4.91016H20.8711C22.0312 4.91016 22.6875 5.53125 22.6875 6.75V20.8711C22.6875 22.0898 22.0312 22.7109 20.8711 22.7109H6.70312Z" fill="currentColor" />
                   <path d="M10.3125 19.1602C10.6875 19.1602 10.8984 19.0312 11.1914 18.6211L13.7227 15.0117H13.7695L16.3008 18.6211C16.5938 19.0312 16.8047 19.1602 17.1797 19.1602C17.707 19.1602 18.0938 18.8086 18.0938 18.3047C18.0938 18.0703 18.0234 17.8945 17.8711 17.6953L14.9297 13.6758L17.8945 9.64453C18.0586 9.43359 18.1289 9.24609 18.1289 9.02344C18.1289 8.56641 17.7305 8.20312 17.2383 8.20312C16.875 8.20312 16.6406 8.34375 16.3828 8.73047L13.9453 12.3398H13.875L11.3789 8.71875C11.1094 8.34375 10.8867 8.20312 10.4883 8.20312C9.98438 8.20312 9.57422 8.60156 9.57422 9.07031C9.57422 9.32812 9.64453 9.49219 9.82031 9.75L12.6328 13.6172L9.65625 17.7422C9.50391 17.9531 9.44531 18.1172 9.44531 18.3516C9.44531 18.8086 9.82031 19.1602 10.3125 19.1602Z" fill="currentColor" />
@@ -168,23 +307,97 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
               </button>
             </div>
 
-            <div className={`file-requirement${fileAdded ? " is-added" : ""}`}>
-              <button className="file-row" type="button" onClick={() => setFileAdded(true)}>
-                <span>Parent&apos;s Consent Form</span>
-                <FileIcon />
-              </button>
-              <div className="file-added-strip" aria-hidden={!fileAdded}>
-                File Added!
-              </div>
-            </div>
+            {eventRequirements.length > 0 ? (
+              <div className="requirements-list">
+                {eventRequirements.map((requirement) => {
+                  const selectedFile = selectedRequirementFiles[requirement];
 
-            <button className="confirm-button" type="button" onClick={handleConfirm}>
+                  return (
+                    <div className={`file-requirement${selectedFile ? " is-added" : ""}`} key={requirement}>
+                      <label className="file-row">
+                        <span>{requirement}</span>
+                        <FilePlusIcon />
+                        <input
+                          className="requirement-file-input"
+                          type="file"
+                          onChange={(event) => handleRequirementFileChange(requirement, event)}
+                          aria-label={`Upload ${requirement}`}
+                          required
+                        />
+                      </label>
+                      <div className="file-added-strip" aria-hidden={!selectedFile}>
+                        {selectedFile?.name || "File Added!"}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="requirements-empty">No required files for this event.</p>
+            )}
+
+            {showRequirementWarning && (
+              <p className="requirements-warning" role="alert">
+                Please submit the requirements first
+              </p>
+            )}
+
+            <button
+              className={`confirm-button${showRequirementWarning ? " has-warning" : ""}`}
+              type="button"
+              onClick={handleConfirm}
+            >
               Confirm
             </button>
           </section>
         </div>
       )}
+
+      {showDeleteConfirm && (
+        <div className="delete-confirm-overlay">
+          <section className="delete-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+            <h2 id="delete-confirm-title">
+              Are you sure you want to delete &quot;{eventDetails.name}&quot;?
+            </h2>
+            <div className="delete-confirm-actions">
+              <button className="delete-confirm-no" type="button" onClick={() => setShowDeleteConfirm(false)}>
+                No
+              </button>
+              <button className="delete-confirm-yes" type="button" onClick={handleDeleteEvent}>
+                Yes
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </section>
+  );
+}
+
+function SubmittedRequirementLink({
+  requirement,
+  file,
+}: {
+  requirement: string;
+  file: UploadedRequirementFile;
+}) {
+  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
+  return (
+    <span className="submitted-requirement">
+      <a
+        className="submitted-requirement__link"
+        href={file.dataUrl}
+        target={isPdf ? "_blank" : undefined}
+        rel={isPdf ? "noreferrer" : undefined}
+        download={isPdf ? undefined : file.name}
+      >
+        {requirement}
+      </a>
+      <span className="submitted-requirement__tooltip" role="tooltip">
+        {file.name}
+      </span>
+    </span>
   );
 }
 
@@ -212,11 +425,13 @@ function OrganizerIcon() {
   );
 }
 
-function FileIcon() {
+function FilePlusIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
       <path d="M14 2V8H20" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M12 12V18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M9 15H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }

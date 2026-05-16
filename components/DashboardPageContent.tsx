@@ -1,9 +1,15 @@
-"use client";
+'use client';
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { EmptyState } from "@/components/EmptyState";
-import { type FrontendEvent, readOrganizedEvents, setSelectedBrowseEventId } from "@/lib/dc-events";
+import {
+  canOrganizeEvents,
+  type FrontendEvent,
+  readOrganizedEvents,
+  setSelectedBrowseEventId,
+} from "@/lib/dc-events";
 
 type RegisteredEvent = {
   id?: string;
@@ -17,12 +23,12 @@ type RegisteredEvent = {
 };
 
 const registeredEventSections = [
-  { key: "today", title: "Today's Event" },
-  { key: "upcoming", title: "Upcoming Event" },
-  { key: "passed", title: "Passed Event" },
+  { key: 'today', title: "Today's Event" },
+  { key: 'upcoming', title: 'Upcoming Event' },
+  { key: 'passed', title: 'Passed Event' },
 ] as const;
 
-type RegisteredEventSectionKey = (typeof registeredEventSections)[number]["key"];
+type RegisteredEventSectionKey = (typeof registeredEventSections)[number]['key'];
 
 function getRegisteredEventDate(event: RegisteredEvent) {
   const parsedDate = new Date(`${event.month} ${event.day}, ${event.year}`);
@@ -41,15 +47,15 @@ function getRegisteredEventSection(event: RegisteredEvent): RegisteredEventSecti
   today.setHours(0, 0, 0, 0);
 
   if (!eventDate || eventDate.getTime() === today.getTime()) {
-    return "today";
+    return 'today';
   }
 
-  return eventDate > today ? "upcoming" : "passed";
+  return eventDate > today ? 'upcoming' : 'passed';
 }
 
 function getRegisteredEventDetailsHref(event: RegisteredEvent) {
   return {
-    pathname: "/dashboard/registered-event",
+    pathname: '/dashboard/registered-event',
     query: {
       month: event.month,
       day: event.day,
@@ -58,24 +64,25 @@ function getRegisteredEventDetailsHref(event: RegisteredEvent) {
   };
 }
 
-function sortRegisteredEventsByDate(events: RegisteredEvent[], direction: "ascending" | "descending") {
+function sortRegisteredEventsByDate(events: RegisteredEvent[], direction: 'ascending' | 'descending') {
   return [...events].sort((firstEvent, secondEvent) => {
     const firstDate = getRegisteredEventDate(firstEvent)?.getTime() ?? 0;
     const secondDate = getRegisteredEventDate(secondEvent)?.getTime() ?? 0;
 
-    return direction === "ascending" ? firstDate - secondDate : secondDate - firstDate;
+    return direction === 'ascending' ? firstDate - secondDate : secondDate - firstDate;
   });
 }
 
 export function DashboardPageContent() {
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
   const [organizedEvents, setOrganizedEvents] = useState<FrontendEvent[]>([]);
+  const [canViewOrganizedEvents, setCanViewOrganizedEvents] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const [activeDashboardView, setActiveDashboardView] = useState<"registered" | "organized">("registered");
+  const [activeDashboardView, setActiveDashboardView] = useState<'registered' | 'organized'>('registered');
   const [consentChecked, setConsentChecked] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
 
-  const isRegisteredView = activeDashboardView === "registered";
+  const isRegisteredView = activeDashboardView === 'registered';
 
   const registeredEventsBySection = useMemo(
     () =>
@@ -84,7 +91,7 @@ export function DashboardPageContent() {
 
         return {
           ...section,
-          events: sortRegisteredEventsByDate(sectionEvents, section.key === "passed" ? "descending" : "ascending"),
+          events: sortRegisteredEventsByDate(sectionEvents, section.key === 'passed' ? 'descending' : 'ascending'),
         };
       }),
     [registeredEvents],
@@ -93,23 +100,36 @@ export function DashboardPageContent() {
   useEffect(() => {
     const refreshDashboardEvents = () => {
       const saved = JSON.parse(localStorage.getItem("dcspaceRegisteredEvents") || "[]");
+      const requestedView = window.sessionStorage.getItem("dcspaceDashboardView");
       setRegisteredEvents(saved);
       setOrganizedEvents(readOrganizedEvents());
+      setCanViewOrganizedEvents(canOrganizeEvents());
+
+      if (requestedView === "organized" && canOrganizeEvents()) {
+        setActiveDashboardView("organized");
+        window.sessionStorage.removeItem("dcspaceDashboardView");
+      }
     };
 
     refreshDashboardEvents();
-    window.addEventListener("pageshow", refreshDashboardEvents);
-    window.addEventListener("storage", refreshDashboardEvents);
-    window.addEventListener("dcspace-events-updated", refreshDashboardEvents);
-    window.addEventListener("dcspace-registered-events-updated", refreshDashboardEvents);
+    window.addEventListener('pageshow', refreshDashboardEvents);
+    window.addEventListener('storage', refreshDashboardEvents);
+    window.addEventListener('dcspace-events-updated', refreshDashboardEvents);
+    window.addEventListener('dcspace-registered-events-updated', refreshDashboardEvents);
 
     return () => {
-      window.removeEventListener("pageshow", refreshDashboardEvents);
-      window.removeEventListener("storage", refreshDashboardEvents);
-      window.removeEventListener("dcspace-events-updated", refreshDashboardEvents);
-      window.removeEventListener("dcspace-registered-events-updated", refreshDashboardEvents);
+      window.removeEventListener('pageshow', refreshDashboardEvents);
+      window.removeEventListener('storage', refreshDashboardEvents);
+      window.removeEventListener('dcspace-events-updated', refreshDashboardEvents);
+      window.removeEventListener('dcspace-registered-events-updated', refreshDashboardEvents);
     };
   }, []);
+
+  useEffect(() => {
+    if (!canViewOrganizedEvents && activeDashboardView === "organized") {
+      setActiveDashboardView("registered");
+    }
+  }, [activeDashboardView, canViewOrganizedEvents]);
 
   useEffect(() => {
     setShowPrivacyModal(window.sessionStorage.getItem("dcspacePrivacySeen") !== "true");
@@ -123,35 +143,37 @@ export function DashboardPageContent() {
 
     setShowPrivacyModal(false);
     setShowValidation(false);
-    window.sessionStorage.setItem("dcspacePrivacySeen", "true");
+    window.sessionStorage.setItem('dcspacePrivacySeen', 'true');
   };
 
   const handleCancel = () => {
     setConsentChecked(false);
     setShowValidation(false);
     setShowPrivacyModal(false);
-    window.sessionStorage.setItem("dcspacePrivacySeen", "true");
+    window.sessionStorage.setItem('dcspacePrivacySeen', 'true');
   };
 
   return (
     <section className="dashboard-page">
-      <div className={showPrivacyModal ? "dashboard-content dashboard-content--blurred" : "dashboard-content"}>
+      <div className={showPrivacyModal ? 'dashboard-content dashboard-content--blurred' : 'dashboard-content'}>
         <section className="dashboard-views">
           <div className="dashboard-tabs">
             <button
-              className={`dashboard-tab${isRegisteredView ? " is-active" : ""}`}
+              className={`dashboard-tab${isRegisteredView ? ' is-active' : ''}`}
               type="button"
-              onClick={() => setActiveDashboardView("registered")}
+              onClick={() => setActiveDashboardView('registered')}
             >
               Events Registered
             </button>
-            <button
-              className={`dashboard-tab${!isRegisteredView ? " is-active" : ""}`}
-              type="button"
-              onClick={() => setActiveDashboardView("organized")}
-            >
-              Events Organized
-            </button>
+            {canViewOrganizedEvents && (
+              <button
+                className={`dashboard-tab${!isRegisteredView ? " is-active" : ""}`}
+                type="button"
+                onClick={() => setActiveDashboardView("organized")}
+              >
+                Events Organized
+              </button>
+            )}
           </div>
 
           {isRegisteredView ? (
@@ -209,21 +231,12 @@ export function DashboardPageContent() {
                 <div className="organized-row" key={`${event.id}-${index}`}>
                   <span>{event.name}</span>
                   <span>{`${event.month} ${event.day}, ${event.year}`}</span>
-                  <span>{getRegisteredEventSection(event) === "today" ? "Ongoing" : getRegisteredEventSection(event) === "passed" ? "Passed" : "Upcoming"}</span>
-                  <span>{event.certificate || "Processing"}</span>
+                  <span>{getRegisteredEventSection(event) === 'today' ? 'Ongoing' : getRegisteredEventSection(event) === 'passed' ? 'Passed' : 'Upcoming'}</span>
+                  <span>{event.certificate || 'Processing'}</span>
 
-                  <Link className="details-button" href="/events/details" onClick={() => setSelectedBrowseEventId(event.id)}>
+                  <Link className="details-button" href="/dashboard/organized-event" onClick={() => setSelectedBrowseEventId(event.id)}>
                     View Details
-                    <svg viewBox="0 0 14 13" fill="none" aria-hidden="true">
-                      <path
-                        d="M0.262209 11.7641C-0.0942397 12.0519 -0.0861691 12.5132 0.281041 12.7935C0.646905 13.0739 1.23336 13.0675 1.58981 12.7787L8.73493 6.98223L8.0718 6.47548L8.73762 6.98329C9.09407 6.69341 9.086 6.23109 8.71745 5.95074C8.70669 5.94227 8.69593 5.93487 8.68516 5.92746L1.58847 0.220919C1.23202 -0.0678991 0.646905 -0.0742467 0.279695 0.206108C-0.0861691 0.486463 -0.0942397 0.946668 0.262209 1.23549L6.78052 6.47759L0.262209 11.7641Z"
-                        fill="currentColor"
-                      />
-                      <path
-                        d="M5.26221 11.7641C4.90576 12.0519 4.91383 12.5132 5.28104 12.7935C5.64691 13.0739 6.23336 13.0675 6.58981 12.7787L13.7349 6.98223L13.0718 6.47548L13.7376 6.98329C14.0941 6.69341 14.086 6.23109 13.7174 5.95074C13.7067 5.94227 13.6959 5.93487 13.6852 5.92746L6.58847 0.220919C6.23202 -0.0678991 5.64691 -0.0742467 5.2797 0.206108C4.91383 0.486463 4.90576 0.946668 5.26221 1.23549L11.7805 6.47759L5.26221 11.7641Z"
-                        fill="currentColor"
-                      />
-                    </svg>
+                    <Image src="/assets/chevron-double-right.svg" alt="" width={16} height={16} aria-hidden="true" />
                   </Link>
                 </div>
               ))}

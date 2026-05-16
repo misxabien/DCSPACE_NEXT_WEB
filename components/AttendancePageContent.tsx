@@ -1,7 +1,8 @@
-"use client";
+'use client';
 
+import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SearchWithClear } from "@/components/SearchWithClear";
 import {
   ATTENDANCE_UPDATED_EVENT,
@@ -21,7 +22,7 @@ import {
   readUserAttendanceRecords,
   recordRfidAttendanceTap,
   setSelectedAttendanceEvent,
-} from "@/lib/attendance";
+} from '@/lib/attendance';
 
 type AttendanceEvent = {
   id: string;
@@ -43,7 +44,7 @@ function buildAttendanceEvents(
 
     return {
       id,
-      name: event.name || "Event Name",
+      name: event.name || 'Event Name',
       date: formatEventDate(event),
       status: getEventStatus(event),
       certificate: getCertificateStatus(record),
@@ -53,21 +54,27 @@ function buildAttendanceEvents(
   });
 }
 
+function getAttendanceEventTime(event: AttendanceEvent) {
+  const eventDate = new Date(`${event.registeredEvent.month} ${event.registeredEvent.day}, ${event.registeredEvent.year}`);
+  return Number.isNaN(eventDate.getTime()) ? 0 : eventDate.getTime();
+}
+
 function isEditableTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
 
   return (
     target.isContentEditable ||
-    ["INPUT", "TEXTAREA", "SELECT", "BUTTON", "A"].includes(target.tagName)
+    ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName)
   );
 }
 
 export function AttendancePageContent() {
   const [attendanceEvents, setAttendanceEvents] = useState<AttendanceEvent[]>([]);
+  const [sortAsc, setSortAsc] = useState(true);
   const [currentUser, setCurrentUser] = useState<AttendanceUser | null>(null);
-  const [scanMessage, setScanMessage] = useState("");
+  const [scanMessage, setScanMessage] = useState('');
   const registeredEventsRef = useRef<RegisteredEvent[]>([]);
-  const scanBufferRef = useRef("");
+  const scanBufferRef = useRef('');
   const scanTimeoutRef = useRef<number | null>(null);
 
   const loadAttendanceEvents = useCallback(() => {
@@ -85,18 +92,18 @@ export function AttendancePageContent() {
 
     const handleRefresh = () => loadAttendanceEvents();
     const handleStorage = (event: StorageEvent) => {
-      if (!event.key || event.key === REGISTERED_EVENTS_KEY || event.key.startsWith("dcspaceAttendanceRecords:")) {
+      if (!event.key || event.key === REGISTERED_EVENTS_KEY || event.key.startsWith('dcspaceAttendanceRecords:')) {
         loadAttendanceEvents();
       }
     };
 
-    window.addEventListener("pageshow", handleRefresh);
-    window.addEventListener("storage", handleStorage);
+    window.addEventListener('pageshow', handleRefresh);
+    window.addEventListener('storage', handleStorage);
     window.addEventListener(ATTENDANCE_UPDATED_EVENT, handleRefresh);
 
     return () => {
-      window.removeEventListener("pageshow", handleRefresh);
-      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener('pageshow', handleRefresh);
+      window.removeEventListener('storage', handleStorage);
       window.removeEventListener(ATTENDANCE_UPDATED_EVENT, handleRefresh);
     };
   }, [loadAttendanceEvents]);
@@ -111,9 +118,9 @@ export function AttendancePageContent() {
         window.clearTimeout(scanTimeoutRef.current);
       }
 
-      if (event.key === "Enter") {
+      if (event.key === 'Enter') {
         const scannedRfid = scanBufferRef.current.trim();
-        scanBufferRef.current = "";
+        scanBufferRef.current = '';
 
         if (!scannedRfid) return;
 
@@ -130,15 +137,15 @@ export function AttendancePageContent() {
       if (event.key.length === 1) {
         scanBufferRef.current += event.key;
         scanTimeoutRef.current = window.setTimeout(() => {
-          scanBufferRef.current = "";
+          scanBufferRef.current = '';
         }, 1200);
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown);
 
       if (scanTimeoutRef.current) {
         window.clearTimeout(scanTimeoutRef.current);
@@ -150,6 +157,15 @@ export function AttendancePageContent() {
     if (!currentUser) return;
     downloadAttendanceCertificate(event.registeredEvent, currentUser, event.record);
   };
+
+  const sortedAttendanceEvents = useMemo(() => {
+    return [...attendanceEvents].sort((firstEvent, secondEvent) => {
+      const firstTime = getAttendanceEventTime(firstEvent);
+      const secondTime = getAttendanceEventTime(secondEvent);
+
+      return sortAsc ? firstTime - secondTime : secondTime - firstTime;
+    });
+  }, [attendanceEvents, sortAsc]);
 
   return (
     <>
@@ -185,7 +201,7 @@ export function AttendancePageContent() {
                 </thead>
 
                 <tbody>
-                  {attendanceEvents.map((event) => (
+                  {sortedAttendanceEvents.map((event) => (
                     <tr key={event.id}>
                       <td>{event.name}</td>
                       <td className="cell-muted">{event.date}</td>
@@ -195,7 +211,7 @@ export function AttendancePageContent() {
                         </span>
                       </td>
                       <td className="cert">
-                        {event.certificate === "Download" ? (
+                        {event.certificate === 'Download' ? (
                           <button className="cert-download" type="button" onClick={() => handleDownload(event)}>
                             Download
                           </button>
@@ -229,17 +245,13 @@ export function AttendancePageContent() {
 
             <div className="footer-controls" aria-label="Attendance filters">
               <div className="segmented" role="group" aria-label="Attendance controls">
-                <button type="button">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path d="M4 7h16M6 12h12M8 17h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
+                <button type="button" aria-pressed={sortAsc} onClick={() => setSortAsc(true)}>
+                  <Image src="/assets/ascending-arrow.svg" alt="" width={16} height={16} aria-hidden="true" />
                   Ascending
                 </button>
 
-                <button type="button">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path d="M8 10l4-4 4 4M16 14l-4 4-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                <button type="button" aria-pressed={!sortAsc} onClick={() => setSortAsc(false)}>
+                  <Image src="/assets/descending-arrow.svg" alt="" width={16} height={16} aria-hidden="true" />
                   Descending
                 </button>
               </div>

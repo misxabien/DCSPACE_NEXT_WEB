@@ -18,7 +18,7 @@
   --btn-brown: #4a3528;
   --btn-green: #5a9e6f;
   --font: var(--font-lato), "Lato", system-ui, sans-serif;
-  --cream-bg: #fdf5e6;
+  --cream-bg: #fffbf2;
 }
 
 .main {
@@ -387,11 +387,12 @@ a.open-btn {
   border-left: 1px solid var(--att-border-tan);
 }
 
+.segmented img,
 .segmented svg {
-  width: 14px;
-  height: 14px;
-  opacity: 0.9;
-}
+    width: 14px;
+    height: 14px;
+    opacity: 0.9;
+  }
 
 .event-grid {
   display: grid;
