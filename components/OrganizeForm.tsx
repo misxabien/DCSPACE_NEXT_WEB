@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useRouter } from "next/navigation";
 import type { FormEvent, KeyboardEvent } from "react";
@@ -113,34 +113,34 @@ export function OrganizeForm() {
       const org = orgRef.current;
       const combined = combinedRef.current;
       if (!course || !org || !combined) return;
-      const c = (course.value || "").trim();
-      const o = (org.value || "").trim().replace(/^[\s—-]+|[\s—-]+$/g, "");
-      combined.value = c && o ? `${c}-${o}` : c || o || "";
+      const c = (course.value || '').trim();
+      const o = (org.value || '').trim().replace(/^[\s—-]+|[\s—-]+$/g, '');
+      combined.value = c && o ? `${c}-${o}` : c || o || '';
     }
 
     const course = courseRef.current;
     const org = orgRef.current;
     if (!course || !org) return;
 
-    course.addEventListener("change", syncCombined);
-    org.addEventListener("input", syncCombined);
+    course.addEventListener('change', syncCombined);
+    org.addEventListener('input', syncCombined);
     syncCombined();
     return () => {
-      course.removeEventListener("change", syncCombined);
-      org.removeEventListener("input", syncCombined);
+      course.removeEventListener('change', syncCombined);
+      org.removeEventListener('input', syncCombined);
     };
   }, []);
 
   const getFormValue = (formData: FormData, key: string) => {
     const value = formData.get(key);
-    return typeof value === "string" && value.trim() ? value.trim() : "Not provided";
+    return typeof value === 'string' && value.trim() ? value.trim() : 'Not provided';
   };
 
   const syncCourseOrganizer = () => {
     if (combinedRef.current && courseRef.current && orgRef.current) {
-      const course = (courseRef.current.value || "").trim();
-      const org = (orgRef.current.value || "").trim().replace(/^[\s—-]+|[\s—-]+$/g, "");
-      combinedRef.current.value = course && org ? `${course}-${org}` : course || org || "";
+      const course = (courseRef.current.value || '').trim();
+      const org = (orgRef.current.value || '').trim().replace(/^[\s—-]+|[\s—-]+$/g, '');
+      combinedRef.current.value = course && org ? `${course}-${org}` : course || org || '';
     }
   };
 
@@ -224,7 +224,7 @@ export function OrganizeForm() {
 
     saveOrganizedEvent(getReviewDetails());
     setShowReview(false);
-    router.push("/events");
+    router.push('/events');
   };
 
   if (canCreate === null) {

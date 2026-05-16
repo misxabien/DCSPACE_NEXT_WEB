@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { EmptyState } from "@/components/EmptyState";
-import { type FrontendEvent, readBrowseEvents, setSelectedBrowseEventId } from "@/lib/dc-events";
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { EmptyState } from '@/components/EmptyState';
+import { type FrontendEvent, readBrowseEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
 
 const today = new Date();
 const calendarYear = today.getFullYear();
 const calendarMonth = today.getMonth();
-const monthName = today.toLocaleString("en-US", { month: "long" });
+const monthName = today.toLocaleString('en-US', { month: 'long' });
 const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
 const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
 const calendarDays = [
   ...Array.from({ length: firstDay }, () => null),
   ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
 ];
-const weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"];
+const weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export function EventsPageContent() {
   const [eventCards, setEventCards] = useState<FrontendEvent[]>([]);
@@ -24,14 +24,14 @@ export function EventsPageContent() {
     const refreshEvents = () => setEventCards(readBrowseEvents());
 
     refreshEvents();
-    window.addEventListener("pageshow", refreshEvents);
-    window.addEventListener("storage", refreshEvents);
-    window.addEventListener("dcspace-events-updated", refreshEvents);
+    window.addEventListener('pageshow', refreshEvents);
+    window.addEventListener('storage', refreshEvents);
+    window.addEventListener('dcspace-events-updated', refreshEvents);
 
     return () => {
-      window.removeEventListener("pageshow", refreshEvents);
-      window.removeEventListener("storage", refreshEvents);
-      window.removeEventListener("dcspace-events-updated", refreshEvents);
+      window.removeEventListener('pageshow', refreshEvents);
+      window.removeEventListener('storage', refreshEvents);
+      window.removeEventListener('dcspace-events-updated', refreshEvents);
     };
   }, []);
 
@@ -107,8 +107,8 @@ export function EventsPageContent() {
 
                   return (
                     <span
-                      className={`${day ? "calendar-day" : "empty-day"}${isToday ? " is-today" : ""}${isUpcoming ? " is-upcoming" : ""}`}
-                      key={`${day ?? "blank"}-${index}`}
+                      className={`${day ? 'calendar-day' : 'empty-day'}${isToday ? ' is-today' : ''}${isUpcoming ? ' is-upcoming' : ''}`}
+                      key={`${day ?? 'blank'}-${index}`}
                     >
                       {day}
                     </span>

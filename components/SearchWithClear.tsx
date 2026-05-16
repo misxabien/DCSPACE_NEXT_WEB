@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useRef } from "react";
+import { useRef } from 'react';
 
 export function SearchWithClear({
   className,
   role,
 }: {
   className?: string;
-  role?: "search";
+  role?: 'search';
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className={className ?? "search"} role={role}>
+    <div className={className ?? 'search'} role={role}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
         <circle cx="11" cy="11" r="7" />
         <path d="M20 20L16.6 16.6" strokeLinecap="round" />
@@ -31,7 +31,7 @@ export function SearchWithClear({
         aria-label="Clear search"
         onClick={() => {
           if (inputRef.current) {
-            inputRef.current.value = "";
+            inputRef.current.value = '';
             inputRef.current.focus();
           }
         }}

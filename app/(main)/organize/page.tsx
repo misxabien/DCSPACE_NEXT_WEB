@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
-import { OrganizeForm } from "@/components/OrganizeForm";
-import "@/styles/pages/organize.css";
+import type { Metadata } from 'next';
+import { OrganizeForm } from '@/components/OrganizeForm';
+import '@/styles/pages/organize.css';
 
 export const metadata: Metadata = {
-  title: "Organize — DC Space",
+  title: 'Organize — DC Space',
 };
 
 export default function OrganizePage() {

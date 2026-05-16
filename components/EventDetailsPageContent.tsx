@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,16 +18,16 @@ import {
 } from "@/lib/dc-events";
 
 const fallbackEventDetails: FrontendEvent = {
-  id: "fallback-event",
-  name: "Event Name",
-  month: "MAR",
-  day: "15",
-  year: "2026",
-  dateTime: "Event Date, Time Start and End",
-  venue: "Event Venue",
-  organizer: "Event Organizer",
+  id: 'fallback-event',
+  name: 'Event Name',
+  month: 'MAR',
+  day: '15',
+  year: '2026',
+  dateTime: 'Event Date, Time Start and End',
+  venue: 'Event Venue',
+  organizer: 'Event Organizer',
   overview:
-    "Last week, our school held a successful technology seminar that brought together students and professionals to learn about the latest trends in innovation. The event featured several guest speakers who shared their experiences in the field of information technology, providing valuable insights and practical advice. Participants were actively engaged through interactive discussions and hands-on activities, making the seminar both informative and enjoyable.",
+    'Last week, our school held a successful technology seminar that brought together students and professionals to learn about the latest trends in innovation. The event featured several guest speakers who shared their experiences in the field of information technology, providing valuable insights and practical advice. Participants were actively engaged through interactive discussions and hands-on activities, making the seminar both informative and enjoyable.',
   requirements: ["Parent's Consent Form"],
 };
 
@@ -42,15 +42,15 @@ type EventDetailsPageContentProps = {
   };
 };
 
-function getRegisteredEventStatusLabel(eventDate?: EventDetailsPageContentProps["eventDate"]) {
+function getRegisteredEventStatusLabel(eventDate?: EventDetailsPageContentProps['eventDate']) {
   if (!eventDate?.month || !eventDate.day || !eventDate.year) {
-    return "Upcoming Event";
+    return 'Upcoming Event';
   }
 
   const parsedDate = new Date(`${eventDate.month} ${eventDate.day}, ${eventDate.year}`);
 
   if (Number.isNaN(parsedDate.getTime())) {
-    return "Upcoming Event";
+    return 'Upcoming Event';
   }
 
   const today = new Date();
@@ -61,7 +61,7 @@ function getRegisteredEventStatusLabel(eventDate?: EventDetailsPageContentProps[
     return "Today's Event";
   }
 
-  return parsedDate > today ? "Upcoming Event" : "Passed Event";
+  return parsedDate > today ? 'Upcoming Event' : 'Passed Event';
 }
 
 function readRequirementFile(file: File): Promise<UploadedRequirementFile> {
@@ -168,7 +168,7 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
 
     window.setTimeout(() => {
       startTransition(() => {
-        router.push("/dashboard");
+        router.push('/dashboard');
       });
     }, 180);
   };
@@ -278,7 +278,7 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
           })}
 
           <li>
-            Minimum Attendance Time Required: {eventDetails.minAttendance || "TBA"}
+            Minimum Attendance Time Required: {eventDetails.minAttendance || 'TBA'}
           </li>
         </ul>
       </section>

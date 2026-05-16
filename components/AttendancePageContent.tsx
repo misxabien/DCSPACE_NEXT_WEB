@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Image from "next/image";
 import Link from "next/link";
@@ -22,7 +22,7 @@ import {
   readUserAttendanceRecords,
   recordRfidAttendanceTap,
   setSelectedAttendanceEvent,
-} from "@/lib/attendance";
+} from '@/lib/attendance';
 
 type AttendanceEvent = {
   id: string;
@@ -44,7 +44,7 @@ function buildAttendanceEvents(
 
     return {
       id,
-      name: event.name || "Event Name",
+      name: event.name || 'Event Name',
       date: formatEventDate(event),
       status: getEventStatus(event),
       certificate: getCertificateStatus(record),
@@ -64,7 +64,7 @@ function isEditableTarget(target: EventTarget | null) {
 
   return (
     target.isContentEditable ||
-    ["INPUT", "TEXTAREA", "SELECT", "BUTTON", "A"].includes(target.tagName)
+    ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName)
   );
 }
 
@@ -72,9 +72,9 @@ export function AttendancePageContent() {
   const [attendanceEvents, setAttendanceEvents] = useState<AttendanceEvent[]>([]);
   const [sortAsc, setSortAsc] = useState(true);
   const [currentUser, setCurrentUser] = useState<AttendanceUser | null>(null);
-  const [scanMessage, setScanMessage] = useState("");
+  const [scanMessage, setScanMessage] = useState('');
   const registeredEventsRef = useRef<RegisteredEvent[]>([]);
-  const scanBufferRef = useRef("");
+  const scanBufferRef = useRef('');
   const scanTimeoutRef = useRef<number | null>(null);
 
   const loadAttendanceEvents = useCallback(() => {
@@ -92,18 +92,18 @@ export function AttendancePageContent() {
 
     const handleRefresh = () => loadAttendanceEvents();
     const handleStorage = (event: StorageEvent) => {
-      if (!event.key || event.key === REGISTERED_EVENTS_KEY || event.key.startsWith("dcspaceAttendanceRecords:")) {
+      if (!event.key || event.key === REGISTERED_EVENTS_KEY || event.key.startsWith('dcspaceAttendanceRecords:')) {
         loadAttendanceEvents();
       }
     };
 
-    window.addEventListener("pageshow", handleRefresh);
-    window.addEventListener("storage", handleStorage);
+    window.addEventListener('pageshow', handleRefresh);
+    window.addEventListener('storage', handleStorage);
     window.addEventListener(ATTENDANCE_UPDATED_EVENT, handleRefresh);
 
     return () => {
-      window.removeEventListener("pageshow", handleRefresh);
-      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener('pageshow', handleRefresh);
+      window.removeEventListener('storage', handleStorage);
       window.removeEventListener(ATTENDANCE_UPDATED_EVENT, handleRefresh);
     };
   }, [loadAttendanceEvents]);
@@ -118,9 +118,9 @@ export function AttendancePageContent() {
         window.clearTimeout(scanTimeoutRef.current);
       }
 
-      if (event.key === "Enter") {
+      if (event.key === 'Enter') {
         const scannedRfid = scanBufferRef.current.trim();
-        scanBufferRef.current = "";
+        scanBufferRef.current = '';
 
         if (!scannedRfid) return;
 
@@ -137,15 +137,15 @@ export function AttendancePageContent() {
       if (event.key.length === 1) {
         scanBufferRef.current += event.key;
         scanTimeoutRef.current = window.setTimeout(() => {
-          scanBufferRef.current = "";
+          scanBufferRef.current = '';
         }, 1200);
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown);
 
       if (scanTimeoutRef.current) {
         window.clearTimeout(scanTimeoutRef.current);
@@ -211,7 +211,7 @@ export function AttendancePageContent() {
                         </span>
                       </td>
                       <td className="cert">
-                        {event.certificate === "Download" ? (
+                        {event.certificate === 'Download' ? (
                           <button className="cert-download" type="button" onClick={() => handleDownload(event)}>
                             Download
                           </button>

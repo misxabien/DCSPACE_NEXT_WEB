@@ -24,21 +24,21 @@ function groupByLabel(
 export async function sendToGemini(attendanceData: Array<Record<string, unknown>>): Promise<GeminiAnalyticsResult> {
   const attendanceTrends = groupByLabel(attendanceData, (record) => {
     const value = record.eventTitle;
-    return typeof value === "string" && value.trim() ? value : "Untitled event";
+    return typeof value === 'string' && value.trim() ? value : 'Untitled event';
   });
 
   const peakEventTimes = groupByLabel(attendanceData, (record) => {
     const attendedAt = record.attendedAt;
 
-    if (typeof attendedAt === "string") {
-      return `${attendedAt.slice(11, 13) || "00"}:00`;
+    if (typeof attendedAt === 'string') {
+      return `${attendedAt.slice(11, 13) || '00'}:00`;
     }
 
     if (attendedAt instanceof Date) {
-      return `${String(attendedAt.getHours()).padStart(2, "0")}:00`;
+      return `${String(attendedAt.getHours()).padStart(2, '0')}:00`;
     }
 
-    return "Unknown";
+    return 'Unknown';
   });
 
   const predictedAttendees = attendanceData.length === 0
