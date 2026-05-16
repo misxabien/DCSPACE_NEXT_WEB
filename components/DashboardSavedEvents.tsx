@@ -1,45 +1,45 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { DC_SAVED_EVENTS_KEY } from "@/lib/dc-storage";
+import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
+import { DC_SAVED_EVENTS_KEY } from '@/lib/dc-storage';
 
 const CATALOG: Record<
   string,
   { month: string; day: string; year: string; title: string; meta: string }
 > = {
   evt1: {
-    month: "MAR",
-    day: "15",
-    year: "2026",
-    title: "Event Name",
-    meta: "Event Time Start and End<br />Event Venue<br />Event Organizer",
+    month: 'MAR',
+    day: '15',
+    year: '2026',
+    title: 'Event Name',
+    meta: 'Event Time Start and End<br />Event Venue<br />Event Organizer',
   },
   evt2: {
-    month: "MAR",
-    day: "20",
-    year: "2026",
-    title: "Event Name",
-    meta: "Event Time Start and End<br />Event Venue<br />Event Organizer",
+    month: 'MAR',
+    day: '20',
+    year: '2026',
+    title: 'Event Name',
+    meta: 'Event Time Start and End<br />Event Venue<br />Event Organizer',
   },
   evt3: {
-    month: "APR",
-    day: "02",
-    year: "2026",
-    title: "Event Name",
-    meta: "Event Time Start and End<br />Event Venue<br />Event Organizer",
+    month: 'APR',
+    day: '02',
+    year: '2026',
+    title: 'Event Name',
+    meta: 'Event Time Start and End<br />Event Venue<br />Event Organizer',
   },
   evt4: {
-    month: "APR",
-    day: "10",
-    year: "2026",
-    title: "Event Name",
-    meta: "Event Time Start and End<br />Event Venue<br />Event Organizer",
+    month: 'APR',
+    day: '10',
+    year: '2026',
+    title: 'Event Name',
+    meta: 'Event Time Start and End<br />Event Venue<br />Event Organizer',
   },
 };
 
 function catalogKey(id: string) {
-  return id.includes("-") ? id.replace("-", "") : id;
+  return id.includes('-') ? id.replace('-', '') : id;
 }
 
 function readIds(): string[] {
@@ -65,13 +65,13 @@ export function DashboardSavedEvents() {
       if (e.key === DC_SAVED_EVENTS_KEY) refresh();
     };
     const onLocalRefresh = () => refresh();
-    window.addEventListener("pageshow", onShow);
-    window.addEventListener("storage", onStorage);
-    window.addEventListener("dc-refresh-saved", onLocalRefresh);
+    window.addEventListener('pageshow', onShow);
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('dc-refresh-saved', onLocalRefresh);
     return () => {
-      window.removeEventListener("pageshow", onShow);
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("dc-refresh-saved", onLocalRefresh);
+      window.removeEventListener('pageshow', onShow);
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('dc-refresh-saved', onLocalRefresh);
     };
   }, [refresh]);
 

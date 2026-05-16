@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { requireAdmin } from "@/lib/admin/auth/roleGuard";
-import { generateAndSaveCertificate } from "@/lib/admin/db/certificates";
-import { toErrorResponse } from "@/lib/admin/errors";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { requireAdmin } from '@/lib/admin/auth/roleGuard';
+import { generateAndSaveCertificate } from '@/lib/admin/db/certificates';
+import { toErrorResponse } from '@/lib/admin/errors';
 
 /**
  * Generates and returns a downloadable PDF certificate for a student
@@ -13,19 +13,19 @@ export async function POST(request: NextRequest) {
     await requireAdmin();
 
     const body = (await request.json()) as Record<string, unknown>;
-    const eventId = typeof body.eventId === "string" ? body.eventId.trim() : "";
-    const userId = typeof body.userId === "string" ? body.userId.trim() : "";
+    const eventId = typeof body.eventId === 'string' ? body.eventId.trim() : '';
+    const userId = typeof body.userId === 'string' ? body.userId.trim() : '';
 
     if (!eventId) {
       return NextResponse.json(
-        { error: "eventId is required", code: 400 },
+        { error: 'eventId is required', code: 400 },
         { status: 400 },
       );
     }
 
     if (!userId) {
       return NextResponse.json(
-        { error: "userId is required", code: 400 },
+        { error: 'userId is required', code: 400 },
         { status: 400 },
       );
     }
@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${fileName}"`,
-        "Content-Length": String(pdfBuffer.byteLength),
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+        'Content-Length': String(pdfBuffer.byteLength),
       },
     });
   } catch (error) {

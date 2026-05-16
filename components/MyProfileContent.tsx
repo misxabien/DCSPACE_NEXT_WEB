@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Image from "next/image";
 import Link from "next/link";
@@ -129,7 +129,7 @@ export function MyProfileContent() {
     const events =
       tab === "attended"
         ? attendedEvents
-        : tab === "certs"
+        : tab === 'certs'
         ? certificateEvents
         : organizedEvents;
 
@@ -262,7 +262,7 @@ export function MyProfileContent() {
             href="/login"
             onClick={() => {
               signOutAttendanceUser();
-              window.sessionStorage.removeItem("dcspacePrivacySeen");
+              window.sessionStorage.removeItem('dcspacePrivacySeen');
             }}
           >
             Log Out
@@ -344,64 +344,6 @@ export function MyProfileContent() {
                   </button>
                 )}
 
-                <button
-                  type="button"
-                  className={`profile-tab${tab === "certs" ? " is-active" : ""}`}
-                  role="tab"
-                  aria-selected={tab === "certs"}
-                  onClick={() => setTab("certs")}
-                >
-                  Certificates ({certificateEvents.length})
-                </button>
-              </div>
-
-              <button className="profile-feedback" type="button" onClick={handleOpenFeedback}>
-                Submit a Feedback!
-              </button>
-            </div>
-
-            <div className="profile-panel">
-              <div className="profile-table-wrap">
-                <table className="profile-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Event Name</th>
-                      <th scope="col">Date</th>
-                      <th scope="col">Event Status</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {visibleEvents.length > 0 ? (
-                      visibleEvents.map((event) => (
-                        <tr key={getRegisteredEventId(event)}>
-                          <td>{event.name || "Event Name"}</td>
-                          <td>{formatEventDate(event)}</td>
-                          <td>
-                            <span className="profile-table__status">
-                              {getEventStatus(event)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={3}>No records available yet.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="profile-panel__footer">
-              <div className="profile-sort" role="group" aria-label="Sort order">
-                <button
-                  type="button"
-                  className={`profile-sort__btn${sortAsc ? " is-active" : ""}`}
-                  aria-pressed={sortAsc}
-                  onClick={() => setSortAsc(true)}
-                >
                   <Image src="/assets/ascending-arrow.svg" alt="" width={16} height={16} aria-hidden="true" />
                   Ascending
                 </button>

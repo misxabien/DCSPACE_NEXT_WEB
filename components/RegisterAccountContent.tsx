@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useRef, useState } from 'react';
 
 type RegisterReview = {
   firstName: string;
@@ -19,17 +19,17 @@ type RegisterReview = {
 };
 
 const emptyReview: RegisterReview = {
-  firstName: "",
-  lastName: "",
-  studentNumber: "",
-  studentEmail: "",
-  rfidNumber: "",
-  organizationPart: "",
-  organizationRole: "",
-  course: "",
-  school: "",
-  password: "",
-  confirmPassword: "",
+  firstName: '',
+  lastName: '',
+  studentNumber: '',
+  studentEmail: '',
+  rfidNumber: '',
+  organizationPart: '',
+  organizationRole: '',
+  course: '',
+  school: '',
+  password: '',
+  confirmPassword: '',
 };
 
 export function RegisterAccountContent() {
@@ -40,52 +40,52 @@ export function RegisterAccountContent() {
   const [review, setReview] = useState<RegisterReview>(emptyReview);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [studentEmail, setStudentEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [validationError, setValidationError] = useState("");
+  const [studentEmail, setStudentEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   const passwordChecks = [
-    { label: "At least 8 characters", valid: password.length >= 8 },
-    { label: "Contains an uppercase letter", valid: /[A-Z]/.test(password) },
-    { label: "Contains a lowercase letter", valid: /[a-z]/.test(password) },
-    { label: "Contains a number", valid: /\d/.test(password) },
-    { label: "Contains a special character", valid: /[^A-Za-z0-9]/.test(password) },
-    { label: "Passwords match", valid: password.length > 0 && password === confirmPassword },
+    { label: 'At least 8 characters', valid: password.length >= 8 },
+    { label: 'Contains an uppercase letter', valid: /[A-Z]/.test(password) },
+    { label: 'Contains a lowercase letter', valid: /[a-z]/.test(password) },
+    { label: 'Contains a number', valid: /\d/.test(password) },
+    { label: 'Contains a special character', valid: /[^A-Za-z0-9]/.test(password) },
+    { label: 'Passwords match', valid: password.length > 0 && password === confirmPassword },
   ];
 
   const passwordIsValid = passwordChecks.every((check) => check.valid);
 
   const getValue = (formData: FormData, key: string) => {
     const value = formData.get(key);
-    return typeof value === "string" && value.trim() ? value.trim() : "Not provided";
+    return typeof value === 'string' && value.trim() ? value.trim() : 'Not provided';
   };
 
   const handleReview = () => {
     if (!formRef.current) return;
 
     if (!passwordIsValid) {
-      setValidationError("Please complete all password requirements before reviewing.");
+      setValidationError('Please complete all password requirements before reviewing.');
       return;
     }
 
     const formData = new FormData(formRef.current);
 
     setReview({
-      firstName: getValue(formData, "first_name"),
-      lastName: getValue(formData, "last_name"),
-      studentNumber: getValue(formData, "student_number"),
-      studentEmail: getValue(formData, "student_email"),
-      rfidNumber: getValue(formData, "rfid_number"),
-      organizationPart: getValue(formData, "organization_part"),
-      organizationRole: getValue(formData, "organization_role"),
-      course: getValue(formData, "course"),
-      school: getValue(formData, "school"),
-      password: getValue(formData, "password") === "Not provided" ? "Not provided" : "********",
-      confirmPassword: getValue(formData, "confirm_password") === "Not provided" ? "Not provided" : "********",
+      firstName: getValue(formData, 'first_name'),
+      lastName: getValue(formData, 'last_name'),
+      studentNumber: getValue(formData, 'student_number'),
+      studentEmail: getValue(formData, 'student_email'),
+      rfidNumber: getValue(formData, 'rfid_number'),
+      organizationPart: getValue(formData, 'organization_part'),
+      organizationRole: getValue(formData, 'organization_role'),
+      course: getValue(formData, 'course'),
+      school: getValue(formData, 'school'),
+      password: getValue(formData, 'password') === 'Not provided' ? 'Not provided' : '********',
+      confirmPassword: getValue(formData, 'confirm_password') === 'Not provided' ? 'Not provided' : '********',
     });
 
-    setValidationError("");
+    setValidationError('');
     setShowReview(true);
   };
 
@@ -93,25 +93,25 @@ export function RegisterAccountContent() {
     if (!formRef.current) return;
 
     if (!passwordIsValid) {
-      setValidationError("Please complete all password requirements before signing up.");
+      setValidationError('Please complete all password requirements before signing up.');
       setShowReview(false);
       return;
     }
 
     const formData = new FormData(formRef.current);
 
-    window.localStorage.setItem("dcspaceFirstName", getValue(formData, "first_name"));
-    window.localStorage.setItem("dcspaceLastName", getValue(formData, "last_name"));
-    window.localStorage.setItem("dcspaceStudentNumber", getValue(formData, "student_number"));
-    window.localStorage.setItem("dcspaceStudentEmail", studentEmail.trim());
-    window.localStorage.setItem("dcspaceRfidNumber", getValue(formData, "rfid_number"));
-    window.localStorage.setItem("dcspaceCourse", getValue(formData, "course"));
-    window.localStorage.setItem("dcspaceSchool", getValue(formData, "school"));
-    window.localStorage.setItem("dcspaceOrganizationPart", getValue(formData, "organization_part"));
-    window.localStorage.setItem("dcspaceOrganizationRole", getValue(formData, "organization_role"));
-    window.sessionStorage.removeItem("dcspacePrivacySeen");
+    window.localStorage.setItem('dcspaceFirstName', getValue(formData, 'first_name'));
+    window.localStorage.setItem('dcspaceLastName', getValue(formData, 'last_name'));
+    window.localStorage.setItem('dcspaceStudentNumber', getValue(formData, 'student_number'));
+    window.localStorage.setItem('dcspaceStudentEmail', studentEmail.trim());
+    window.localStorage.setItem('dcspaceRfidNumber', getValue(formData, 'rfid_number'));
+    window.localStorage.setItem('dcspaceCourse', getValue(formData, 'course'));
+    window.localStorage.setItem('dcspaceSchool', getValue(formData, 'school'));
+    window.localStorage.setItem('dcspaceOrganizationPart', getValue(formData, 'organization_part'));
+    window.localStorage.setItem('dcspaceOrganizationRole', getValue(formData, 'organization_role'));
+    window.sessionStorage.removeItem('dcspacePrivacySeen');
 
-    router.push("/login");
+    router.push('/login');
   };
 
   return (
@@ -136,7 +136,7 @@ export function RegisterAccountContent() {
                 aria-label="RFID Number"
                 autoFocus
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") {
+                  if (event.key === 'Enter') {
                     event.preventDefault();
                     handleReview();
                   }
@@ -209,7 +209,7 @@ export function RegisterAccountContent() {
               value={studentEmail}
               onChange={(event) => {
                 setStudentEmail(event.target.value);
-                setValidationError("");
+                setValidationError('');
               }}
             />
 
@@ -217,20 +217,20 @@ export function RegisterAccountContent() {
               <span className="register-sr-only">Password</span>
               <input
                 name="password"
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Password:"
                 aria-label="Password"
                 autoComplete="new-password"
                 value={password}
                 onChange={(event) => {
                   setPassword(event.target.value);
-                  setValidationError("");
+                  setValidationError('');
                 }}
               />
               <button
                 className="register-eye-toggle"
                 type="button"
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 onClick={() => setShowPassword((current) => !current)}
               >
                 {showPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
@@ -241,20 +241,20 @@ export function RegisterAccountContent() {
               <span className="register-sr-only">Re-enter password</span>
               <input
                 name="confirm_password"
-                type={showConfirmPassword ? "text" : "password"}
+                type={showConfirmPassword ? 'text' : 'password'}
                 placeholder="Re-enter password:"
                 aria-label="Re-enter password"
                 autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(event) => {
                   setConfirmPassword(event.target.value);
-                  setValidationError("");
+                  setValidationError('');
                 }}
               />
               <button
                 className="register-eye-toggle"
                 type="button"
-                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                 onClick={() => setShowConfirmPassword((current) => !current)}
               >
                 {showConfirmPassword ? <EyeOpenIcon /> : <EyeClosedIcon />}
@@ -263,7 +263,7 @@ export function RegisterAccountContent() {
 
             <ul className="password-requirements" aria-label="Password requirements">
               {passwordChecks.map((check) => (
-                <li className={check.valid ? "is-valid" : ""} key={check.label}>
+                <li className={check.valid ? 'is-valid' : ''} key={check.label}>
                   {check.label}
                 </li>
               ))}

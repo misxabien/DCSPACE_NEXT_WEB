@@ -1,7 +1,7 @@
 import { REGISTERED_EVENTS_KEY, type RegisteredEvent, type UploadedRequirementFile } from "@/lib/attendance";
 
-export const ORGANIZED_EVENTS_KEY = "dcspaceOrganizedEvents";
-export const SELECTED_BROWSE_EVENT_KEY = "dcspaceSelectedBrowseEventId";
+export const ORGANIZED_EVENTS_KEY = 'dcspaceOrganizedEvents';
+export const SELECTED_BROWSE_EVENT_KEY = 'dcspaceSelectedBrowseEventId';
 
 export type FrontendEvent = RegisteredEvent & {
   id: string;
@@ -40,32 +40,32 @@ export type OrganizedEventInput = {
 
 const fallbackEvents: FrontendEvent[] = [
   {
-    id: "sample-event-jan-24-2026",
-    name: "Event Name",
-    month: "JAN",
-    day: "24",
-    year: "2026",
-    dateTime: "January 24, 2026, Event Date and Time",
-    venue: "Event Venue",
-    organizer: "Event Representative or Organizer",
+    id: 'sample-event-jan-24-2026',
+    name: 'Event Name',
+    month: 'JAN',
+    day: '24',
+    year: '2026',
+    dateTime: 'January 24, 2026, Event Date and Time',
+    venue: 'Event Venue',
+    organizer: 'Event Representative or Organizer',
     overview:
-      "This event brings students together for a school activity. Details can be updated later when backend event management is connected.",
+      'This event brings students together for a school activity. Details can be updated later when backend event management is connected.',
     requirements: ["Parent's Consent Form"],
-    department: "Event Representative or Organizer",
+    department: 'Event Representative or Organizer',
   },
   {
-    id: "sample-event-feb-08-2026",
-    name: "Event Name",
-    month: "FEB",
-    day: "08",
-    year: "2026",
-    dateTime: "February 08, 2026, Event Date and Time",
-    venue: "Event Venue",
-    organizer: "Event Representative or Organizer",
+    id: 'sample-event-feb-08-2026',
+    name: 'Event Name',
+    month: 'FEB',
+    day: '08',
+    year: '2026',
+    dateTime: 'February 08, 2026, Event Date and Time',
+    venue: 'Event Venue',
+    organizer: 'Event Representative or Organizer',
     overview:
-      "This event brings students together for a school activity. Details can be updated later when backend event management is connected.",
+      'This event brings students together for a school activity. Details can be updated later when backend event management is connected.',
     requirements: ["Parent's Consent Form"],
-    department: "Event Representative or Organizer",
+    department: 'Event Representative or Organizer',
   },
 ];
 
@@ -80,17 +80,17 @@ function readJson<T>(storage: Storage, key: string, fallback: T): T {
 }
 
 function present(value: unknown) {
-  return typeof value === "string" && value.trim() ? value.trim() : "";
+  return typeof value === 'string' && value.trim() ? value.trim() : '';
 }
 
 function normalizeKey(value: string) {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "event";
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'event';
 }
 
 function formatTime(value: string) {
-  if (!value) return "TBA";
+  if (!value) return 'TBA';
 
-  const [hourValue, minuteValue] = value.split(":");
+  const [hourValue, minuteValue] = value.split(':');
   const hour = Number(hourValue);
   const minute = Number(minuteValue);
 
@@ -98,9 +98,9 @@ function formatTime(value: string) {
     return value;
   }
 
-  return new Date(2026, 0, 1, hour, minute).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Date(2026, 0, 1, hour, minute).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
     hour12: true,
   });
 }
@@ -109,17 +109,17 @@ function datePartsFromInput(dateValue: string) {
   const date = dateValue ? new Date(`${dateValue}T00:00:00`) : new Date();
 
   if (Number.isNaN(date.getTime())) {
-    return datePartsFromInput("");
+    return datePartsFromInput('');
   }
 
   return {
-    month: date.toLocaleString("en-US", { month: "short" }).toUpperCase(),
-    day: date.toLocaleString("en-US", { day: "2-digit" }),
+    month: date.toLocaleString('en-US', { month: 'short' }).toUpperCase(),
+    day: date.toLocaleString('en-US', { day: '2-digit' }),
     year: String(date.getFullYear()),
-    longDate: date.toLocaleDateString("en-US", {
-      month: "long",
-      day: "2-digit",
-      year: "numeric",
+    longDate: date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: '2-digit',
+      year: 'numeric',
     }),
   };
 }
@@ -143,11 +143,11 @@ function getEventDateDisplay(input: OrganizedEventInput, startDate: ReturnType<t
 }
 
 export function getCurrentOrganizationRole() {
-  return present(window.localStorage.getItem("dcspaceOrganizationRole")) || "Organization Member";
+  return present(window.localStorage.getItem('dcspaceOrganizationRole')) || 'Organization Member';
 }
 
 export function canOrganizeEvents() {
-  return getCurrentOrganizationRole().toLowerCase().includes("officer");
+  return getCurrentOrganizationRole().toLowerCase().includes('officer');
 }
 
 export function readOrganizedEvents() {
@@ -156,7 +156,7 @@ export function readOrganizedEvents() {
 
 export function writeOrganizedEvents(events: FrontendEvent[]) {
   window.localStorage.setItem(ORGANIZED_EVENTS_KEY, JSON.stringify(events));
-  window.dispatchEvent(new CustomEvent("dcspace-events-updated"));
+  window.dispatchEvent(new CustomEvent('dcspace-events-updated'));
 }
 
 export function deleteOrganizedEvent(eventId: string) {
@@ -268,7 +268,7 @@ export function registerEventForCurrentUser(event: FrontendEvent, requirementFil
   ];
 
   window.localStorage.setItem(REGISTERED_EVENTS_KEY, JSON.stringify(nextRegisteredEvents));
-  window.dispatchEvent(new CustomEvent("dcspace-registered-events-updated"));
+  window.dispatchEvent(new CustomEvent('dcspace-registered-events-updated'));
 
   return nextRegisteredEvents;
 }

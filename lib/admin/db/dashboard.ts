@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MongoClient } from "mongodb";
+import { MongoClient } from 'mongodb';
 
-const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
-const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
+const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
+const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
 
 const globalForMongo = globalThis as unknown as {
   adminDashboardMongoClient?: MongoClient;
@@ -30,7 +30,7 @@ async function getDatabase() {
 
 function toDateKey(value: Date | string | null | undefined) {
   if (!value) {
-    return "Unknown";
+    return 'Unknown';
   }
 
   const date = value instanceof Date ? value : new Date(value);
@@ -39,11 +39,11 @@ function toDateKey(value: Date | string | null | undefined) {
 
 function toHourLabel(value: Date | string | null | undefined) {
   if (!value) {
-    return "Unknown";
+    return 'Unknown';
   }
 
   const date = value instanceof Date ? value : new Date(value);
-  return `${String(date.getHours()).padStart(2, "0")}:00`;
+  return `${String(date.getHours()).padStart(2, '0')}:00`;
 }
 
 /**
@@ -51,8 +51,8 @@ function toHourLabel(value: Date | string | null | undefined) {
  */
 export async function getDashboardStats() {
   const db = await getDatabase();
-  const events = db.collection<any>("events");
-  const attendance = db.collection<any>("attendance");
+  const events = db.collection<any>('events');
+  const attendance = db.collection<any>('attendance');
 
   const [totalEvents, totalAttendees] = await Promise.all([
     events.countDocuments({}),
@@ -70,17 +70,17 @@ export async function getDashboardStats() {
  */
 export async function getDashboardAttendanceData() {
   const db = await getDatabase();
-  const attendance = db.collection<any>("attendance");
+  const attendance = db.collection<any>('attendance');
   const records = await attendance.find({}).sort({ createdAt: -1 }).limit(500).toArray();
 
   return records.map((record) => ({
     eventId: record.eventId ?? null,
-    eventTitle: record.eventTitle ?? record.eventName ?? "Untitled event",
+    eventTitle: record.eventTitle ?? record.eventName ?? 'Untitled event',
     attendedAt: record.attendedAt ?? record.tapIn ?? record.createdAt ?? null,
     tapOut: record.tapOut ?? null,
     attendeeId: record.attendeeId ?? record.userId ?? null,
-    attendeeName: record.attendeeName ?? record.name ?? "Unknown attendee",
-    status: record.status ?? "Present",
+    attendeeName: record.attendeeName ?? record.name ?? 'Unknown attendee',
+    status: record.status ?? 'Present',
   }));
 }
 
@@ -92,7 +92,7 @@ export function getDashboardCharts(attendanceData: Array<Record<string, unknown>
   const attendeesByHour = new Map<string, number>();
 
   for (const record of attendanceData) {
-    const attendedAt = typeof record.attendedAt === "string" || record.attendedAt instanceof Date
+    const attendedAt = typeof record.attendedAt === 'string' || record.attendedAt instanceof Date
       ? record.attendedAt
       : null;
 
@@ -108,7 +108,7 @@ export function getDashboardCharts(attendanceData: Array<Record<string, unknown>
       labels: Array.from(eventsByDate.keys()),
       datasets: [
         {
-          label: "Attendance Trend",
+          label: 'Attendance Trend',
           data: Array.from(eventsByDate.values()),
         },
       ],
@@ -117,7 +117,7 @@ export function getDashboardCharts(attendanceData: Array<Record<string, unknown>
       labels: Array.from(attendeesByHour.keys()),
       datasets: [
         {
-          label: "Peak Event Times",
+          label: 'Peak Event Times',
           data: Array.from(attendeesByHour.values()),
         },
       ],

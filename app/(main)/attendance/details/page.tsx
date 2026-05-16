@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
-import { AttendanceDetailsPageContent } from "@/components/AttendanceDetailsPageContent";
-import { SearchWithClear } from "@/components/SearchWithClear";
-import "@/styles/pages/attendance-details.css";
+import type { Metadata } from 'next';
+import { AttendanceDetailsPageContent } from '@/components/AttendanceDetailsPageContent';
+import { SearchWithClear } from '@/components/SearchWithClear';
+import '@/styles/pages/attendance-details.css';
 
 export const metadata: Metadata = {
-  title: "Attendance details - DC Space",
+  title: 'Attendance details - DC Space',
 };
 
 export default function AttendanceDetailsPage() {

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Image from "next/image";
 import Link from "next/link";
@@ -15,7 +15,7 @@ import {
 } from "@/lib/notifications";
 
 const AVATAR =
-  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=128&h=128&fit=crop&crop=faces";
+  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=128&h=128&fit=crop&crop=faces';
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -59,7 +59,7 @@ export function Sidebar() {
         <ul className="topbar__links">
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            const isCreate = "kind" in item && item.kind === "create";
+            const isCreate = 'kind' in item && item.kind === 'create';
 
             if (isCreate && !canCreateEvents) {
               return null;
@@ -69,11 +69,11 @@ export function Sidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={`${isCreate ? "topbar__add" : "topbar__link"}${active ? " is-active" : ""}`}
-                  aria-current={active ? "page" : undefined}
-                  aria-label={isCreate ? "Organize an event" : undefined}
+                  className={`${isCreate ? 'topbar__add' : 'topbar__link'}${active ? ' is-active' : ''}`}
+                  aria-current={active ? 'page' : undefined}
+                  aria-label={isCreate ? 'Organize an event' : undefined}
                 >
-                  {isCreate ? "+" : item.label}
+                  {isCreate ? '+' : item.label}
                 </Link>
               </li>
             );

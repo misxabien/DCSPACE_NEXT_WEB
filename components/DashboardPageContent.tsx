@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
@@ -23,12 +23,12 @@ type RegisteredEvent = {
 };
 
 const registeredEventSections = [
-  { key: "today", title: "Today's Event" },
-  { key: "upcoming", title: "Upcoming Event" },
-  { key: "passed", title: "Passed Event" },
+  { key: 'today', title: "Today's Event" },
+  { key: 'upcoming', title: 'Upcoming Event' },
+  { key: 'passed', title: 'Passed Event' },
 ] as const;
 
-type RegisteredEventSectionKey = (typeof registeredEventSections)[number]["key"];
+type RegisteredEventSectionKey = (typeof registeredEventSections)[number]['key'];
 
 function getRegisteredEventDate(event: RegisteredEvent) {
   const parsedDate = new Date(`${event.month} ${event.day}, ${event.year}`);
@@ -47,15 +47,15 @@ function getRegisteredEventSection(event: RegisteredEvent): RegisteredEventSecti
   today.setHours(0, 0, 0, 0);
 
   if (!eventDate || eventDate.getTime() === today.getTime()) {
-    return "today";
+    return 'today';
   }
 
-  return eventDate > today ? "upcoming" : "passed";
+  return eventDate > today ? 'upcoming' : 'passed';
 }
 
 function getRegisteredEventDetailsHref(event: RegisteredEvent) {
   return {
-    pathname: "/dashboard/registered-event",
+    pathname: '/dashboard/registered-event',
     query: {
       month: event.month,
       day: event.day,
@@ -64,12 +64,12 @@ function getRegisteredEventDetailsHref(event: RegisteredEvent) {
   };
 }
 
-function sortRegisteredEventsByDate(events: RegisteredEvent[], direction: "ascending" | "descending") {
+function sortRegisteredEventsByDate(events: RegisteredEvent[], direction: 'ascending' | 'descending') {
   return [...events].sort((firstEvent, secondEvent) => {
     const firstDate = getRegisteredEventDate(firstEvent)?.getTime() ?? 0;
     const secondDate = getRegisteredEventDate(secondEvent)?.getTime() ?? 0;
 
-    return direction === "ascending" ? firstDate - secondDate : secondDate - firstDate;
+    return direction === 'ascending' ? firstDate - secondDate : secondDate - firstDate;
   });
 }
 
@@ -78,11 +78,11 @@ export function DashboardPageContent() {
   const [organizedEvents, setOrganizedEvents] = useState<FrontendEvent[]>([]);
   const [canViewOrganizedEvents, setCanViewOrganizedEvents] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const [activeDashboardView, setActiveDashboardView] = useState<"registered" | "organized">("registered");
+  const [activeDashboardView, setActiveDashboardView] = useState<'registered' | 'organized'>('registered');
   const [consentChecked, setConsentChecked] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
 
-  const isRegisteredView = activeDashboardView === "registered";
+  const isRegisteredView = activeDashboardView === 'registered';
 
   const registeredEventsBySection = useMemo(
     () =>
@@ -91,7 +91,7 @@ export function DashboardPageContent() {
 
         return {
           ...section,
-          events: sortRegisteredEventsByDate(sectionEvents, section.key === "passed" ? "descending" : "ascending"),
+          events: sortRegisteredEventsByDate(sectionEvents, section.key === 'passed' ? 'descending' : 'ascending'),
         };
       }),
     [registeredEvents],
@@ -112,16 +112,16 @@ export function DashboardPageContent() {
     };
 
     refreshDashboardEvents();
-    window.addEventListener("pageshow", refreshDashboardEvents);
-    window.addEventListener("storage", refreshDashboardEvents);
-    window.addEventListener("dcspace-events-updated", refreshDashboardEvents);
-    window.addEventListener("dcspace-registered-events-updated", refreshDashboardEvents);
+    window.addEventListener('pageshow', refreshDashboardEvents);
+    window.addEventListener('storage', refreshDashboardEvents);
+    window.addEventListener('dcspace-events-updated', refreshDashboardEvents);
+    window.addEventListener('dcspace-registered-events-updated', refreshDashboardEvents);
 
     return () => {
-      window.removeEventListener("pageshow", refreshDashboardEvents);
-      window.removeEventListener("storage", refreshDashboardEvents);
-      window.removeEventListener("dcspace-events-updated", refreshDashboardEvents);
-      window.removeEventListener("dcspace-registered-events-updated", refreshDashboardEvents);
+      window.removeEventListener('pageshow', refreshDashboardEvents);
+      window.removeEventListener('storage', refreshDashboardEvents);
+      window.removeEventListener('dcspace-events-updated', refreshDashboardEvents);
+      window.removeEventListener('dcspace-registered-events-updated', refreshDashboardEvents);
     };
   }, []);
 
@@ -143,25 +143,25 @@ export function DashboardPageContent() {
 
     setShowPrivacyModal(false);
     setShowValidation(false);
-    window.sessionStorage.setItem("dcspacePrivacySeen", "true");
+    window.sessionStorage.setItem('dcspacePrivacySeen', 'true');
   };
 
   const handleCancel = () => {
     setConsentChecked(false);
     setShowValidation(false);
     setShowPrivacyModal(false);
-    window.sessionStorage.setItem("dcspacePrivacySeen", "true");
+    window.sessionStorage.setItem('dcspacePrivacySeen', 'true');
   };
 
   return (
     <section className="dashboard-page">
-      <div className={showPrivacyModal ? "dashboard-content dashboard-content--blurred" : "dashboard-content"}>
+      <div className={showPrivacyModal ? 'dashboard-content dashboard-content--blurred' : 'dashboard-content'}>
         <section className="dashboard-views">
           <div className="dashboard-tabs">
             <button
-              className={`dashboard-tab${isRegisteredView ? " is-active" : ""}`}
+              className={`dashboard-tab${isRegisteredView ? ' is-active' : ''}`}
               type="button"
-              onClick={() => setActiveDashboardView("registered")}
+              onClick={() => setActiveDashboardView('registered')}
             >
               Events Registered
             </button>
@@ -231,8 +231,8 @@ export function DashboardPageContent() {
                 <div className="organized-row" key={`${event.id}-${index}`}>
                   <span>{event.name}</span>
                   <span>{`${event.month} ${event.day}, ${event.year}`}</span>
-                  <span>{getRegisteredEventSection(event) === "today" ? "Ongoing" : getRegisteredEventSection(event) === "passed" ? "Passed" : "Upcoming"}</span>
-                  <span>{event.certificate || "Processing"}</span>
+                  <span>{getRegisteredEventSection(event) === 'today' ? 'Ongoing' : getRegisteredEventSection(event) === 'passed' ? 'Passed' : 'Upcoming'}</span>
+                  <span>{event.certificate || 'Processing'}</span>
 
                   <Link className="details-button" href="/dashboard/organized-event" onClick={() => setSelectedBrowseEventId(event.id)}>
                     View Details

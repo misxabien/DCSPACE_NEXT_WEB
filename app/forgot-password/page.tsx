@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import "@/app/login/login.css";
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import '@/app/login/login.css';
 
 export const metadata: Metadata = {
-  title: "Forgot Password | DC Space",
+  title: 'Forgot Password | DC Space',
 };
 
 export default function ForgotPasswordPage() {
