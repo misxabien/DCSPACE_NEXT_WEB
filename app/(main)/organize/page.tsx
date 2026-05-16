@@ -3,7 +3,7 @@ import { OrganizeForm } from "@/components/OrganizeForm";
 import "@/styles/pages/organize.css";
 
 export const metadata: Metadata = {
-  title: "Organize — DC Space",
+  title: "Organize",
 };
 
 export default function OrganizePage() {
