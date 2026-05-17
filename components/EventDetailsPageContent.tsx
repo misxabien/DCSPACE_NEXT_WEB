@@ -111,7 +111,7 @@ function toEventDetails(event: RegisteredEvent, fallback: FrontendEvent): Fronte
   };
 }
 
-export function EventDetailsPageContent({ source = "events", eventDate }: EventDetailsPageContentProps) {
+export function EventDetailsPageContent({ source = "events", eventDate }: Readonly<EventDetailsPageContentProps>) {
   const router = useRouter();
   const isDashboardSource = source === "dashboard";
   const isOrganizedSource = source === "organized";
@@ -377,10 +377,10 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
 function SubmittedRequirementLink({
   requirement,
   file,
-}: {
+}: Readonly<{
   requirement: string;
   file: UploadedRequirementFile;
-}) {
+}>) {
   const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 
   return (
