@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -126,7 +125,7 @@ export function RegisterAccountContent() {
 
   return (
     <div className="login-scope register-scope">
-      <main className={`register-shell${showPrivacyModal ? ' is-modal-open' : ''}`}>
+      <main className={`register-shell register-shell--${step}${showPrivacyModal ? ' is-modal-open' : ''}`}>
         <aside className="register-side" aria-label="DC Space welcome panel">
           <div className="register-side__content">
             <Image
@@ -140,10 +139,10 @@ export function RegisterAccountContent() {
             <h2>Hello New Friend!</h2>
             {step === 'personal' && <p>Already have an account?</p>}
             {step === 'personal' && (
-              <Link className="register-signin-btn" href="/login">
+              <button className="register-signin-btn" type="button" onClick={() => router.back()}>
                 <Image src="/svg icons create account page/Arrow left.svg" alt="" width={40} height={40} />
                 <span>SIGN IN</span>
-              </Link>
+              </button>
             )}
           </div>
         </aside>
@@ -190,6 +189,9 @@ export function RegisterAccountContent() {
               </label>
 
               <div className="register-controls register-controls--end">
+                <button className="register-back-step auth-mobile-control-back" type="button" onClick={() => router.back()}>
+                  Go back to Sign In
+                </button>
                 <button className="register-continue" type="button" onClick={handlePersonalContinue}>
                   Save &amp; Continue
                 </button>
