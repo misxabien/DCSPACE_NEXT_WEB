@@ -39,6 +39,7 @@ export function RegisterAccountContent() {
   const [formData, setFormData] = useState<RegisterData>(initialData);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   const passwordChecks = [
     formData.password.length >= 8,
@@ -49,6 +50,7 @@ export function RegisterAccountContent() {
   ];
   const passedPasswordChecks = passwordChecks.filter(Boolean).length;
   const passwordStrength = passedPasswordChecks >= 5 ? 'Strong' : passedPasswordChecks >= 3 ? 'Medium' : 'Weak';
+  const filledStrengthBoxes = passwordStrength === 'Strong' ? 5 : passwordStrength === 'Medium' ? 3 : 1;
   const showPasswordWarning = formData.password.length > 0 && passwordStrength === 'Weak';
   const showPasswordMatch = formData.confirmPassword.length > 0;
   const passwordMatches = formData.password.length > 0 && formData.password === formData.confirmPassword;
@@ -61,7 +63,28 @@ export function RegisterAccountContent() {
     setStep('school');
   };
 
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    window.setTimeout(() => setToastMessage(''), 2200);
+  };
+
   const handleFinish = () => {
+    const requiredValues = [
+      formData.firstName,
+      formData.lastName,
+      formData.studentNumber,
+      formData.course,
+      formData.school,
+      formData.schoolEmail,
+      formData.password,
+      formData.confirmPassword,
+    ];
+
+    if (requiredValues.some((value) => !value.trim()) || passwordStrength !== 'Strong' || !passwordMatches) {
+      showToast('Please fill in the required details');
+      return;
+    }
+
     window.localStorage.setItem('dcspaceFirstName', formData.firstName.trim());
     window.localStorage.setItem('dcspaceLastName', formData.lastName.trim());
     window.localStorage.setItem('dcspaceStudentNumber', formData.studentNumber.trim());
@@ -72,7 +95,8 @@ export function RegisterAccountContent() {
     window.localStorage.setItem('dcspaceStudentEmail', formData.schoolEmail.trim());
     window.sessionStorage.removeItem('dcspacePrivacySeen');
 
-    router.push('/login');
+    showToast('Created the account');
+    window.setTimeout(() => router.push('/login'), 900);
   };
 
   return (
@@ -104,7 +128,7 @@ export function RegisterAccountContent() {
             <h1>Create Account</h1>
 
             {step === 'personal' ? (
-              <div className="register-step" aria-label="Personal information">
+              <div className="register-step" key="personal" aria-label="Personal information">
                 <h2>Personal Info</h2>
 
               <label className="register-field">
@@ -147,7 +171,7 @@ export function RegisterAccountContent() {
               </div>
               </div>
             ) : step === 'school' ? (
-              <div className="register-step" aria-label="School details">
+              <div className="register-step register-step--school" key="school" aria-label="School details">
               <h2>School Details</h2>
 
               <label className="register-field">
@@ -233,7 +257,7 @@ export function RegisterAccountContent() {
               </div>
             </div>
             ) : (
-              <div className="register-step register-step--account" aria-label="Account set up">
+              <div className="register-step register-step--account" key="account" aria-label="Account set up">
                 <h2>Account Set Up</h2>
 
                 <label className="register-field register-field--compact">
@@ -271,20 +295,21 @@ export function RegisterAccountContent() {
                   </button>
                 </label>
 
-                <div className={`password-strength password-strength--${passwordStrength.toLowerCase()}`}>
-                  <div className="password-strength__bars" aria-hidden>
-                    <span />
-                    <span />
-                    <span />
-                    <span />
+                {formData.password.length > 0 && (
+                  <div className={`password-strength password-strength--${passwordStrength.toLowerCase()}`}>
+                    <div className="password-strength__bars" aria-hidden>
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <span className={index < filledStrengthBoxes ? 'is-filled' : ''} key={index} />
+                      ))}
+                    </div>
+                    <p>Password Strength: {passwordStrength}</p>
+                    {showPasswordWarning && (
+                      <p className="password-strength__warning">
+                        Password must be at least 8 characters and include uppercase, lowercase, number, and special character.
+                      </p>
+                    )}
                   </div>
-                  <p>Password Strength: {passwordStrength}</p>
-                  {showPasswordWarning && (
-                    <p className="password-strength__warning">
-                      Password must be at least 8 characters and include uppercase, lowercase, number, and special character.
-                    </p>
-                  )}
-                </div>
+                )}
 
                 <label className="register-field register-field--compact register-password-field">
                   <span>Re-enter your password*</span>
@@ -328,6 +353,11 @@ export function RegisterAccountContent() {
             )}
           </div>
         </section>
+        {toastMessage && (
+          <div className="auth-toast" role="status" aria-live="polite">
+            {toastMessage}
+          </div>
+        )}
       </main>
     </div>
   );
