@@ -3,6 +3,10 @@
   --bg-2: #448aff;
   --bg-3: #dbe8ff;
   --card: #fffef4;
+  --teal: #156884;
+  --cyan: #2ca6de;
+  --gray: #7e7d77;
+  --field-gray: #bbbbba;
   --text: #2a2a2a;
   --muted: rgba(42, 42, 42, 0.55);
   --border: rgba(42, 42, 42, 0.26);
@@ -34,6 +38,12 @@
   box-sizing: border-box;
 }
 
+.login-scope.register-scope {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
 .login-scope .page {
   min-height: 100vh;
   min-height: 100dvh;
@@ -44,11 +54,12 @@
 }
 
 .login-scope .layout {
-  width: min(1160px, 100%);
+  width: min(1088px, 100%);
   display: grid;
-  grid-template-columns: minmax(430px, 1fr) minmax(440px, 478px);
+  grid-template-columns: minmax(390px, 1fr) 455px;
   align-items: center;
-  gap: clamp(26px, 4vw, 54px);
+  gap: clamp(42px, 8vw, 126px);
+  animation: authPageIn 0.72s cubic-bezier(0.2, 0.85, 0.22, 1) both;
 }
 
 .login-scope .brand {
@@ -56,15 +67,18 @@
   justify-items: center;
   text-align: center;
   padding: 0 4px;
-  transform: translateY(8px);
+  transform: translateY(7px);
+  animation: authBrandFloat 4.8s ease-in-out infinite;
+  gap: 0;
 }
 
 .login-scope .brand__logo-wrap {
-  width: min(390px, 76vw);
-  aspect-ratio: 1;
+  width: min(360px, 78vw);
+  aspect-ratio: 1.84;
   height: auto;
   display: grid;
   place-items: center;
+  margin-bottom: 12px;
 }
 
 .login-scope .brand__logo {
@@ -76,31 +90,44 @@
 }
 
 .login-scope .brand__headline {
-  margin-top: -28px;
-  font-size: clamp(22px, 3vw, 28px);
-  font-weight: 700;
-  letter-spacing: 0.6px;
-  color: rgba(255, 255, 255, 0.92);
+  margin-top: 0;
+  font-size: clamp(22px, 2.9vw, 28px);
+  font-weight: bold;
+  letter-spacing: 0;
+  color: white;
   text-shadow: none;
+  font-family: var(--font-montserrat), sans-serif;
 }
 
 .login-scope .brand__sub {
-  margin-top: 6px;
-  max-width: 520px;
-  font-size: 12px;
-  font-weight: 500;
+  margin-top: 8px;
+  max-width: 580px;
+  font-size: clamp(14px, 1.7vw, 17px);
+  line-height: 1.35;
+  font-weight: medium;
   color: rgba(255, 255, 255, 0.82);
   text-shadow: none;
+  font-family: poppins, sans-serif;
 }
 
 .login-scope .card {
-  width: min(478px, 100%);
+  width: min(455px, 100%);
   border: 1px solid rgba(43, 63, 108, 0.16);
-  border-radius: 21px;
+  border-radius: 16px;
   background: var(--card);
-  box-shadow: var(--shadow);
-  padding: 34px 42px 30px;
+  box-shadow: 4px 4px 3px rgba(50, 59, 77, 0.45);
+  padding: 22px 25px 23px;
   justify-self: center;
+}
+
+.login-scope .card h1 {
+  margin: 0 0 24px;
+  color: var(--teal);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
 }
 
 .login-scope .btn {
@@ -156,63 +183,96 @@
   position: relative;
   display: block;
   width: 100%;
-  margin-top: 11px;
+  margin-top: 0;
+}
+
+.login-scope .field + .field {
+  margin-top: 23px;
+}
+
+.login-scope .field__label {
+  display: block;
+  margin: 0 0 8px;
+  color: var(--gray);
+  font-size: 16px;
+  font-weight: light;
+  line-height: 1;
+  font-family: poppins, sans-serif;
 }
 
 .login-scope .input {
   width: 100%;
-  height: 48px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
+  height: 31px;
+  border-radius: 7px;
+  border: 1.5px solid var(--field-gray);
   background: rgba(255, 255, 255, 0.35);
-  padding: 0 48px 0 46px;
-  font-size: 14px;
-  font-weight: 500;
+  padding: 0 56px 0 45px;
+  color: #000;
+  font-family: poppins, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
   outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .login-scope .field--password .input {
-  padding-right: 56px;
+  border-color: var(--field-gray);
+  padding-right: 58px;
 }
 
 .login-scope .input::placeholder {
-  color: rgba(42, 42, 42, 0.38);
-  font-weight: 500;
+  color: var(--field-gray);
+  font-weight: light;
+  font-family: poppins, sans-serif;
+  line-height: 38px;
+}
+
+.login-scope .input:hover,
+.login-scope .input:focus {
+  border-color: #6b7df2;
+  box-shadow: 0 0 0 1px rgba(107, 125, 242, 0.08);
 }
 
 .login-scope .icon-left {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  color: rgba(42, 42, 42, 0.52);
+  left: 11px;
+  bottom: 0;
+  width: 24px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  color: var(--field-gray);
   pointer-events: none;
-  left: 16px;
+}
+
+.login-scope .icon-left img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
 }
 
 .login-scope .eye {
   position: absolute;
-  top: 50%;
-  right: 12px;
-  transform: translateY(-50%);
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
+  right: 11px;
+  bottom: 5.5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
   display: grid;
   place-items: center;
-  color: rgba(42, 42, 42, 0.52);
+  color: var(--field-gray);
 }
 
-.login-scope .eye svg {
-  width: 18px;
-  height: 18px;
+.login-scope .eye img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 
 .login-scope .actions {
   display: grid;
   justify-items: end;
-  margin-top: 14px;
+  margin-top: 5px;
 }
 
 .login-scope .auth-field-error {
@@ -225,10 +285,12 @@
 }
 
 .login-scope .link {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  color: var(--blue);
+  color: var(--teal);
   text-decoration: none;
+  font-family: poppins, sans-serif;
+  line-height: 30px;
 }
 
 .login-scope .link:hover {
@@ -236,34 +298,37 @@
 }
 
 .login-scope .primary {
-  margin-top: 6px;
+  margin-top: 23px;
   width: 100%;
-  height: 49px;
-  border-radius: 12px;
-  background: var(--blue);
+  height: 52px;
+  border-radius: 7px;
+  background: var(--cyan);
   color: white;
   font-weight: 700;
   letter-spacing: 0.4px;
-  box-shadow: 0 10px 16px rgba(63, 130, 245, 0.35);
+  box-shadow: 0 3px 3px rgba(50, 59, 77, 0.28);
 }
 
 .login-scope .primary:hover {
-  background: var(--blue-2);
+  background: #2499ce;
 }
 
 .login-scope .below {
-  margin-top: 13px;
+  margin-top: 8px;
   text-align: center;
-  font-size: 11px;
-  font-weight: 500;
-  color: rgba(42, 42, 42, 0.65);
+  font-size: 10px;
+  font-weight: 300;
+  font-family: poppins, sans-serif;
+  line-height: 25px;
+  color: #000;
   overflow-wrap: anywhere;
 }
 
 .login-scope .below a {
-  margin-left: 6px;
-  font-weight: 700;
-  color: var(--blue);
+  margin-left: 8px;
+  font-weight: 500;
+  line-height: 25px;
+  color: var(--teal);
   text-decoration: none;
 }
 
@@ -272,18 +337,35 @@
 }
 
 .login-scope .role {
-  margin-top: 14px;
-  width: 250px;
-  height: 43px;
+  margin-top: 13px;
+  width: 195px;
+  height: 29px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(42, 42, 42, 0.14);
+  border: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  padding: 6px;
-  gap: 6px;
+  padding: 0;
+  gap: 0;
   margin-left: auto;
   margin-right: auto;
+  overflow: hidden;
+  position: relative;
+}
+
+.login-scope .role::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 50%;
+  border-radius: inherit;
+  background: var(--cyan);
+  transition: transform 0.24s ease;
+  z-index: 0;
+}
+
+.login-scope .role--faculty::before {
+  transform: translateX(100%);
 }
 
 .login-scope .role__btn {
@@ -292,21 +374,29 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 6px;
   font-weight: 700;
-  font-size: 12px;
-  color: rgba(42, 42, 42, 0.5);
+  font-size: 8px;
+  color: var(--cyan);
+  position: relative;
+  z-index: 1;
+  transition: color 0.2s ease;
 }
 
 .login-scope .role__btn[aria-pressed="true"] {
-  background: var(--blue);
-  color: white;
-  box-shadow: 0 8px 14px rgba(63, 130, 245, 0.32);
+  color: var(--card);
+  box-shadow: none;
 }
 
-.login-scope .role__btn svg {
-  width: 18px;
-  height: 18px;
+.login-scope .role__btn img {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+  transition: filter 0.2s ease;
+}
+
+.login-scope .role__btn[aria-pressed="true"] img {
+  filter: brightness(0) invert(1);
 }
 
 .login-scope .sr-only {
@@ -319,6 +409,334 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+.login-scope .register-shell {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 37.7% 1fr;
+  background: var(--card);
+  color: #000;
+  overflow: hidden;
+  animation: authPageIn 0.72s cubic-bezier(0.2, 0.85, 0.22, 1) both;
+}
+
+.login-scope .register-side {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 42px 44px;
+  text-align: center;
+  background:
+    linear-gradient(
+      180deg,
+      #dbe8ff 0%,
+      #91bdff 34%,
+      #448aff 52%,
+      #8ebaff 76%,
+      #dbe8ff 100%
+    );
+}
+
+.login-scope .register-side__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: authBrandFloat 4.8s ease-in-out infinite;
+}
+
+.login-scope .register-side__logo {
+  width: min(305px, 78%);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 14px rgba(43, 63, 108, 0.18));
+}
+
+.login-scope .register-side h2 {
+  margin: 8px 0 0;
+  color: #fff;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(28px, 3vw, 35px);
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.login-scope .register-side p {
+  margin: 8px 0 22px;
+  color: #fff;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.login-scope .register-signin-btn {
+  width: min(243px, 100%);
+  height: 51px;
+  border-radius: 8px;
+  background: var(--cyan);
+  color: #fff;
+  box-shadow: 0 3px 3px rgba(50, 59, 77, 0.28);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.login-scope .register-signin-btn img {
+  width: 27px;
+  height: 27px;
+}
+
+.login-scope .register-main {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 32px 50px 30px 36px;
+  background: var(--card);
+}
+
+.login-scope .register-form-panel {
+  width: min(100%, 602px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-scope .register-form-panel h1 {
+  margin: 0 0 32px;
+  color: var(--teal);
+  font-family: montserrat, sans-serif;
+  font-size: clamp(32px, 4vw, 36px);
+  font-weight: extra-bold;
+  line-height: 49px;
+}
+
+.login-scope .register-step {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.login-scope .register-step h2 {
+  margin: 0 0 30px;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.login-scope .register-field {
+  display: block;
+  width: 100%;
+  margin-bottom: 51px;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+}
+
+.login-scope .register-field span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.login-scope .register-field input,
+.login-scope .register-field select {
+  width: 100%;
+  height: 37px;
+  border: 1.5px solid #8f8f8a;
+  border-radius: 8px;
+  background: transparent;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+  padding: 0 15px;
+  outline: none;
+  transition: border-color 0.18s ease;
+}
+
+.login-scope .register-field select {
+  color: var(--gray);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("/svg icons create account page/Arrow Buttons.svg");
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+  background-size: 18px 18px;
+  padding-right: 42px;
+}
+
+.login-scope .register-field input::placeholder {
+  color: var(--field-gray);
+}
+
+.login-scope .register-field select:invalid {
+  color: var(--field-gray);
+}
+
+.login-scope .register-field input:hover,
+.login-scope .register-field select:hover,
+.login-scope .register-field input:focus,
+.login-scope .register-field select:focus {
+  border-color: #6b7df2;
+}
+
+.login-scope .register-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
+  margin-top: auto;
+  padding-bottom: 2px;
+}
+
+.login-scope .register-controls--end {
+  justify-content: flex-end;
+}
+
+.login-scope .register-back-step {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.login-scope .register-continue {
+  width: 203px;
+  height: 36px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--blue);
+  color: #fff;
+  box-shadow: 0 2px 3px rgba(50, 59, 77, 0.32);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.login-scope .register-continue:hover,
+.login-scope .register-signin-btn:hover {
+  filter: brightness(1.04);
+}
+
+.login-scope .register-step--account {
+  min-height: 0;
+}
+
+.login-scope .register-step--account h2 {
+  margin-bottom: 20px;
+}
+
+.login-scope .register-field--compact {
+  margin-bottom: 24px;
+}
+
+.login-scope .register-password-field {
+  position: relative;
+}
+
+.login-scope .register-password-field input {
+  padding-right: 52px;
+}
+
+.login-scope .register-password-eye {
+  position: absolute;
+  right: 8px;
+  bottom: 1px;
+  width: 35px;
+  height: 35px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--field-gray);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.login-scope .register-password-eye svg,
+.login-scope .register-password-eye img {
+  width: 22px;
+  height: 22px;
+}
+
+.login-scope .password-strength {
+  margin: -16px 0 12px;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+}
+
+.login-scope .password-strength__bars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  width: 100%;
+  height: 8px;
+  margin-bottom: 4px;
+}
+
+.login-scope .password-strength__bars span {
+  border: 2px solid #000;
+  background: transparent;
+}
+
+.login-scope .password-strength--weak .password-strength__bars span {
+  background: #e43d30;
+}
+
+.login-scope .password-strength--medium .password-strength__bars span {
+  background: #f5d348;
+}
+
+.login-scope .password-strength--strong .password-strength__bars span {
+  background: #2ca95f;
+}
+
+.login-scope .password-strength p {
+  margin: 0;
+  font-size: 8px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.login-scope .password-strength__warning {
+  color: #000;
+}
+
+.login-scope .password-match {
+  margin: -16px 0 0;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.login-scope .password-match.is-match {
+  color: #2ca95f;
+}
+
+.login-scope .password-match.is-mismatch {
+  color: #e43d30;
 }
 
 @media (max-width: 1060px) {
@@ -337,9 +755,27 @@
     width: min(520px, 100%);
     margin-left: 0;
   }
+
+  .login-scope .register-shell {
+    grid-template-columns: 360px 1fr;
+  }
+
+  .login-scope .register-side {
+    padding: 34px 28px;
+  }
+
+  .login-scope .register-main {
+    padding: 32px 34px 30px;
+  }
 }
 
 @media (max-width: 560px) {
+  .login-scope.register-scope {
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+
   .login-scope .page {
     padding: 24px 16px;
     align-items: start;
@@ -375,6 +811,49 @@
   .login-scope .role {
     width: 100%;
     max-width: 340px;
+  }
+
+  .login-scope .register-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .login-scope .register-side {
+    min-height: auto;
+    padding: 36px 18px 30px;
+  }
+
+  .login-scope .register-side__logo {
+    width: min(250px, 78%);
+  }
+
+  .login-scope .register-main {
+    min-height: auto;
+    padding: 28px 18px 32px;
+  }
+
+  .login-scope .register-step {
+    min-height: auto;
+  }
+
+  .login-scope .register-field {
+    margin-bottom: 28px;
+  }
+
+  .login-scope .register-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .login-scope .register-back-step {
+    order: 2;
+  }
+
+  .login-scope .register-continue {
+    width: 100%;
   }
 }
 
@@ -881,6 +1360,29 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes authPageIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes authBrandFloat {
+  0%,
+  100% {
+    transform: translateY(7px);
+  }
+
+  50% {
+    transform: translateY(-5px);
   }
 }
 
