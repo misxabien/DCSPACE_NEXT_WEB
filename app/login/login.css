@@ -813,6 +813,57 @@
 }
 
 @media (max-width: 560px) {
+  .login-scope.forgot-scope {
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+
+  .login-scope .forgot-shell {
+    height: auto;
+    min-height: 100dvh;
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .login-scope .forgot-main {
+    min-height: auto;
+    padding: 28px 18px 32px;
+    order: 2;
+  }
+
+  .login-scope .forgot-side {
+    height: auto;
+    min-height: auto;
+    padding: 36px 18px 30px;
+    order: 1;
+  }
+
+  .login-scope .forgot-step {
+    padding-bottom: 0;
+  }
+
+  .login-scope .forgot-field {
+    margin-top: 42px;
+  }
+
+  .login-scope .forgot-controls {
+    position: static;
+    width: auto;
+    margin-top: 42px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .login-scope .forgot-back {
+    order: 2;
+  }
+
+  .login-scope .forgot-primary {
+    width: 100%;
+  }
+
   .login-scope.register-scope {
     height: auto;
     min-height: 100dvh;
@@ -1383,6 +1434,250 @@
 .login-scope .forgot-form button:hover {
   transform: translateY(-1px);
   filter: brightness(1.04);
+}
+
+.login-scope.forgot-scope {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.login-scope .forgot-shell {
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: 63% 37%;
+  overflow: hidden;
+  background: var(--card);
+  color: #000;
+  animation: authPageIn 0.72s cubic-bezier(0.2, 0.85, 0.22, 1) both;
+}
+
+.login-scope .forgot-main {
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  background: var(--card);
+  padding: 40px 44px 27px;
+}
+
+.login-scope .forgot-form-panel {
+  width: min(100%, 690px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-scope .forgot-step {
+  position: relative;
+  flex: 1;
+  padding-bottom: 52px;
+  animation: registerStepIn 0.36s ease both;
+}
+
+.login-scope .forgot-step h1 {
+  margin: 0 0 12px;
+  color: var(--teal);
+  font-family: montserrat, sans-serif;
+  font-size: clamp(30px, 4vw, 36px);
+  font-weight: extra-bold;
+  line-height: 49px;
+}
+
+.login-scope .forgot-copy {
+  margin: 0;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.login-scope .forgot-field {
+  display: block;
+  width: 100%;
+  margin-top: 88px;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+}
+
+.login-scope .forgot-field + .forgot-field {
+  margin-top: 24px;
+}
+
+.login-scope .forgot-field span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.login-scope .forgot-field input {
+  width: 100%;
+  height: 31px;
+  border: 1.5px solid #8f8f8a;
+  border-radius: 7px;
+  background: transparent;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  outline: none;
+  padding: 0 15px;
+  transition: border-color 0.18s ease;
+}
+
+.login-scope .forgot-field input::placeholder {
+  color: var(--field-gray);
+}
+
+.login-scope .forgot-field input:hover,
+.login-scope .forgot-field input:focus {
+  border-color: #6b7df2;
+}
+
+.login-scope .forgot-password-field {
+  position: relative;
+  margin-top: 36px;
+}
+
+.login-scope .forgot-password-field input {
+  padding-right: 44px;
+}
+
+.login-scope .forgot-eye {
+  position: absolute;
+  right: 11px;
+  bottom: 5.5px;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.login-scope .forgot-eye img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.login-scope .forgot-controls {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 28px;
+}
+
+.login-scope .forgot-back {
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.login-scope .forgot-primary {
+  width: 205px;
+  height: 34px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--blue);
+  color: #fff;
+  box-shadow: 0 2px 3px rgba(50, 59, 77, 0.32);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.login-scope .forgot-primary:hover,
+.login-scope .forgot-signin-btn:hover {
+  filter: brightness(1.04);
+}
+
+.login-scope .forgot-side {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 42px 36px;
+  text-align: center;
+  background:
+    linear-gradient(
+      180deg,
+      #dbe8ff 0%,
+      #91bdff 34%,
+      #448aff 52%,
+      #8ebaff 76%,
+      #dbe8ff 100%
+    );
+}
+
+.login-scope .forgot-side__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: authBrandFloat 4.8s ease-in-out infinite;
+}
+
+.login-scope .forgot-side__logo {
+  width: min(295px, 88%);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 14px rgba(43, 63, 108, 0.18));
+}
+
+.login-scope .forgot-side h2 {
+  margin: 8px 0 0;
+  color: #fff;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(25px, 3vw, 28px);
+  font-weight: 700;
+  line-height: 1.08;
+}
+
+.login-scope .forgot-side p {
+  margin: 34px 0 13px;
+  color: #fff;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.login-scope .forgot-signin-btn {
+  width: min(196px, 100%);
+  height: 40px;
+  border-radius: 7px;
+  background: var(--cyan);
+  color: #fff;
+  box-shadow: 0 3px 3px rgba(50, 59, 77, 0.28);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.login-scope .forgot-signin-btn img {
+  width: 20px;
+  height: 20px;
 }
 
 @keyframes registerCardIn {
