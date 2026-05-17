@@ -14,7 +14,7 @@ type RegisteredEventDetailsPageProps = {
   }>;
 };
 
-export default async function RegisteredEventDetailsPage({ searchParams }: RegisteredEventDetailsPageProps) {
+export default async function RegisteredEventDetailsPage({ searchParams }: Readonly<RegisteredEventDetailsPageProps>) {
   const eventDate = await searchParams;
 
   return <EventDetailsPageContent source="dashboard" eventDate={eventDate} />;
