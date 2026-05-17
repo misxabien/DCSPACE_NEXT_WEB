@@ -40,6 +40,9 @@ export function RegisterAccountContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [privacyModalClosing, setPrivacyModalClosing] = useState(false);
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
 
   const passwordChecks = [
     formData.password.length >= 8,
@@ -68,7 +71,7 @@ export function RegisterAccountContent() {
     window.setTimeout(() => setToastMessage(''), 2200);
   };
 
-  const handleFinish = () => {
+  const accountIsComplete = () => {
     const requiredValues = [
       formData.firstName,
       formData.lastName,
@@ -80,8 +83,30 @@ export function RegisterAccountContent() {
       formData.confirmPassword,
     ];
 
-    if (requiredValues.some((value) => !value.trim()) || passwordStrength !== 'Strong' || !passwordMatches) {
+    return !requiredValues.some((value) => !value.trim()) && passwordStrength === 'Strong' && passwordMatches;
+  };
+
+  const handleFinish = () => {
+    if (!accountIsComplete()) {
       showToast('Please fill in the required details');
+      return;
+    }
+
+    setShowPrivacyModal(true);
+    setPrivacyModalClosing(false);
+  };
+
+  const handleClosePrivacyModal = () => {
+    setPrivacyModalClosing(true);
+    window.setTimeout(() => {
+      setShowPrivacyModal(false);
+      setPrivacyModalClosing(false);
+    }, 240);
+  };
+
+  const handleCreateAccount = () => {
+    if (!privacyAgreed) {
+      showToast('Please agree to the Data Privacy Policy');
       return;
     }
 
@@ -101,7 +126,7 @@ export function RegisterAccountContent() {
 
   return (
     <div className="login-scope register-scope">
-      <main className="register-shell">
+      <main className={`register-shell${showPrivacyModal ? ' is-modal-open' : ''}`}>
         <aside className="register-side" aria-label="DC Space welcome panel">
           <div className="register-side__content">
             <Image
@@ -356,6 +381,54 @@ export function RegisterAccountContent() {
         {toastMessage && (
           <div className="auth-toast" role="status" aria-live="polite">
             {toastMessage}
+          </div>
+        )}
+
+        {showPrivacyModal && (
+          <div className={`privacy-modal-overlay${privacyModalClosing ? ' is-closing' : ''}`} role="presentation">
+            <section className="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-modal-title">
+              <button
+                className="privacy-modal__close"
+                type="button"
+                aria-label="Close privacy agreement"
+                onClick={handleClosePrivacyModal}
+              >
+                <Image src="/svg icons create account page/x-square.svg" alt="" width={40} height={40} />
+              </button>
+
+              <div className="privacy-modal__content">
+                <p className="privacy-modal__intro">
+                  To create your account, please review and agree to the Data Privacy Policy first.
+                </p>
+
+                <h2 id="privacy-modal-title">Agreement &amp; Data Privacy</h2>
+
+                <h3>Data Privacy Notice</h3>
+                <p>
+                  This application, DC Space, collects and processes your personal data to facilitate e-certificate
+                  issuance and attendance tracking. We are committed to protecting your privacy in accordance with the
+                  Data Privacy Act of 2012 (RA 10173). Your student number will be used to verify your identity and link
+                  your records.
+                </p>
+
+                <h3>Consent</h3>
+                <label className="privacy-consent">
+                  <input
+                    type="checkbox"
+                    checked={privacyAgreed}
+                    onChange={(event) => setPrivacyAgreed(event.target.checked)}
+                  />
+                  <span>
+                    I have read and agree to the Data Privacy Notice and give my consent for the collection and
+                    processing of my student number.
+                  </span>
+                </label>
+
+                <button className="privacy-modal__submit" type="button" onClick={handleCreateAccount}>
+                  Create Account
+                </button>
+              </div>
+            </section>
           </div>
         )}
       </main>

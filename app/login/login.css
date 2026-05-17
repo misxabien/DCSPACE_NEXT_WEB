@@ -423,6 +423,12 @@
   animation: authPageIn 0.72s cubic-bezier(0.2, 0.85, 0.22, 1) both;
 }
 
+.login-scope .register-shell.is-modal-open > :not(.privacy-modal-overlay):not(.auth-toast) {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
+
 .login-scope .register-side {
   min-height: 0;
   height: 100%;
@@ -782,6 +788,139 @@
   animation: authToastIn 0.22s ease both;
 }
 
+.login-scope .privacy-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.login-scope .privacy-modal-overlay.is-closing {
+  animation: privacyOverlayOut 0.24s ease both;
+}
+
+.login-scope .privacy-modal-overlay.is-closing .privacy-modal {
+  animation: privacyModalDown 0.24s ease both;
+}
+
+.login-scope .privacy-modal {
+  position: relative;
+  width: min(1070px, calc(100vw - 8px));
+  max-height: min(91vh, 620px);
+  overflow: hidden;
+  border: 2px solid var(--teal);
+  border-radius: 5px;
+  background: var(--card);
+  color: #000;
+  box-shadow: 0 18px 42px rgba(30, 57, 92, 0.22);
+  padding: 70px 39px 16px;
+  animation: privacyModalUp 0.32s ease both;
+}
+
+.login-scope .privacy-modal__close {
+  position: absolute;
+  top: 9px;
+  left: 18px;
+  width: 39px;
+  height: 35px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--teal);
+  padding: 0;
+  cursor: pointer;
+}
+
+.login-scope .privacy-modal__close img {
+  width: 39px;
+  height: 35px;
+  object-fit: contain;
+}
+
+.login-scope .privacy-modal__content {
+  animation: privacyTextIn 0.34s ease 0.14s both;
+}
+
+.login-scope .privacy-modal__intro {
+  margin: 0 0 6px;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.login-scope .privacy-modal h2 {
+  margin: 0 0 22px;
+  text-align: center;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 39px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-shadow: 2px 3px 2px rgba(0, 0, 0, 0.22);
+}
+
+.login-scope .privacy-modal h3 {
+  margin: 0 0 12px;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 31px;
+  font-weight: 600;
+  line-height: 1.1;
+  text-shadow: 2px 3px 2px rgba(0, 0, 0, 0.2);
+}
+
+.login-scope .privacy-modal p {
+  font-family: var(--font-poppins), sans-serif;
+}
+
+.login-scope .privacy-modal h3 + p {
+  margin: 0 0 22px;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.15;
+  text-align: justify;
+  text-shadow: 1px 2px 2px rgba(0, 0, 0, 0.2);
+}
+
+.login-scope .privacy-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 17px;
+  margin: 8px 0 23px 20px;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.12;
+  text-shadow: 1px 2px 2px rgba(0, 0, 0, 0.18);
+}
+
+.login-scope .privacy-consent input {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  accent-color: var(--teal);
+  flex: 0 0 auto;
+}
+
+.login-scope .privacy-modal__submit {
+  display: block;
+  width: 234px;
+  height: 40px;
+  margin: 0 auto;
+  border: 0;
+  border-radius: 3px;
+  background: var(--blue);
+  color: #fff;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 19px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 3px rgba(50, 59, 77, 0.32);
+}
+
 @media (max-width: 1060px) {
   .login-scope .layout {
     grid-template-columns: 1fr;
@@ -862,6 +1001,33 @@
 
   .login-scope .forgot-primary {
     width: 100%;
+  }
+
+  .login-scope .privacy-modal {
+    width: min(100%, 520px);
+    max-height: 82vh;
+    padding: 58px 18px 24px;
+  }
+
+  .login-scope .privacy-modal__submit {
+    width: 100%;
+  }
+
+  .login-scope .privacy-modal__intro {
+    font-size: 20px;
+  }
+
+  .login-scope .privacy-modal h2 {
+    font-size: 30px;
+  }
+
+  .login-scope .privacy-modal h3 {
+    font-size: 24px;
+  }
+
+  .login-scope .privacy-modal h3 + p,
+  .login-scope .privacy-consent {
+    font-size: 15px;
   }
 
   .login-scope.register-scope {
@@ -1737,6 +1903,52 @@
   to {
     opacity: 1;
     transform: translate(-50%, 0);
+  }
+}
+
+@keyframes privacyModalUp {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes privacyModalDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+@keyframes privacyOverlayOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes privacyTextIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
