@@ -18,7 +18,7 @@ export function LoginForm() {
     const email = formData.get('email');
 
     signInAttendanceUser(typeof email === 'string' ? email : '');
-    router.push('/dashboard');
+    router.push('/home');
   };
 
   return (
