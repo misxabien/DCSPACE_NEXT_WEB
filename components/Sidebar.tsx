@@ -67,7 +67,7 @@ export function Sidebar() {
             : pathname.includes('/certificates')
               ? 'Certificates'
               : pathname.includes('/events')
-                ? 'Saved Events'
+                ? 'My Saved Events'
                 : pathname.includes('/notifications')
                   ? 'Notifications'
                   : pathname.includes('/my-profile')

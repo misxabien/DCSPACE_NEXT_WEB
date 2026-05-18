@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { EventsPageContent } from '@/components/EventsPageContent';
-import '@/styles/pages/events.css';
+import { SavedEventsPageContent } from '@/components/SavedEventsPageContent';
+import '@/styles/pages/saved-events.css';
 
 export const metadata: Metadata = {
-  title: 'Browse Events — DC Space',
+  title: 'My Saved Events - DC Space',
 };
 
 export default function EventsPage() {
-  return <EventsPageContent />;
+  return <SavedEventsPageContent />;
 }
