@@ -274,7 +274,7 @@ export function EventsOrganizedPageContent() {
               <div className="organized-status-legend">
                 {(Object.keys(statusMeta) as StatusKey[]).map((key) => (
                   <p key={key}>
-                    <span className="organized-dot" style={{ '--dot-color': statusMeta[key].color } as CSSProperties} />
+                    <span className="organized-status-dot" style={{ '--dot-color': statusMeta[key].color } as CSSProperties} />
                     <strong>{statusMeta[key].label}</strong>
                     <small>{Math.round((counts[key] / totalCount) * 100)}%</small>
                   </p>

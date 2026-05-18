@@ -19,6 +19,7 @@ export type FrontendEvent = RegisteredEvent & {
   eventType?: string;
   duration?: string;
   minAttendance?: string;
+  registrationDeadline?: string;
   createdBy?: string;
 };
 
@@ -36,6 +37,7 @@ export type OrganizedEventInput = {
   eventType: string;
   duration: string;
   minAttendance: string;
+  registrationDeadline?: string;
 };
 
 const fallbackEvents: FrontendEvent[] = [
@@ -142,6 +144,16 @@ function getEventDateDisplay(input: OrganizedEventInput, startDate: ReturnType<t
   return `${startDate.longDate} - ${endDate.longDate}`;
 }
 
+function isRegistrationOpen(event: FrontendEvent) {
+  if (!event.registrationDeadline) return true;
+
+  const deadline = new Date(`${event.registrationDeadline}T23:59:59`);
+
+  if (Number.isNaN(deadline.getTime())) return true;
+
+  return deadline >= new Date();
+}
+
 export function getCurrentOrganizationRole() {
   return present(window.localStorage.getItem('dcspaceOrganizationRole')) || 'Organization Member';
 }
@@ -179,7 +191,9 @@ export function readBrowseEvents() {
   const eventMap = new Map<string, FrontendEvent>();
 
   [...organized, ...fallbackEvents].forEach((event) => {
-    eventMap.set(event.id, event);
+    if (isRegistrationOpen(event)) {
+      eventMap.set(event.id, event);
+    }
   });
 
   return Array.from(eventMap.values());
@@ -211,6 +225,7 @@ export function saveOrganizedEvent(input: OrganizedEventInput) {
     eventType: present(input.eventType) || "Event",
     duration: present(input.duration) || "TBA",
     minAttendance: present(input.minAttendance) || "TBA",
+    registrationDeadline: present(input.registrationDeadline),
     createdBy: present(window.localStorage.getItem("dcspaceStudentEmail")) || "local-frontend-user",
     status: "Created",
     certificate: "Processing",
