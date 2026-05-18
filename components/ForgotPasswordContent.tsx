@@ -1,19 +1,20 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 type ForgotStep = 'email' | 'code' | 'password';
 
 export function ForgotPasswordContent() {
+  const router = useRouter();
   const [step, setStep] = useState<ForgotStep>('email');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
     <div className="login-scope forgot-scope">
-      <main className="forgot-shell">
+      <main className={`forgot-shell forgot-shell--${step}`}>
         <section className="forgot-main" aria-label="Reset password form">
           <div className="forgot-form-panel">
             <div className="forgot-step" key={step}>
@@ -29,6 +30,9 @@ export function ForgotPasswordContent() {
                   </label>
 
                   <div className="forgot-controls">
+                    <button className="forgot-back auth-mobile-control-back" type="button" onClick={() => router.back()}>
+                      Go back to Sign In
+                    </button>
                     <button className="forgot-primary" type="button" onClick={() => setStep('code')}>
                       Send verification code
                     </button>
@@ -97,6 +101,9 @@ export function ForgotPasswordContent() {
                   </label>
 
                   <div className="forgot-controls">
+                    <button className="forgot-back" type="button" onClick={() => setStep('code')}>
+                      Go back to Verification Code
+                    </button>
                     <button className="forgot-primary" type="button">
                       Save New Password
                     </button>
@@ -121,10 +128,10 @@ export function ForgotPasswordContent() {
             {step === 'email' && (
               <>
                 <p>I remember my password!</p>
-                <Link className="forgot-signin-btn" href="/login">
+                <button className="forgot-signin-btn" type="button" onClick={() => router.back()}>
                   <span>SIGN IN</span>
                   <Image src="/svg icons forgot password page/Arrow right.svg" alt="" width={24} height={24} />
-                </Link>
+                </button>
               </>
             )}
           </div>
