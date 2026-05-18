@@ -4,13 +4,43 @@ import { useEffect, useState } from "react";
 import { useShowStatus } from "@/contexts/ShowStatusContext";
 
 const ROWS = [
-  { cat: "event", status: "new" },
-  { cat: "event", status: "new" },
-  { cat: "event", status: "actioned" },
-  { cat: "event", status: "actioned" },
-  { cat: "system", status: "reviewed" },
-  { cat: "system", status: "reviewed" },
+  { cat: "event", status: "new", initials: "MG", name: "Misxa Bien D. Germino", email: "misxagermino@sdca.edu.ph" },
+  { cat: "event", status: "new", initials: "GE", name: "Gwyneth Mucio", email: "gwyneth@sdca.edu.ph" },
+  { cat: "event", status: "actioned", initials: "PC", name: "Paul Cielo", email: "paul@sdca.edu.ph" },
+  { cat: "event", status: "actioned", initials: "AM", name: "Amira Marqueses", email: "amira@sdca.edu.ph" },
+  { cat: "system", status: "reviewed", initials: "KE", name: "Khrystelle Esplana", email: "khrystelle@sdca.edu.ph" },
+  { cat: "system", status: "reviewed", initials: "MG", name: "Misxa Bien D. Germino", email: "misxagermino@sdca.edu.ph" },
 ];
+
+const STAR_PATH =
+  "M12 2.25l2.95 5.98 6.6.96-4.78 4.66 1.13 6.58L12 17.77l-5.9 3.1 1.13-6.58-4.78-4.66 6.6-.96L12 2.25Z";
+
+function StarRating({ filled = 4, total = 5, size = "md" }) {
+  const dim = { sm: 14, md: 16, lg: 20, xl: 24, stat: 16 }[size] ?? 16;
+  return (
+    <span
+      className={`feedback-stars feedback-stars--${size}`}
+      role="img"
+      aria-label={`${filled} out of ${total} stars`}
+    >
+      {Array.from({ length: total }).map((_, i) => {
+        const isFilled = i < filled;
+        return (
+          <svg
+            key={i}
+            className={`feedback-star-icon${isFilled ? " is-filled" : " is-empty"}`}
+            width={dim}
+            height={dim}
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d={STAR_PATH} />
+          </svg>
+        );
+      })}
+    </span>
+  );
+}
 
 export function FeedbackView() {
   const showStatus = useShowStatus();
@@ -27,7 +57,7 @@ export function FeedbackView() {
   }, [modalOpen]);
 
   return (
-    <section className="view" id="feedbackView">
+    <section className="view feedback-view" id="feedbackView">
       <div className="header-row">
         <h1>Feedback Overview</h1>
       </div>
@@ -35,20 +65,20 @@ export function FeedbackView() {
       <section className="feedback-wrap">
         <div className="feedback-summary">
           <article className="feedback-stat">
-            <div className="feedback-star">★</div>
-            <div>
-              <h3>Average Event Rating</h3>
-              <p>4 / 5 ★★★★</p>
-              <small>from 106 events</small>
-            </div>
+            <h3 className="feedback-stat__label">Average event rating</h3>
+            <p className="feedback-stat__score" aria-label="4 out of 5">
+              <span className="feedback-stat__value">4.0</span>
+            </p>
+            <StarRating filled={4} size="stat" />
+            <p className="feedback-stat__count">(106 events)</p>
           </article>
           <article className="feedback-stat">
-            <div className="feedback-star">★</div>
-            <div>
-              <h3>System Ease of Use</h3>
-              <p>4 / 5 ★★★★</p>
-              <small>from 345 users</small>
-            </div>
+            <h3 className="feedback-stat__label">System ease of use</h3>
+            <p className="feedback-stat__score" aria-label="4 out of 5">
+              <span className="feedback-stat__value">4.0</span>
+            </p>
+            <StarRating filled={4} size="stat" />
+            <p className="feedback-stat__count">(345 users)</p>
           </article>
         </div>
 
@@ -56,42 +86,44 @@ export function FeedbackView() {
           <table className="feedback-table">
             <thead>
               <tr>
-                <th>Rating</th>
-                <th>Category</th>
-                <th>User</th>
-                <th>Event</th>
-                <th>Facility</th>
-                <th>Status</th>
-                <th>…</th>
+                <th scope="col">Rating</th>
+                <th scope="col">Category</th>
+                <th scope="col">User</th>
+                <th scope="col">Event</th>
+                <th scope="col">Facility</th>
+                <th scope="col">Status</th>
+                <th scope="col" className="col-actions">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {ROWS.map((r, i) => (
                 <tr key={i}>
                   <td>
-                    <span className="rating-stars">★★★★</span>
-                    <span className="rating-label">4/5</span>
+                    <div className="feedback-rating-cell">
+                      <StarRating filled={4} />
+                      <span className="rating-label">4/5</span>
+                    </div>
                   </td>
                   <td>
-                    <span
-                      className={`chip-cat${r.cat === "system" ? " system" : ""}`}
-                    >
+                    <span className={`feedback-chip feedback-chip--cat ${r.cat}`}>
                       {r.cat === "system" ? "System" : "Event"}
                     </span>
                   </td>
                   <td>
                     <div className="user-col">
-                      <div className="avatar-mini">MG</div>
+                      <div className="avatar-mini">{r.initials}</div>
                       <div>
-                        <strong>Misxa Bien D. Germino</strong>
-                        <small>misxagermino@sdca.edu.ph</small>
+                        <strong>{r.name}</strong>
+                        <small>{r.email}</small>
                       </div>
                     </div>
                   </td>
                   <td>IT WEEK</td>
-                  <td>GD 3 -DRA HALL</td>
+                  <td>GD 3 – DRA Hall</td>
                   <td>
-                    <span className={`status-chip ${r.status}`}>
+                    <span className={`feedback-chip feedback-chip--status ${r.status}`}>
                       {r.status === "new"
                         ? "New"
                         : r.status === "actioned"
@@ -99,16 +131,16 @@ export function FeedbackView() {
                           : "Reviewed"}
                     </span>
                   </td>
-                  <td>
+                  <td className="col-actions">
                     <button
-                      className="btn-view-mini"
+                      className="btn-view feedback-row-btn"
                       type="button"
                       onClick={() => {
                         setModalOpen(true);
                         showStatus("Viewing feedback details");
                       }}
                     >
-                      View »
+                      View
                     </button>
                   </td>
                 </tr>
@@ -132,9 +164,7 @@ export function FeedbackView() {
           aria-labelledby="feedbackModalTitle"
         >
           <div className="fm-head">
-            <span id="feedbackModalTitle">
-              Feedback · Misxa Bien D. Germino
-            </span>
+            <span id="feedbackModalTitle">Feedback · Misxa Bien D. Germino</span>
             <button
               className="fm-close"
               id="feedbackModalClose"
@@ -146,17 +176,16 @@ export function FeedbackView() {
             </button>
           </div>
           <div className="fm-body">
-            <h3 className="fm-section-title">User Information</h3>
-            <section className="fm-card fm-user">
+            <section className="fm-section">
+            <h3 className="fm-section-title">User information</h3>
+            <div className="fm-card fm-user">
               <div className="fm-avatar">MG</div>
               <div>
                 <h4>Misxa Bien D. Germino</h4>
                 <small>Email: misxabien.germino@sdca.edu.ph</small>
-                <small>Student Number: 202312345</small>
-                <small>
-                  Course: BSIT - Bachelor of Science in Information Technology
-                </small>
-                <small>Year and Section: 3 - B</small>
+                <small>Student number: 202312345</small>
+                <small>Course: BSIT – Bachelor of Science in Information Technology</small>
+                <small>Year and section: 3 – B</small>
               </div>
               <div className="fm-role-panel">
                 <div className="fm-role-block">
@@ -178,58 +207,61 @@ export function FeedbackView() {
                   </button>
                 </div>
               </div>
+            </div>
             </section>
 
-            <h3 className="fm-section-title">Rating & Feedback</h3>
-            <section className="fm-rating-grid">
+            <section className="fm-section">
+            <h3 className="fm-section-title">Rating & feedback</h3>
+            <div className="fm-rating-grid">
               <div className="fm-rating-box">
-                <div className="stars">★★★★</div>
+                <StarRating filled={4} size="lg" />
                 <div className="score">
                   4<small>/5</small>
                 </div>
               </div>
               <div className="fm-comment-box">
                 <strong>Comment</strong>
-                <br />
-                Overall great experience at IT WEEK! The GD 3 - DRA HALL venue
-                was spacious and well-equipped. Looking forward to the next
-                one. Maybe the workshop timings could be slightly longer.
+                <p>
+                  Overall great experience at IT WEEK! The GD 3 – DRA Hall venue was spacious and
+                  well-equipped. Looking forward to the next one. Maybe the workshop timings could
+                  be slightly longer.
+                </p>
               </div>
+            </div>
             </section>
 
-            <h3 className="fm-section-title">Event Details</h3>
-            <section className="fm-card fm-row-grid">
+            <section className="fm-section">
+            <h3 className="fm-section-title">Event details</h3>
+            <div className="fm-card fm-row-grid">
               <div className="fm-ev-cell">
                 <strong>Category</strong>
-                <span className="fm-ev-val fm-ev-val--cat">Event feedback</span>
+                <span className="fm-ev-val">Event feedback</span>
               </div>
               <div className="fm-ev-cell">
-                <strong>Event Name</strong>
-                <span className="fm-ev-val fm-ev-val--name">BSIT WEEK</span>
+                <strong>Event name</strong>
+                <span className="fm-ev-val">BSIT WEEK</span>
               </div>
               <div className="fm-ev-cell">
                 <strong>Location</strong>
-                <span className="fm-ev-val fm-ev-val--venue">
-                  GD 3 - DRA HALL
-                </span>
+                <span className="fm-ev-val">GD 3 – DRA Hall</span>
               </div>
               <div className="fm-ev-cell">
                 <strong>Date</strong>
-                <span className="fm-ev-val fm-ev-val--date">
-                  April 04, 2026
-                </span>
+                <span className="fm-ev-val">April 4, 2026</span>
               </div>
+            </div>
             </section>
 
-            <h3 className="fm-section-title">Admin Actions</h3>
-            <section className="fm-actions">
+            <section className="fm-section">
+            <h3 className="fm-section-title">Admin actions</h3>
+            <div className="fm-actions">
               <button
                 className="fm-btn-soft"
                 id="viewCertCopyBtn"
                 type="button"
                 onClick={() => showStatus("Viewing certificate copy")}
               >
-                View Original Copy of E-Certificate
+                View original e-certificate
               </button>
               <button
                 className="fm-btn-soft"
@@ -245,12 +277,14 @@ export function FeedbackView() {
                 type="button"
                 onClick={() => showStatus("Follow-up email sent")}
               >
-                Send Follow-up Email
+                Send follow-up email
               </button>
+            </div>
             </section>
 
-            <h3 className="fm-section-title">Admin Note</h3>
-            <section className="fm-card">
+            <section className="fm-section">
+            <h3 className="fm-section-title">Admin note</h3>
+            <div className="fm-card fm-note-card">
               <div className="fm-note-row">
                 <input
                   id="feedbackAdminNoteInput"
@@ -275,9 +309,11 @@ export function FeedbackView() {
                   Send
                 </button>
               </div>
+            </div>
             </section>
 
-            <section className="fm-status-row">
+            <section className="fm-section fm-section--status">
+            <div className="fm-status-row">
               <strong>Status</strong>
               <select
                 id="feedbackStatusSelect"
@@ -292,20 +328,19 @@ export function FeedbackView() {
                 className="fm-change"
                 id="feedbackChangeStatusBtn"
                 type="button"
-                onClick={() =>
-                  showStatus(`Status changed to ${statusVal}`)
-                }
+                onClick={() => showStatus(`Status changed to ${statusVal}`)}
               >
-                Change Status
+                Change status
               </button>
+            </div>
             </section>
 
-            <div className="fm-submitted">
-              Submitted On: 04-06-2026 &nbsp; 11:11 AM
-            </div>
+            <p className="fm-submitted">Submitted on April 6, 2026 · 11:11 AM</p>
           </div>
         </div>
       </div>
     </section>
   );
 }
+
+

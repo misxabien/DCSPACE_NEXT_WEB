@@ -4,6 +4,9 @@ export const metadata = {
   title: "E-Certificate & Attendance",
 };
 
-export default function AdminEcertPage() {
-  return <EcertView />;
+export default async function AdminEcertPage({ searchParams }) {
+  const params = await searchParams;
+  const openAttendance = params?.view === "attendance";
+
+  return <EcertView openAttendance={openAttendance} />;
 }

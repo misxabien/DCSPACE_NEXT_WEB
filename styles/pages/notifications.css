@@ -2,7 +2,7 @@
 
 .notifications-page {
   min-height: calc(100vh - 88px);
-  background: #fffbf2;
+  background: transparent;
   color: #634b05;
   font-family: var(--font-dm), sans-serif;
 }

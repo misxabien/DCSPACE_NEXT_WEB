@@ -1,0 +1,83 @@
+/* Shared modern overrides for main app pages */
+
+.events-title,
+.certificates-title,
+.attendance-title,
+.organize-title,
+.profile-page-header h1,
+.details-title,
+.event-details-title {
+  color: var(--text-primary) !important;
+  font-size: clamp(26px, 3.5vw, 34px) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+}
+
+.events-search,
+.profile-search,
+.certificates-search {
+  border: 1px solid var(--glass-border-subtle) !important;
+  border-radius: var(--radius-pill) !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--glass-shadow);
+}
+
+.events-search-input,
+.profile-search-input {
+  color: var(--text-primary) !important;
+}
+
+.browse-event-card,
+.cert-card {
+  border-radius: var(--radius-md) !important;
+  color: var(--text-primary);
+}
+
+.event-list-title,
+.browse-month-label {
+  color: var(--text-secondary) !important;
+  font-weight: 600 !important;
+}
+
+.main {
+  background: transparent !important;
+}
+
+/* Primary actions */
+.events-bookmark-btn,
+.events-register-btn,
+.cert-download-btn,
+.organize-submit,
+.profile-save-btn {
+  border-radius: var(--radius-pill) !important;
+  font-weight: 600 !important;
+}
+
+.events-register-btn,
+.cert-download-btn--active {
+  background: var(--accent) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px rgba(10, 132, 255, 0.35);
+}
+
+.notifications-page,
+.attendance-page,
+.certificates-page,
+.organize-page,
+.my-profile-page {
+  color: var(--text-primary);
+}
+
+.notifications-card,
+.attendance-card,
+.profile-section {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+}
