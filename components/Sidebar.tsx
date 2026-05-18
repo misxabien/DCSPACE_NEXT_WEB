@@ -61,7 +61,7 @@ export function Sidebar() {
       : pathname === '/dashboard'
         ? 'Dashboard'
         : pathname.includes('/events-organized') || pathname.includes('/organize') || pathname.includes('/organized-event')
-          ? 'Events Organized'
+          ? 'My Organized Events'
           : pathname.includes('/attendance')
             ? 'Attendance'
             : pathname.includes('/certificates')

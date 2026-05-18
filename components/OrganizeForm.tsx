@@ -224,7 +224,7 @@ export function OrganizeForm() {
 
     saveOrganizedEvent(getReviewDetails());
     setShowReview(false);
-    router.push('/events');
+    router.push('/events-organized');
   };
 
   if (canCreate === null) {
