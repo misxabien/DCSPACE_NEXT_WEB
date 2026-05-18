@@ -22,5 +22,15 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    // "/admin/:path*",  // Uncomment to require admin login for /admin routes
+    "/attendance/:path*",
+    "/certificates/:path*",
+    "/dashboard/:path*",
+    "/events/:path*",
+    "/hover/:path*",
+    "/my-profile/:path*",
+    "/organize/:path*",
+    "/api/admin/((?!auth/).+)",
+  ],
 };
