@@ -2,52 +2,23 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { signInAttendanceUser } from "@/lib/attendance";
 
 export function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<"student" | "faculty">("student");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError("");
-    setLoading(true);
-
     const formData = new FormData(event.currentTarget);
-    const email = typeof formData.get("email") === "string" ? formData.get("email") as string : "";
-    const password = typeof formData.get("password") === "string" ? formData.get("password") as string : "";
-    const callbackUrl = searchParams.get("callbackUrl") || "/admin";
+    const email = formData.get("email");
 
-    // Try NextAuth admin login first
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-
-    if (result?.ok) {
-      // Admin login succeeded — redirect to admin dashboard
-      router.push(callbackUrl);
-      return;
-    }
-
-    // If NextAuth fails, fall back to student/faculty localStorage flow
-    if (email) {
-      signInAttendanceUser(email);
-      router.push("/dashboard");
-      return;
-    }
-
-    setError("Invalid credentials. Please try again.");
-    setLoading(false);
+    signInAttendanceUser(typeof email === "string" ? email : "");
+    router.push("/dashboard");
   };
 
 
@@ -176,11 +147,9 @@ export function LoginForm() {
               </Link>
             </div>
 
-            <button className="btn primary" type="submit" disabled={loading}>
-              {loading ? "SIGNING IN…" : "SIGN IN"}
+            <button className="btn primary" type="submit">
+              SIGN IN
             </button>
-
-            {error && <p style={{ color: "#e74c3c", fontSize: "0.85rem", textAlign: "center", marginTop: "0.5rem" }}>{error}</p>}
           </form>
 
           <div className="below">
