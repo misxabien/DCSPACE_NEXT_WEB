@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useShowStatus } from "@/contexts/ShowStatusContext";
 
@@ -7,6 +8,28 @@ const EVENT_CARDS = [
   { name: "Digital Campus Ugnayan Seminar" },
   { name: "Career and Leadership Summit" },
   { name: "Campus Research Symposium" },
+];
+
+const DETAIL_FIELDS = [
+  { label: "Date", value: "April 15, 2026" },
+  { label: "Venue", value: "DRA Hall" },
+  { label: "Start time", value: "1:00 PM" },
+  { label: "End time", value: "5:00 PM" },
+  { label: "Organizer", value: "Misxa Bien Germino" },
+  { label: "Campus", value: "Main" },
+  { label: "Department", value: "SCMCS" },
+  { label: "Course", value: "BSIT" },
+  { label: "Organization", value: "Domini Xode" },
+  { label: "Event type", value: "Seminar" },
+  { label: "Duration", value: "5 hours" },
+  { label: "Minimum attendance", value: "4 hours" },
+];
+
+const DETAIL_FILES = [
+  { title: "Event Poster", file: "dc-seminar.pdf" },
+  { title: "Room Reservation Form", file: "dro.pdf" },
+  { title: "Approved Concept Paper", file: "concept-dc.pdf" },
+  { title: "E-Certificate Template", file: "cert_template.pdf" },
 ];
 
 export function EventsView() {
@@ -18,9 +41,7 @@ export function EventsView() {
 
   const visibleCards = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return EVENT_CARDS.filter(
-      (c) => !q || c.name.toLowerCase().includes(q)
-    );
+    return EVENT_CARDS.filter((c) => !q || c.name.toLowerCase().includes(q));
   }, [query]);
 
   const isApprovedTab = tab === "approved";
@@ -50,7 +71,7 @@ export function EventsView() {
                 showStatus("Pending events");
               }}
             >
-              ◉ Pending Events
+              Pending Events
             </button>
             <button
               className={`event-tab${tab === "approved" ? " active" : ""}`}
@@ -62,23 +83,28 @@ export function EventsView() {
                 showStatus("Approved events");
               }}
             >
-              ◌ Approved Events
+              Approved Events
             </button>
           </div>
           <div className="events-searchbar">
             <span>Filter: All</span>
             <label className="search-wrap">
-              <span>🔎</span>
+              <span aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                  <path d="M20 20l-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </span>
               <input
                 id="eventSearch"
                 type="search"
-                placeholder="Search"
+                placeholder="Search events"
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
                   const q = e.target.value.trim().toLowerCase();
                   const n = EVENT_CARDS.filter(
-                    (c) => !q || c.name.toLowerCase().includes(q)
+                    (c) => !q || c.name.toLowerCase().includes(q),
                   ).length;
                   showStatus(`${n} event(s) shown`);
                 }}
@@ -87,60 +113,41 @@ export function EventsView() {
           </div>
         </div>
 
-        <div
-          className={`event-list-view${detailOpen ? " hidden" : ""}`}
-          id="eventListView"
-        >
+        <div className={`event-list-view${detailOpen ? " hidden" : ""}`} id="eventListView">
           <div className="events-list" id="eventsList">
             {visibleCards.map((ev) => (
-              <article
-                key={ev.name}
-                className="event-card"
-                data-event-name={ev.name}
-              >
-                <div className="event-thumb">image placeholder</div>
+              <article key={ev.name} className="event-card" data-event-name={ev.name}>
+                <div className="event-thumb">Image placeholder</div>
                 <div className="event-info">
-                  <h3>Event Name</h3>
-                  <p>Event Date and Time</p>
-                  <p>Event Venue</p>
-                  <p>Event Representative or Organizer</p>
+                  <h3>{ev.name}</h3>
+                  <p>Event date and time</p>
+                  <p>Event venue</p>
+                  <p>Organizer</p>
                 </div>
-                <button
-                  className="btn-view"
-                  type="button"
-                  onClick={openDetail}
-                >
-                  View Details »
+                <button className="btn-view" type="button" onClick={openDetail}>
+                  View details
                 </button>
               </article>
             ))}
           </div>
         </div>
 
-        <div
-          className={`event-detail-view${detailOpen ? "" : " hidden"}`}
-          id="eventDetailView"
-        >
+        <div className={`event-detail-view${detailOpen ? "" : " hidden"}`} id="eventDetailView">
           <div className="detail-top">
             <div
-              className={`detail-state-pill ${
-                isApprovedTab ? "approved" : "pending"
-              }`}
+              className={`detail-state-pill ${isApprovedTab ? "approved" : "pending"}`}
               id="detailStatePill"
             >
-              {isApprovedTab ? "✪ Approved Event" : "◉ Pending Approval"}
+              {isApprovedTab ? "Approved event" : "Pending approval"}
             </div>
-            <div
-              className={`detail-actions${isApprovedTab ? " hidden" : ""}`}
-              id="pendingActions"
-            >
+            <div className={`detail-actions${isApprovedTab ? " hidden" : ""}`} id="pendingActions">
               <button
                 className="btn-approve"
                 type="button"
                 id="approveEventBtn"
                 onClick={() => showStatus("Event approved")}
               >
-                Approved
+                Approve
               </button>
               <button
                 className="btn-reject"
@@ -156,7 +163,7 @@ export function EventsView() {
                 id="requestChangesBtn"
                 onClick={() => showStatus("Requested changes sent")}
               >
-                Request Changes
+                Request changes
               </button>
               <button
                 className="btn-soft"
@@ -171,25 +178,16 @@ export function EventsView() {
               </button>
             </div>
             <div
-              className={`detail-actions${isApprovedTab ? "" : " hidden"}`}
+              className={`detail-actions detail-actions--approved${isApprovedTab ? "" : " hidden"}`}
               id="approvedActions"
             >
-              <button
-                className={`detail-status-toggle${approvedToggleOn ? "" : " off"}`}
-                type="button"
-                aria-label="Approved status toggle"
-                onClick={() => {
-                  setApprovedToggleOn((v) => {
-                    const next = !v;
-                    showStatus(
-                      next
-                        ? "Approved event is active"
-                        : "Approved event is inactive"
-                    );
-                    return next;
-                  });
-                }}
-              />
+              <Link
+                className="btn-primary btn-tap-attendance"
+                href="/admin/tap?event=Digital%20Campus%20Ugnayan%20Seminar"
+                onClick={() => showStatus("Opening tap in / tap out")}
+              >
+                Tap in / Tap out
+              </Link>
               <button
                 className="btn-soft"
                 type="button"
@@ -201,87 +199,89 @@ export function EventsView() {
               >
                 Back
               </button>
+              <button
+                className={`detail-status-toggle${approvedToggleOn ? "" : " off"}`}
+                type="button"
+                aria-label="Approved status toggle"
+                onClick={() => {
+                  setApprovedToggleOn((v) => {
+                    const next = !v;
+                    showStatus(next ? "Approved event is active" : "Approved event is inactive");
+                    return next;
+                  });
+                }}
+              />
             </div>
           </div>
 
           <article className="event-detail-card">
-            <div className="event-meta">
-              <strong>EVENT DETAILS</strong>
-              <span className="submitted">
-                Submitted: March 26, 2026 • 3:39 PM
-              </span>
-            </div>
-            <h2 className="detail-title">DIGITAL CAMPUS UGNAYAN SEMINAR</h2>
+            <header className="event-detail-card__header">
+              <p className="event-detail-card__eyebrow">Event details</p>
+              <span className="submitted">Submitted March 26, 2026 · 3:39 PM</span>
+            </header>
+
+            <h2 className="detail-title">Digital Campus Ugnayan Seminar</h2>
             <p className="detail-desc">
-              This seminar covers &quot;Digital Footprints in AI&quot; and
-              &quot;Lifelong Learner in AI&quot;, guiding students on online
-              responsibility, how their digital activities are tracked, and the
-              importance of continuous learning.
+              This seminar covers &quot;Digital Footprints in AI&quot; and &quot;Lifelong Learner in
+              AI&quot;, guiding students on online responsibility, how their digital activities are
+              tracked, and the importance of continuous learning.
             </p>
 
-            <div className="detail-grid">
-              <div>🗓 Date: April 15, 2026</div>
-              <div>📍 Venue: DRA HALL</div>
-              <div>⏰ Start: 1:00 PM</div>
-              <div>⏳ End Time: 5:00 PM</div>
-              <div>👤 Requesting Organizer: Misxa Bien Germino</div>
-              <div>🏫 Campus: MAIN</div>
-              <div>🏢 Department: SCMCS</div>
-              <div>📄 Course: BSIT</div>
-              <div>🏛 Organization: Domini Xode</div>
-              <div>🛡 Type of Event: Seminar</div>
-              <div>⌛ Total Time Duration: 5 Hours</div>
-              <div>🕒 Minimum Attendance Time Required: 4 Hours</div>
-            </div>
+            <section className="detail-section" aria-label="Event information">
+              <h3 className="detail-section__title">Information</h3>
+              <dl className="detail-grid">
+                {DETAIL_FIELDS.map((field) => (
+                  <div key={field.label} className="detail-field">
+                    <dt className="detail-field__label">{field.label}</dt>
+                    <dd className="detail-field__value">{field.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
 
-            <div className="files-row">
-              <div className="file-card">
-                <span>🖼</span>
-                <small>
-                  Event Poster
-                  <br />
-                  dc-seminar.pdf
-                </small>
+            <section className="detail-section" aria-label="Attachments">
+              <h3 className="detail-section__title">Attachments</h3>
+              <div className="files-row">
+                {DETAIL_FILES.map((file) => (
+                  <button key={file.file} type="button" className="file-card">
+                    <span className="file-card__icon" aria-hidden="true">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M8 4h8l4 4v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M16 4v4h4M9 13h6M9 17h4"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </span>
+                    <span className="file-card__title">{file.title}</span>
+                    <span className="file-card__name">{file.file}</span>
+                  </button>
+                ))}
               </div>
-              <div className="file-card">
-                <span>📄</span>
-                <small>
-                  Room Reservation Form
-                  <br />
-                  dro.pdf
-                </small>
-              </div>
-              <div className="file-card">
-                <span>📄</span>
-                <small>
-                  Approved Concept Paper
-                  <br />
-                  concept-dc.pdf
-                </small>
-              </div>
-              <div className="file-card">
-                <span>📜</span>
-                <small>
-                  E-Certificate Template
-                  <br />
-                  cert_template.pdf
-                </small>
-              </div>
-            </div>
+            </section>
 
-            <div className="admin-comment">
-              <h4>Admin</h4>
+            <section className="admin-comment" aria-label="Admin comment">
+              <label className="admin-comment__label" htmlFor="adminCommentInput">
+                Admin note
+              </label>
               <input
                 type="text"
                 id="adminCommentInput"
-                placeholder="write a comment..."
+                placeholder="Write a comment for the organizer…"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && e.currentTarget.value.trim()) {
                     showStatus("Admin comment added");
                   }
                 }}
               />
-            </div>
+            </section>
           </article>
         </div>
       </section>

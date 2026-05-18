@@ -1,20 +1,13 @@
-/* Dashboard: DC Space frontend UI layout */
-
-:root {
-  --dashboard-blue: #448aff;
-  --dashboard-cream: #f7efdf;
-  --dashboard-brown: #604d18;
-  --dashboard-gold: #ceaa61;
-}
+/* Dashboard: modern glass layout */
 
 .main {
-  background: var(--page-gradient);
+  background: transparent;
 }
 
 .dashboard-page {
-  min-height: calc(100vh - 88px);
+  min-height: calc(100vh - 96px);
   position: relative;
-  color: var(--dashboard-brown);
+  color: var(--text-primary);
 }
 
 .dashboard-content {
@@ -35,31 +28,41 @@
 }
 
 .dashboard-tabs {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 32px;
-  margin-bottom: 34px;
+  gap: 4px;
+  margin-bottom: 28px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--glass-border-subtle);
 }
 
 .dashboard-tab {
   border: none;
   background: transparent;
-  color: rgba(107, 93, 74, 0.62);
+  color: var(--text-secondary);
   font-family: var(--font), sans-serif;
-  font-size: clamp(34px, 4vw, 46px);
-  font-weight: 900;
-  letter-spacing: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color var(--duration-fast) ease,
+    background var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-spring);
 }
 
 .dashboard-tab:hover {
-  transform: translateY(-1px);
+  color: var(--text-primary);
 }
 
 .dashboard-tab.is-active {
-  color: var(--dashboard-blue);
+  color: var(--accent);
+  background: var(--glass-bg-strong);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .registered-sections {
@@ -74,10 +77,12 @@
 
 .registered-group-title {
   margin: 0;
-  color: #8a6d00;
+  color: var(--text-secondary);
   font-family: var(--font), sans-serif;
-  font-size: clamp(28px, 3vw, 34px);
-  font-weight: 900;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .registered-grid {
@@ -92,25 +97,21 @@
   grid-template-columns: 118px 1fr;
   align-items: center;
   min-height: 172px;
-  border: none;
-  border-radius: 7px;
-  background: #f4ecd7;
-  box-shadow: 4px 5px 5px rgba(67, 57, 28, 0.38);
-  color: #705615;
+  color: var(--text-primary);
   cursor: pointer;
   text-decoration: none;
   text-align: left;
   padding: 18px 22px;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, color 0.2s ease;
 }
 
 .registered-card:hover,
 .registered-card:focus-visible,
 .registered-card:active {
-  background: var(--dashboard-blue);
+  background: var(--accent);
+  border-color: transparent;
   color: white;
-  box-shadow: 6px 8px 12px rgba(50, 62, 87, 0.35);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(10, 132, 255, 0.35);
+  transform: translateY(-3px) scale(1.01);
   outline: none;
 }
 
@@ -123,7 +124,7 @@
 .registered-date {
   align-items: center;
   justify-content: center;
-  color: var(--dashboard-gold);
+  color: var(--accent);
   font-family: var(--font), sans-serif;
   font-weight: 900;
   line-height: 1;
@@ -142,7 +143,7 @@
 .registered-details {
   gap: 9px;
   padding: 4px 0 0 8px;
-  color: var(--dashboard-gold);
+  color: var(--text-secondary);
   font-size: 15px;
   font-weight: 500;
   line-height: 1.1;
@@ -150,10 +151,11 @@
 
 .registered-details strong {
   margin-bottom: 8px;
-  color: #705615;
+  color: var(--text-primary);
   font-family: var(--font), sans-serif;
-  font-size: 24px;
-  font-weight: 900;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   line-height: 1;
 }
 
@@ -172,8 +174,8 @@
 .organized-table {
   width: calc(100% + 84px);
   margin: -10px -42px 0;
-  border-top: 1.5px solid rgba(96, 77, 24, 0.75);
-  color: var(--dashboard-brown);
+  border-top: 1px solid var(--glass-border-subtle);
+  color: var(--text-primary);
 }
 
 .organized-row {
@@ -182,9 +184,9 @@
   align-items: center;
   min-height: 68px;
   padding: 0 36px 0 48px;
-  border-bottom: 1px solid rgba(96, 77, 24, 0.45);
-  color: var(--dashboard-brown);
-  font-size: 22px;
+  border-bottom: 1px solid var(--glass-border-subtle);
+  color: var(--text-primary);
+  font-size: 16px;
   font-weight: 500;
   line-height: 1.25;
 }
@@ -192,9 +194,15 @@
 .organized-header {
   min-height: 58px;
   font-family: var(--font), sans-serif;
-  font-size: 30px;
-  font-weight: 900;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
   line-height: 1;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .details-button {
@@ -204,15 +212,15 @@
   justify-content: center;
   gap: 10px;
   min-width: 128px;
-  height: 26px;
-  border: 1.5px solid #634b05;
-  border-radius: 13px;
-  background: #edcf72;
-  color: #634b05;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: #fff;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 4px 14px rgba(10, 132, 255, 0.3);
 }
 
 .details-button img {
@@ -224,11 +232,10 @@
 .details-button:hover,
 .details-button:focus-visible,
 .details-button:active {
-  border-color: var(--dashboard-blue);
-  background: var(--dashboard-blue);
+  background: var(--accent-hover);
   color: white;
   outline: none;
-  transform: translateY(-1px);
+  transform: scale(1.03);
 }
 
 .dashboard-empty {
@@ -238,23 +245,24 @@
   justify-content: center;
   align-items: center;
   text-align: center;
-  color: #6b5d4a;
+  color: var(--text-secondary);
   padding: 0 22px;
 }
 
 .dashboard-empty-icon {
   width: 80px;
   height: 80px;
-  color: #6b5d4a;
+  color: var(--accent);
   margin-bottom: 20px;
+  opacity: 0.6;
 }
 
 .dashboard-empty p {
   max-width: 320px;
   margin: 0;
-  color: #6b5d4a;
-  font-size: 18px;
-  font-weight: 800;
+  color: var(--text-secondary);
+  font-size: 17px;
+  font-weight: 600;
   line-height: 1.5;
 }
 
@@ -266,18 +274,17 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(84, 65, 23, 0.2);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .privacy-card {
   width: min(100%, 420px);
   max-height: min(88vh, 720px);
   overflow-y: auto;
-  border: 2px solid #9d7a2a;
-  border-radius: 18px;
-  background: var(--dashboard-cream);
-  color: #7a6222;
-  box-shadow: 0 24px 60px rgba(87, 66, 20, 0.18);
+  border-radius: var(--radius-xl);
+  color: var(--text-primary);
 }
 
 .privacy-header {
@@ -391,15 +398,17 @@
 
 .accept-button {
   border: none;
-  background: #d9ad55;
+  background: var(--accent);
   color: white;
-  font-weight: 900;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
 }
 
 .cancel-button {
-  border: 2px solid #a07c2c;
-  background: rgba(160, 124, 44, 0.75);
-  color: white;
+  border: 1px solid var(--glass-border-subtle);
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-primary);
+  border-radius: var(--radius-pill);
 }
 
 .accept-button:hover,
@@ -449,10 +458,10 @@
     grid-template-columns: 1fr;
     gap: 10px;
     min-height: 0;
-    border: 1px solid rgba(96, 77, 24, 0.28);
-    border-radius: 8px;
-    background: #fdf4e3;
-    box-shadow: 2px 3px 5px rgba(67, 57, 28, 0.18);
+    border: 1px solid var(--glass-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--glass-bg);
+    box-shadow: var(--glass-shadow);
     padding: 16px;
     font-size: 16px;
   }
@@ -641,10 +650,10 @@
     grid-template-columns: 1fr;
     gap: 12px;
     min-height: 0;
-    border: 1px solid rgba(96, 77, 24, 0.28);
-    border-radius: 8px;
-    background: #fdf4e3;
-    box-shadow: 2px 3px 5px rgba(67, 57, 28, 0.18);
+    border: 1px solid var(--glass-border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--glass-bg);
+    box-shadow: var(--glass-shadow);
     padding: 18px;
     font-size: 16px;
   }

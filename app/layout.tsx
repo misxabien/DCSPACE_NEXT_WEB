@@ -62,7 +62,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${dmSans.variable} ${lato.variable} ${montserrat.variable} ${poppins.variable} ${lato.className}`}>
+      <body className={`${dmSans.variable} ${lato.variable} ${montserrat.variable} ${poppins.variable} ${dmSans.className}`}>
         {children}
       </body>
     </html>
