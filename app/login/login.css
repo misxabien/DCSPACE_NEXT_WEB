@@ -483,6 +483,7 @@
 .login-scope .register-signin-btn {
   width: min(243px, 100%);
   height: 51px;
+  border: 0;
   border-radius: 8px;
   background: var(--cyan);
   color: #fff;
@@ -495,6 +496,7 @@
   font-size: 17px;
   font-weight: 800;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .login-scope .register-signin-btn img {
@@ -703,7 +705,7 @@
 }
 
 .login-scope .password-strength {
-  margin: -24px 0 18px;
+  margin: -18px 0 20px;
   color: #000;
   font-family: var(--font-poppins), sans-serif;
 }
@@ -718,7 +720,7 @@
 }
 
 .login-scope .password-strength__bars span {
-  border: 2px solid #000;
+  border: 1.5px solid #8f8f8a;
   background: transparent !important;
 }
 
@@ -1767,6 +1769,11 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .login-scope .forgot-primary:hover,
@@ -1827,6 +1834,7 @@
 .login-scope .forgot-signin-btn {
   width: min(196px, 100%);
   height: 40px;
+  border: 0;
   border-radius: 7px;
   background: var(--cyan);
   color: #fff;
@@ -1839,11 +1847,20 @@
   font-size: 16px;
   font-weight: 800;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .login-scope .forgot-signin-btn img {
   width: 20px;
   height: 20px;
+}
+
+.login-scope .auth-mobile-back {
+  display: none;
+}
+
+.login-scope .auth-mobile-control-back {
+  display: none;
 }
 
 @keyframes registerCardIn {
@@ -2039,5 +2056,385 @@
   .login-scope .signup-btn {
     flex: 1;
     min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .login-scope {
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  .login-scope .page {
+    min-height: 100dvh;
+    padding: 18px 11px;
+    place-items: start center;
+  }
+
+  .login-scope .layout {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .login-scope .brand {
+    width: 100%;
+    transform: none;
+  }
+
+  .login-scope .brand__logo-wrap {
+    width: min(250px, 74vw);
+    margin-bottom: 4px;
+  }
+
+  .login-scope .brand__headline {
+    margin-top: 0;
+    font-size: clamp(16px, 5.2vw, 20px);
+    line-height: 1.05;
+  }
+
+  .login-scope .brand__sub {
+    width: min(310px, 90vw);
+    margin-top: 6px;
+    font-size: clamp(10px, 3.2vw, 13px);
+    line-height: 1.25;
+  }
+
+  .login-scope .card {
+    width: 100%;
+    max-width: 390px;
+    border-radius: 12px;
+    padding: 17px 14px 16px;
+  }
+
+  .login-scope .card h1 {
+    margin-bottom: 18px;
+    font-size: clamp(16px, 5.2vw, 22px);
+    line-height: 1.15;
+  }
+
+  .login-scope .field + .field {
+    margin-top: 17px;
+  }
+
+  .login-scope .field__label {
+    font-size: 13px;
+  }
+
+  .login-scope .input {
+    height: 34px;
+    min-width: 0;
+    padding-left: 43px;
+    padding-right: 42px;
+    font-size: 11px;
+  }
+
+  .login-scope .icon-left {
+    height: 34px;
+    left: 10px;
+  }
+
+  .login-scope .icon-left img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .login-scope .eye {
+    right: 9px;
+    bottom: 7px;
+  }
+
+  .login-scope .primary {
+    height: 44px;
+    margin-top: 17px;
+    font-size: 13px;
+  }
+
+  .login-scope .below {
+    font-size: 8px;
+    line-height: 18px;
+  }
+
+  .login-scope .role {
+    width: min(218px, 90%);
+    height: 29px;
+  }
+
+  .login-scope .role__btn {
+    font-size: 8px;
+  }
+
+  .login-scope.register-scope,
+  .login-scope.forgot-scope {
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: auto;
+  }
+
+  .login-scope .register-shell,
+  .login-scope .forgot-shell {
+    height: auto;
+    min-height: 100dvh;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+
+  .login-scope .register-side,
+  .login-scope .forgot-side {
+    display: none;
+  }
+
+  .login-scope .register-side,
+  .login-scope .forgot-side {
+    height: auto;
+    min-height: 210px;
+    padding: 28px 16px 24px;
+  }
+
+  .login-scope .register-side__logo,
+  .login-scope .forgot-side__logo {
+    width: min(230px, 70vw);
+  }
+
+  .login-scope .register-side h2,
+  .login-scope .forgot-side h2 {
+    font-size: clamp(22px, 7vw, 28px);
+  }
+
+  .login-scope .register-main,
+  .login-scope .forgot-main {
+    height: auto;
+    min-height: 100dvh;
+    padding: 24px 18px 28px;
+    align-items: stretch;
+  }
+
+  .login-scope .register-form-panel,
+  .login-scope .forgot-form-panel {
+    width: 100%;
+    height: auto;
+    min-height: calc(100dvh - 52px);
+  }
+
+  .login-scope .auth-mobile-back {
+    display: inline-flex;
+    width: fit-content;
+    margin: 0 0 18px;
+    border: 0;
+    background: transparent;
+    color: var(--blue);
+    font-family: var(--font-poppins), sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .login-scope .register-form-panel h1,
+  .login-scope .forgot-step h1 {
+    margin-bottom: 20px;
+    font-size: clamp(28px, 9vw, 34px);
+    line-height: 1.1;
+  }
+
+  .login-scope .register-step,
+  .login-scope .forgot-step {
+    min-height: auto;
+    flex: 0 0 auto;
+    padding-bottom: 0;
+  }
+
+  .login-scope .register-step h2 {
+    margin-bottom: 22px;
+    font-size: clamp(20px, 6vw, 24px);
+  }
+
+  .login-scope .register-field,
+  .login-scope .register-step--school .register-field,
+  .login-scope .register-field--compact {
+    margin-bottom: 24px;
+  }
+
+  .login-scope .register-field span,
+  .login-scope .forgot-field span {
+    font-size: 15px;
+  }
+
+  .login-scope .register-field input,
+  .login-scope .register-field select,
+  .login-scope .forgot-field input {
+    height: 38px;
+    font-size: 14px;
+    min-width: 0;
+  }
+
+  .login-scope .register-controls,
+  .login-scope .forgot-controls {
+    position: static;
+    width: 100%;
+    margin-top: 28px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  .login-scope .register-controls {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+  }
+
+  .login-scope .register-back-step,
+  .login-scope .forgot-back {
+    text-align: center;
+  }
+
+  .login-scope .forgot-back {
+    order: 0;
+    flex: 1 1 0;
+    min-width: 0;
+    color: var(--blue);
+    font-size: clamp(9px, 2.8vw, 14px);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .login-scope .register-back-step {
+    order: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: clamp(11px, 3.2vw, 14px);
+    text-align: right;
+  }
+
+  .login-scope .register-continue,
+  .login-scope .forgot-primary {
+    width: auto;
+    height: 40px;
+  }
+
+  .login-scope .register-continue {
+    flex: 0 0 min(48%, 203px);
+  }
+
+  .login-scope .forgot-primary {
+    flex: 0 0 clamp(150px, 46vw, 205px);
+    padding-inline: 10px;
+    font-size: clamp(10px, 3vw, 14px);
+    white-space: nowrap;
+  }
+
+  .login-scope .auth-mobile-control-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: var(--blue);
+    text-decoration: none;
+  }
+
+  .login-scope .forgot-field {
+    margin-top: 46px;
+  }
+
+  .login-scope .forgot-password-field {
+    margin-top: 28px;
+  }
+
+  .login-scope .password-strength__bars {
+    gap: 6px;
+  }
+
+  .login-scope .privacy-modal-overlay {
+    padding: 12px;
+  }
+
+  .login-scope .privacy-modal {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    padding: 54px 16px 20px;
+  }
+
+  .login-scope .privacy-modal__intro {
+    font-size: clamp(16px, 5.2vw, 20px);
+  }
+
+  .login-scope .privacy-modal h2 {
+    margin-bottom: 18px;
+    font-size: clamp(24px, 7.4vw, 30px);
+  }
+
+  .login-scope .privacy-modal h3 {
+    font-size: clamp(20px, 6vw, 24px);
+  }
+
+  .login-scope .privacy-modal h3 + p,
+  .login-scope .privacy-consent {
+    font-size: clamp(13px, 4vw, 15px);
+    line-height: 1.25;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-scope .page {
+    padding: 14px 8px;
+  }
+
+  .login-scope .brand__logo-wrap {
+    width: min(220px, 76vw);
+  }
+
+  .login-scope .card {
+    padding: 15px 11px 14px;
+  }
+
+  .login-scope .register-main,
+  .login-scope .forgot-main {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
+
+.login-scope .register-field select {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .login-scope .register-step--school .register-field select {
+    background-position: right 9px center;
+    background-size: 16px 16px;
+    padding-left: 14px;
+    padding-right: 36px;
+  }
+}
+
+@media (max-width: 640px) {
+  .login-scope .register-step--school .register-field select {
+    height: 38px;
+    background-position: right 8px center;
+    background-size: 14px 14px;
+    font-size: clamp(12px, 3.6vw, 14px);
+    padding-left: 12px;
+    padding-right: 32px;
+  }
+
+  .login-scope .register-step--school .register-field select option {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-scope .register-step--school .register-field select {
+    font-size: 12px;
+    padding-left: 10px;
+    padding-right: 28px;
   }
 }
