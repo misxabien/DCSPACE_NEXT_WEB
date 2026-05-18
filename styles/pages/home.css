@@ -1,0 +1,324 @@
+.home-page {
+  min-height: calc(100vh - 72px);
+  background: #efefef;
+  padding: 24px 26px 44px;
+}
+
+.home-page__header {
+  display: grid;
+  grid-template-columns: 1fr minmax(250px, 356px);
+  align-items: start;
+  gap: 28px;
+  margin-bottom: 42px;
+}
+
+.home-page__copy h2 {
+  margin: 0 0 18px;
+  color: #000000;
+  font-family: var(--font-display), "Montserrat", sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.home-page__copy h2 span {
+  color: #448aff;
+}
+
+.home-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding-left: 5px;
+}
+
+.home-page__filter-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.home-page__filter {
+  min-width: 60px;
+  height: 20px;
+  border: 1px solid #c7cbd4;
+  border-radius: 999px;
+  background: #efefef;
+  color: #1d1d1d;
+  font-family: "Google Sans Flex", var(--font-ui), sans-serif;
+  font-size: 9px;
+  font-weight: 400;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 14px;
+}
+
+.home-page__filter img {
+  width: 8px;
+  height: 8px;
+  transition: transform 0.18s ease;
+}
+
+.home-page__filter.is-open img {
+  transform: rotate(180deg);
+}
+
+.home-date-picker {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 8;
+  width: 216px;
+  border: 1px solid #c7cbd4;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(31, 35, 60, 0.12);
+  padding: 12px;
+}
+
+.home-date-picker label {
+  display: grid;
+  gap: 5px;
+  color: #1d1d1d;
+  font-family: "Google Sans Flex", var(--font-ui), sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.home-date-picker input {
+  width: 100%;
+  height: 30px;
+  border: 1px solid #d7dae2;
+  border-radius: 6px;
+  color: #1d1d1d;
+  font-family: "Google Sans Flex", var(--font-ui), sans-serif;
+  font-size: 11px;
+  padding: 0 8px;
+}
+
+.home-date-picker__clear {
+  height: 26px;
+  border: 1px solid #d7dae2;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #5b6378;
+  font-family: "Google Sans Flex", var(--font-ui), sans-serif;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.home-page__filter:hover,
+.home-page__filter.is-active {
+  border-color: #20a8f4;
+  color: #20a8f4;
+}
+
+.home-page__search {
+  height: 32px;
+  border: 1px solid #cfd2d8;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #ffffff;
+  margin-top: 7px;
+  padding: 0 13px;
+}
+
+.home-page__search img {
+  width: 10px;
+  height: 10px;
+}
+
+.home-page__search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #000000;
+  font-family: "Google Sans Flex", var(--font-ui), sans-serif;
+  font-size: 8px;
+}
+
+.home-page__search input::placeholder {
+  color: #000000;
+}
+
+.home-event-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 52px;
+}
+
+.home-event-card {
+  position: relative;
+  min-height: 250px;
+  border: 1px solid #8d8d8d;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 3px 4px 2px rgba(0, 0, 0, 0.22);
+  transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.home-event-card:hover,
+.home-event-card:focus-within {
+  border-color: #b9975e;
+  background: #f5d29d;
+}
+
+.home-event-card__save {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.home-event-card__save img {
+  grid-area: 1 / 1;
+  width: 21px;
+  height: 21px;
+}
+
+.home-event-card__bookmark-outline {
+  filter: brightness(0);
+}
+
+.home-event-card__bookmark-fill {
+  opacity: 0;
+}
+
+.home-event-card__save:hover .home-event-card__bookmark-outline,
+.home-event-card__save.is-saved .home-event-card__bookmark-outline {
+  opacity: 0;
+}
+
+.home-event-card__save:hover .home-event-card__bookmark-fill,
+.home-event-card__save.is-saved .home-event-card__bookmark-fill {
+  opacity: 1;
+}
+
+.home-event-card__link {
+  min-height: 250px;
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  align-items: start;
+  gap: 22px;
+  color: #000000;
+  text-decoration: none;
+  padding: 160px 34px 30px 30px;
+}
+
+.home-event-card__date {
+  display: grid;
+  justify-items: center;
+  align-self: start;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  line-height: 0.95;
+  padding-top: 1px;
+}
+
+.home-event-card__date span {
+  color: #000000;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.home-event-card__date strong {
+  color: #19a7ef;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 0.9;
+}
+
+.home-event-card__details {
+  display: grid;
+  gap: 0;
+  align-self: start;
+  color: #000000;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.08;
+}
+
+.home-event-card__details strong {
+  color: #000000;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.05;
+  margin-bottom: 14px;
+}
+
+.home-event-card__venue {
+  color: #8ab6ff;
+  font-size: 12px;
+  margin-bottom: 7px;
+}
+
+.home-event-card__time {
+  color: #000000;
+  font-size: 11px;
+}
+
+.home-event-card:hover .home-event-card__date span,
+.home-event-card:hover .home-event-card__details,
+.home-event-card:hover .home-event-card__details strong,
+.home-event-card:hover .home-event-card__time,
+.home-event-card:focus-within .home-event-card__date span,
+.home-event-card:focus-within .home-event-card__details,
+.home-event-card:focus-within .home-event-card__details strong,
+.home-event-card:focus-within .home-event-card__time {
+  color: #ffffff;
+}
+
+.home-event-card:hover .home-event-card__date strong,
+.home-event-card:hover .home-event-card__venue,
+.home-event-card:focus-within .home-event-card__date strong,
+.home-event-card:focus-within .home-event-card__venue {
+  color: #6b7df2;
+}
+
+@media (max-width: 1100px) {
+  .home-page__header {
+    grid-template-columns: 1fr;
+    margin-bottom: 36px;
+  }
+
+  .home-page__search {
+    max-width: 360px;
+  }
+
+  .home-event-grid {
+    grid-template-columns: repeat(2, minmax(250px, 1fr));
+    gap: 28px;
+  }
+}
+
+@media (max-width: 700px) {
+  .home-page {
+    padding: 22px 18px 38px;
+  }
+
+  .home-page__copy h2 {
+    font-size: 32px;
+  }
+
+  .home-event-grid {
+    grid-template-columns: 1fr;
+  }
+}
