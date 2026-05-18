@@ -328,6 +328,14 @@
   -webkit-mask: url("/svg icons organized events page/Dot.svg") center / contain no-repeat;
 }
 
+.organized-status-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--dot-color, #6b7df2);
+  mask: url("/svg icons organized events page/Dot.svg") center / contain no-repeat;
+  -webkit-mask: url("/svg icons organized events page/Dot.svg") center / contain no-repeat;
+}
+
 .organized-status-counts__body {
   display: grid;
   justify-items: center;
