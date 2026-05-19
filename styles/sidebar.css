@@ -236,13 +236,28 @@
   min-width: 0;
 }
 
-.topbar__account {
+.topbar__account,
+.topbar__profile-pill {
   color: #6b7df2;
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
+}
+
+.topbar__profile-pill {
+  min-height: 54px;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  border-radius: 999px;
+  padding: 5px 10px 5px 24px;
+}
+
+.topbar__profile-pill:hover,
+.topbar__profile-pill.is-active {
+  background: rgba(107, 125, 242, 0.3);
 }
 
 .topbar__avatar-link {
@@ -258,6 +273,7 @@
   width: 44px;
   height: 44px;
   object-fit: cover;
+  transform-origin: center;
 }
 
 .topbar__icon-button,
@@ -276,10 +292,20 @@
   text-decoration: none;
 }
 
+.topbar__notification-button {
+  width: 44px;
+  height: 44px;
+}
+
 .topbar__icon-button:hover,
 .topbar__icon-button.is-active,
 .topbar__help:hover {
   background: rgba(107, 125, 242, 0.12);
+}
+
+.topbar__notification-button:hover,
+.topbar__notification-button.is-active {
+  background: rgba(107, 125, 242, 0.4);
 }
 
 .topbar__help {
@@ -289,14 +315,150 @@
   font-weight: 600;
 }
 
-.topbar__notification-dot {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 7px;
-  height: 7px;
+.notifications-drawer {
+  position: fixed;
+  top: 72px;
+  right: 0;
+  bottom: 0;
+  z-index: 39;
+  width: max(50vw, 420px);
+  background: #8ab6ff;
+  color: #ffffff;
+  box-shadow: -14px 0 28px rgba(21, 104, 132, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(100%);
+  transition:
+    opacity 0.24s ease,
+    transform 0.28s cubic-bezier(0.2, 0.85, 0.22, 1);
+}
+
+.notifications-drawer.is-open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+.notifications-drawer__header {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.36);
+}
+
+.notifications-drawer__header h2 {
+  margin: 0;
+  color: #ffffff;
+  font-family: var(--font-display), "Montserrat", sans-serif;
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.notifications-drawer__header button {
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+.notifications-drawer__header button:hover,
+.notifications-drawer__header button:focus-visible {
+  outline: none;
+  text-decoration: underline;
+}
+
+.notifications-drawer__list {
+  max-height: calc(100vh - 124px);
+  overflow-y: auto;
+}
+
+.notifications-drawer__item {
+  width: 100%;
+  min-height: 82px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.32);
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 72px;
+  align-items: center;
+  gap: 18px;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  padding: 0 22px;
+  text-align: left;
+}
+
+.notifications-drawer__item:not(.is-unread) {
+  background: #8ab6ff;
+}
+
+.notifications-drawer__item:hover,
+.notifications-drawer__item:focus-visible {
+  background: rgba(21, 104, 132, 0.5);
+  outline: none;
+}
+
+.notifications-drawer__item.is-unread {
+  background: rgba(21, 104, 132, 0.5);
+}
+
+.notifications-drawer__circle {
+  width: 21px;
+  height: 21px;
   border-radius: 50%;
-  background: #f5d29d;
+  background: #156884;
+}
+
+.notifications-drawer__item.is-unread .notifications-drawer__circle {
+  background: #d49434;
+}
+
+.notifications-drawer__item:hover .notifications-drawer__circle,
+.notifications-drawer__item:focus-visible .notifications-drawer__circle {
+  background: #c3ecff;
+}
+
+.notifications-drawer__copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.notifications-drawer__copy strong {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.notifications-drawer__copy small,
+.notifications-drawer__item time {
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.notifications-drawer__item time {
+  text-align: right;
+}
+
+.notifications-drawer__empty {
+  margin: 0;
+  padding: 28px 22px;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .main {
@@ -368,5 +530,10 @@
   .sidebar--collapsed ~ .main {
     margin-left: var(--sidebar-closed-width);
     padding-top: 64px;
+  }
+
+  .notifications-drawer {
+    top: 64px;
+    width: calc(100vw - var(--sidebar-closed-width));
   }
 }
