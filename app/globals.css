@@ -20,8 +20,8 @@
   --main-pad-y: 36px;
   --grid-gap: 26px;
   --card-radius: 14px;
-  --font: var(--font-lato), "Lato", system-ui, -apple-system, sans-serif;
-  --font-dm: var(--font-dm-sans), "DM Sans", system-ui, -apple-system, sans-serif;
+  --font: var(--font-poppins), "Poppins", system-ui, -apple-system, sans-serif;
+  --font-dm: var(--font-poppins), "Poppins", system-ui, -apple-system, sans-serif;
   --font-display: var(--font-montserrat), "Montserrat", system-ui, -apple-system, sans-serif;
   --font-ui: var(--font-poppins), "Poppins", system-ui, -apple-system, sans-serif;
   --page-gradient: #fffbf2;
@@ -61,267 +61,267 @@ body {
 }
 
 .dm-sans-regular {
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-optical-sizing: auto;
   font-weight: 400;
   font-style: normal;
 }
 
 .dm-sans-medium {
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-optical-sizing: auto;
   font-weight: 500;
   font-style: normal;
 }
 
 .dm-sans-semibold {
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-optical-sizing: auto;
   font-weight: 600;
   font-style: normal;
 }
 
 .dm-sans-bold {
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-optical-sizing: auto;
   font-weight: 700;
   font-style: normal;
 }
 
 .dm-sans-extrabold {
-  font-family: "DM Sans", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-optical-sizing: auto;
   font-weight: 800;
   font-style: normal;
 }
 
 .lato-thin {
-  font-family: "Lato", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 100;
   font-style: normal;
 }
 
 .lato-light {
-  font-family: "Lato", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 300;
   font-style: normal;
 }
 
 .lato-regular {
-  font-family: "Lato", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 400;
   font-style: normal;
 }
 
 .lato-bold {
-  font-family: "Lato", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 700;
   font-style: normal;
 }
 
 .lato-black {
-  font-family: "Lato", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 900;
   font-style: normal;
 }
 
 .lato-thin-italic {
-  font-family: "Lato", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 100;
   font-style: italic;
 }
 
 .lato-light-italic {
-  font-family: "Lato", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 300;
   font-style: italic;
 }
 
 .lato-regular-italic {
-  font-family: "Lato", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 400;
   font-style: italic;
 }
 
 .lato-bold-italic {
-  font-family: "Lato", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 700;
   font-style: italic;
 }
 
 .lato-black-italic {
-  font-family: "Lato", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 900;
   font-style: italic;
 }
 
 .montserrat-thin {
-  font-family: "Montserrat", sans-serif;
+  font-family: var(--font-display), "Montserrat", sans-serif;
   font-optical-sizing: auto;
   font-weight: 100;
   font-style: normal;
 }
 
 .montserrat-extralight {
-  font-family: "Montserrat", sans-serif;
+  font-family: var(--font-display), "Montserrat", sans-serif;
   font-optical-sizing: auto;
   font-weight: 200;
   font-style: normal;
 }
 
 .montserrat-light {
-  font-family: "Montserrat", sans-serif;
+  font-family: var(--font-display), "Montserrat", sans-serif;
   font-optical-sizing: auto;
   font-weight: 300;
   font-style: normal;
 }
 
 .montserrat-regular {
-  font-family: "Montserrat", sans-serif;
+  font-family: var(--font-display), "Montserrat", sans-serif;
   font-optical-sizing: auto;
   font-weight: 400;
   font-style: normal;
 }
 
 .montserrat-medium {
-  font-family: "Montserrat", sans-serif;
+  font-family: var(--font-display), "Montserrat", sans-serif;
   font-optical-sizing: auto;
   font-weight: 500;
   font-style: normal;
 }
 
 .montserrat-semibold {
-  font-family: "Montserrat", sans-serif;
+  font-family: var(--font-display), "Montserrat", sans-serif;
   font-optical-sizing: auto;
   font-weight: 600;
   font-style: normal;
 }
 
 .montserrat-bold {
-  font-family: "Montserrat", sans-serif;
+  font-family: var(--font-display), "Montserrat", sans-serif;
   font-optical-sizing: auto;
   font-weight: 700;
   font-style: normal;
 }
 
 .montserrat-extrabold {
-  font-family: "Montserrat", sans-serif;
+  font-family: var(--font-display), "Montserrat", sans-serif;
   font-optical-sizing: auto;
   font-weight: 800;
   font-style: normal;
 }
 
 .montserrat-black {
-  font-family: "Montserrat", sans-serif;
+  font-family: var(--font-display), "Montserrat", sans-serif;
   font-optical-sizing: auto;
   font-weight: 900;
   font-style: normal;
 }
 
 .poppins-thin {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 100;
   font-style: normal;
 }
 
 .poppins-extralight {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 200;
   font-style: normal;
 }
 
 .poppins-light {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 300;
   font-style: normal;
 }
 
 .poppins-regular {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 400;
   font-style: normal;
 }
 
 .poppins-medium {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 500;
   font-style: normal;
 }
 
 .poppins-semibold {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 600;
   font-style: normal;
 }
 
 .poppins-bold {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 700;
   font-style: normal;
 }
 
 .poppins-extrabold {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 800;
   font-style: normal;
 }
 
 .poppins-black {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 900;
   font-style: normal;
 }
 
 .poppins-thin-italic {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 100;
   font-style: italic;
 }
 
 .poppins-extralight-italic {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 200;
   font-style: italic;
 }
 
 .poppins-light-italic {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 300;
   font-style: italic;
 }
 
 .poppins-regular-italic {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 400;
   font-style: italic;
 }
 
 .poppins-medium-italic {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 500;
   font-style: italic;
 }
 
 .poppins-semibold-italic {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 600;
   font-style: italic;
 }
 
 .poppins-bold-italic {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 700;
   font-style: italic;
 }
 
 .poppins-extrabold-italic {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 800;
   font-style: italic;
 }
 
 .poppins-black-italic {
-  font-family: "Poppins", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-weight: 900;
   font-style: italic;
 }
@@ -333,7 +333,7 @@ body {
 }
 
 .google-sans-flex-regular {
-  font-family: "Google Sans Flex", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-optical-sizing: auto;
   font-weight: 400;
   font-style: normal;
@@ -345,7 +345,7 @@ body {
 }
 
 .google-sans-flex-medium {
-  font-family: "Google Sans Flex", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-optical-sizing: auto;
   font-weight: 500;
   font-style: normal;
@@ -357,7 +357,7 @@ body {
 }
 
 .google-sans-flex-bold {
-  font-family: "Google Sans Flex", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-optical-sizing: auto;
   font-weight: 700;
   font-style: normal;

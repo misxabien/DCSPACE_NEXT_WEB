@@ -107,7 +107,7 @@
   font-weight: medium;
   color: rgba(255, 255, 255, 0.82);
   text-shadow: none;
-  font-family: poppins, sans-serif;
+  font-family: var(--font-poppins), "Poppins", sans-serif;
 }
 
 .login-scope .card {
@@ -197,7 +197,7 @@
   font-size: 16px;
   font-weight: light;
   line-height: 1;
-  font-family: poppins, sans-serif;
+  font-family: var(--font-poppins), "Poppins", sans-serif;
 }
 
 .login-scope .input {
@@ -208,7 +208,7 @@
   background: rgba(255, 255, 255, 0.35);
   padding: 0 56px 0 45px;
   color: #000;
-  font-family: poppins, sans-serif;
+  font-family: var(--font-poppins), "Poppins", sans-serif;
   font-size: 12px;
   font-weight: 400;
   outline: none;
@@ -223,7 +223,7 @@
 .login-scope .input::placeholder {
   color: var(--field-gray);
   font-weight: light;
-  font-family: poppins, sans-serif;
+  font-family: var(--font-poppins), "Poppins", sans-serif;
   line-height: 38px;
 }
 
@@ -289,7 +289,7 @@
   font-weight: 600;
   color: var(--teal);
   text-decoration: none;
-  font-family: poppins, sans-serif;
+  font-family: var(--font-poppins), "Poppins", sans-serif;
   line-height: 30px;
 }
 
@@ -318,7 +318,7 @@
   text-align: center;
   font-size: 10px;
   font-weight: 300;
-  font-family: poppins, sans-serif;
+  font-family: var(--font-poppins), "Poppins", sans-serif;
   line-height: 25px;
   color: #000;
   overflow-wrap: anywhere;
@@ -524,7 +524,7 @@
 .login-scope .register-form-panel h1 {
   margin: 0 0 32px;
   color: var(--teal);
-  font-family: montserrat, sans-serif;
+  font-family: var(--font-montserrat), "Montserrat", sans-serif;
   font-size: clamp(32px, 4vw, 36px);
   font-weight: extra-bold;
   line-height: 49px;
@@ -649,7 +649,7 @@
   height: 36px;
   border: 0;
   border-radius: 3px;
-  background: var(--blue);
+  background: #6b7df2;
   color: #fff;
   box-shadow: 0 2px 3px rgba(50, 59, 77, 0.32);
   font-family: var(--font-poppins), sans-serif;
@@ -1647,7 +1647,7 @@
 .login-scope .forgot-step h1 {
   margin: 0 0 12px;
   color: var(--teal);
-  font-family: montserrat, sans-serif;
+  font-family: var(--font-montserrat), "Montserrat", sans-serif;
   font-size: clamp(30px, 4vw, 36px);
   font-weight: extra-bold;
   line-height: 49px;

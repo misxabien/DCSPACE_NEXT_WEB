@@ -105,14 +105,10 @@ function formatTimeLabel(value: string) {
 export function OrganizeForm() {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
-  const requiredFileToastRef = useRef<number | null>(null);
   const [canCreate, setCanCreate] = useState<boolean | null>(null);
   const [reviewDetails, setReviewDetails] = useState<ReviewDetails>(emptyReviewDetails);
-  const [requiredFiles, setRequiredFiles] = useState<string[]>([]);
-  const [requiredFileDraft, setRequiredFileDraft] = useState('');
+  const [requiredFileDrafts, setRequiredFileDrafts] = useState<string[]>(['']);
   const [requiredFilesChoice, setRequiredFilesChoice] = useState<'yes' | 'no'>('yes');
-  const [showRequiredFileInput, setShowRequiredFileInput] = useState(true);
-  const [showRequiredFileToast, setShowRequiredFileToast] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
@@ -122,6 +118,10 @@ export function OrganizeForm() {
 
   const todayDate = getDateInputValue(new Date());
   const totalDuration = getDurationFromTimes(startTime, endTime);
+  const requiredFiles = requiredFilesChoice === 'yes' ? requiredFileDrafts.map((file) => file.trim()).filter(Boolean) : [];
+  const canAddRequiredFile = requiredFileDrafts.every((file) => file.trim());
+  const isReviewStep = progressIndex === progressSteps.length - 1;
+  const isFormComplete = isReviewStep ? Boolean(formRef.current?.checkValidity()) : false;
 
   useEffect(() => {
     setCanCreate(canOrganizeEvents());
@@ -129,9 +129,6 @@ export function OrganizeForm() {
 
   useEffect(() => {
     return () => {
-      if (requiredFileToastRef.current) {
-        window.clearTimeout(requiredFileToastRef.current);
-      }
       if (bannerPreview) {
         URL.revokeObjectURL(bannerPreview);
       }
@@ -217,50 +214,35 @@ export function OrganizeForm() {
     image.src = imageUrl;
   };
 
-  const showAddedRequiredFileToast = () => {
-    setShowRequiredFileToast(true);
+  const addRequiredFile = () => {
+    if (requiredFileDrafts.some((file) => !file.trim())) return;
 
-    if (requiredFileToastRef.current) {
-      window.clearTimeout(requiredFileToastRef.current);
-    }
-
-    requiredFileToastRef.current = window.setTimeout(() => {
-      setShowRequiredFileToast(false);
-    }, 1800);
+    setRequiredFileDrafts((files) => [...files, '']);
   };
 
-  const addRequiredFile = () => {
-    const nextFile = requiredFileDraft.trim();
+  const updateRequiredFileDraft = (index: number, value: string) => {
+    setRequiredFileDrafts((files) => files.map((file, fileIndex) => (fileIndex === index ? value : file)));
+  };
 
-    if (!nextFile) return;
-
-    setRequiredFiles((files) => [...files, nextFile]);
-    setRequiredFileDraft('');
-    setShowRequiredFileInput(false);
-    showAddedRequiredFileToast();
+  const removeRequiredFileDraft = (index: number) => {
+    setRequiredFileDrafts((files) => files.filter((_, fileIndex) => fileIndex !== index));
   };
 
   const handleRequiredFilesChoice = (choice: 'yes' | 'no') => {
     setRequiredFilesChoice(choice);
 
     if (choice === 'yes') {
-      setShowRequiredFileInput(requiredFiles.length === 0);
+      setRequiredFileDrafts((files) => (files.length ? files : ['']));
       return;
     }
 
-    setRequiredFiles([]);
-    setRequiredFileDraft('');
-    setShowRequiredFileInput(false);
+    setRequiredFileDrafts(['']);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!canCreate) return;
-
+  const getOrganizedEventPayload = (status: 'Draft' | 'Pending') => {
     const details = getReviewDetails();
 
-    saveOrganizedEvent({
+    return {
       eventName: details.eventName,
       eventDate: details.eventDate,
       eventEndDate: details.eventEndDate,
@@ -275,8 +257,20 @@ export function OrganizeForm() {
       duration: totalDuration,
       minAttendance: details.minAttendance,
       registrationDeadline: details.registrationDeadline,
-    });
+      status,
+    };
+  };
+
+  const saveReviewEvent = (status: 'Draft' | 'Pending') => {
+    if (!canCreate || !formRef.current?.checkValidity()) return;
+
+    saveOrganizedEvent(getOrganizedEventPayload(status));
     router.push('/events-organized');
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    saveReviewEvent('Pending');
   };
 
   if (canCreate === null) return null;
@@ -290,7 +284,7 @@ export function OrganizeForm() {
   return (
     <form
       ref={formRef}
-      className="organize-form-shell"
+      className={`organize-form-shell organize-form-shell--step-${progressIndex}`}
       onSubmit={handleSubmit}
       onKeyDown={handleFormKeyDown}
       aria-label="Create new event"
@@ -397,7 +391,7 @@ export function OrganizeForm() {
           </div>
         </section>
 
-        <section className={`wizard-page${progressIndex === 2 ? ' is-active' : ''}`} aria-hidden={progressIndex !== 2}>
+        <section className={`wizard-page wizard-page--files${progressIndex === 2 ? ' is-active' : ''}`} aria-hidden={progressIndex !== 2}>
           <div className="upload-grid">
             <h2 className="form-group-title upload-grid__title">Event Documents</h2>
             <label className="upload-tile">
@@ -420,7 +414,8 @@ export function OrganizeForm() {
           <section className="required-files" aria-labelledby="required-files-title">
             <h2 id="required-files-title">File Requirements</h2>
             <fieldset className="required-files__choice">
-              <legend>Are participants required to submit any files before joining the event?</legend>
+              <legend className="required-files__legend">Required participant files</legend>
+              <span className="required-files__question">Are participants required to submit any files before joining the event?</span>
               <label>
                 <input
                   type="radio"
@@ -446,44 +441,52 @@ export function OrganizeForm() {
             {requiredFilesChoice === 'yes' && (
               <>
                 <div className="required-files__list">
-                  {requiredFiles.map((fileName, index) => (
-                    <div className="required-files__saved" key={`${fileName}-${index}`}>
-                      {fileName}
-                    </div>
-                  ))}
+                  {requiredFileDrafts.map((fileName, index) => {
+                    const inputId = `required-file-name-${index}`;
 
-                  {showRequiredFileInput && (
-                    <div className="required-files__row">
-                      <label className="form-row__label" htmlFor="required-file-name">
-                        File Name*
-                      </label>
-                      <input
-                        className="required-files__input"
-                        id="required-file-name"
-                        type="text"
-                        value={requiredFileDraft}
-                        placeholder="Enter the required file name"
-                        autoComplete="off"
-                        required={requiredFiles.length === 0}
-                        onChange={(event) => setRequiredFileDraft(event.target.value)}
-                      />
-                      <button className="required-files__add" type="button" onClick={addRequiredFile} aria-label="Add required file">
-                        <img src="/svg icons organized events page/svg icons create event form page/plus-file-icon.svg" alt="" aria-hidden="true" />
-                      </button>
-                    </div>
-                  )}
+                    return (
+                      <div className="required-files__row" key={inputId}>
+                        <label className="form-row__label" htmlFor={inputId}>
+                          File Name*
+                        </label>
+                        <input
+                          className="required-files__input"
+                          id={inputId}
+                          type="text"
+                          value={fileName}
+                          placeholder="Enter the required file name"
+                          autoComplete="off"
+                          required={index === 0}
+                          onChange={(event) => updateRequiredFileDraft(index, event.target.value)}
+                        />
+                        <span className="required-files__controls">
+                          {index > 0 && (
+                            <button
+                              className="required-files__remove"
+                              type="button"
+                              onClick={() => removeRequiredFileDraft(index)}
+                              aria-label="Remove required file"
+                            >
+                              <span aria-hidden="true">-</span>
+                            </button>
+                          )}
+                          {index === requiredFileDrafts.length - 1 && (
+                            <button
+                              className="required-files__add"
+                              type="button"
+                              onClick={addRequiredFile}
+                              disabled={!canAddRequiredFile}
+                              aria-label="Add required file"
+                            >
+                              <img src="/svg icons organized events page/svg icons create event form page/plus-file-icon.svg" alt="" aria-hidden="true" />
+                            </button>
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
-
-                <button className="required-files__more" type="button" onClick={() => setShowRequiredFileInput(true)}>
-                  Click to add another required file
-                </button>
               </>
-            )}
-
-            {showRequiredFileToast && (
-              <div className="required-files__toast" role="status" aria-live="polite">
-                added required file
-              </div>
             )}
           </section>
         </section>
@@ -492,6 +495,11 @@ export function OrganizeForm() {
           <h2 className="review-page__heading">
             Nearly there! Check <span>if everything&apos;s correct.</span>
           </h2>
+          {!isFormComplete && (
+            <p className="review-page__warning" role="status">
+              Complete all required details to create the event.
+            </p>
+          )}
           <article className="review-event-card">
             <div className="review-event-card__banner">
               {bannerPreview ? <img src={bannerPreview} alt="" /> : <span />}
@@ -538,7 +546,7 @@ export function OrganizeForm() {
           </article>
         </section>
 
-        <div className="form-actions">
+        <div className="form-actions" key={`organize-actions-${progressIndex}`}>
           {progressIndex > 0 && (
             <button type="button" className="btn-back" onClick={() => goToStep(progressIndex - 1)}>
               Go back to {progressSteps[progressIndex - 1]}
@@ -550,11 +558,11 @@ export function OrganizeForm() {
             </button>
           ) : (
             <>
-              <button type="button" className="btn-review" onClick={() => router.push('/events-organized')}>
+              <button type="button" className="btn-review" onClick={() => saveReviewEvent('Draft')} disabled={!isFormComplete}>
                 Save for Later
               </button>
-              <button type="submit" className="btn-submit">
-                Save &amp; Continue
+              <button type="submit" className="btn-submit" disabled={!isFormComplete}>
+                Create Event
               </button>
             </>
           )}

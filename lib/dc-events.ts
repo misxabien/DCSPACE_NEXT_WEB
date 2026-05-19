@@ -38,6 +38,7 @@ export type OrganizedEventInput = {
   duration: string;
   minAttendance: string;
   registrationDeadline?: string;
+  status?: string;
 };
 
 const fallbackEvents: FrontendEvent[] = [
@@ -227,7 +228,7 @@ export function saveOrganizedEvent(input: OrganizedEventInput) {
     minAttendance: present(input.minAttendance) || "TBA",
     registrationDeadline: present(input.registrationDeadline),
     createdBy: present(window.localStorage.getItem("dcspaceStudentEmail")) || "local-frontend-user",
-    status: "Created",
+    status: present(input.status) || "Pending",
     certificate: "Processing",
   };
   const existing = readOrganizedEvents().filter((item) => item.id !== id);
