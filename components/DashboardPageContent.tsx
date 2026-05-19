@@ -17,6 +17,7 @@ import { readNotifications, type DcNotification } from '@/lib/notifications';
 
 const HOME_SAVED_EVENTS_KEY = 'dcspaceHomeSavedEvents';
 const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const greetingNameColors = ['#6B7DF2', '#2CA6DE', '#8AB6FF', '#BA7710'];
 
 type AnalyticsMode = 'hours' | 'month';
 type BreakdownMode = 'day' | 'week' | 'month';
@@ -35,6 +36,25 @@ function readSavedEventIds() {
   } catch {
     return [];
   }
+}
+
+function getJumbledNameColors(name: string) {
+  return Array.from(name).map(() => greetingNameColors[Math.floor(Math.random() * greetingNameColors.length)]);
+}
+
+function ColorfulGreetingName({ name }: { name: string }) {
+  const colors = useMemo(() => getJumbledNameColors(name), [name]);
+
+  return (
+    <span className="dashboard-greeting-name">
+      {Array.from(name).map((letter, index) => (
+        <span style={{ color: colors[index] }} key={`${letter}-${index}`}>
+          {letter}
+        </span>
+      ))}
+      <span style={{ color: colors[colors.length - 1] || greetingNameColors[0] }}>!</span>
+    </span>
+  );
 }
 
 function getEventDate(event: RegisteredEvent) {
@@ -399,7 +419,7 @@ export function DashboardPageContent() {
       <section className="dashboard-page dashboard-page--officer">
         <div className="dashboard-shell dashboard-shell--officer">
           <h2>
-            Hello, <span>{firstName}!</span>
+            Hello, <ColorfulGreetingName name={firstName} />
           </h2>
 
           <p className="dashboard-latest-label">Upcoming Organized Event:</p>
@@ -600,7 +620,7 @@ export function DashboardPageContent() {
     <section className="dashboard-page">
       <div className="dashboard-shell">
         <h2>
-          Hello, <span>{firstName}!</span>
+          Hello, <ColorfulGreetingName name={firstName} />
         </h2>
 
         <p className="dashboard-latest-label">Latest Upcoming Event:</p>
