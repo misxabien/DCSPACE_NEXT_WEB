@@ -45,7 +45,7 @@
   border-radius: 999px;
   background: #efefef;
   color: #1d1d1d;
-  font-family: "Google Sans Flex", var(--font-ui), sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 9px;
   font-weight: 400;
   display: inline-flex;
@@ -86,7 +86,7 @@
   display: grid;
   gap: 5px;
   color: #1d1d1d;
-  font-family: "Google Sans Flex", var(--font-ui), sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 10px;
   font-weight: 500;
 }
@@ -97,7 +97,7 @@
   border: 1px solid #d7dae2;
   border-radius: 6px;
   color: #1d1d1d;
-  font-family: "Google Sans Flex", var(--font-ui), sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 11px;
   padding: 0 8px;
 }
@@ -108,7 +108,7 @@
   border-radius: 999px;
   background: #ffffff;
   color: #5b6378;
-  font-family: "Google Sans Flex", var(--font-ui), sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 10px;
   cursor: pointer;
 }
@@ -143,7 +143,7 @@
   outline: 0;
   background: transparent;
   color: #000000;
-  font-family: "Google Sans Flex", var(--font-ui), sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 8px;
 }
 
