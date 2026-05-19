@@ -1,6 +1,5 @@
 'use client';
 
-import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SearchWithClear } from "@/components/SearchWithClear";
@@ -8,13 +7,9 @@ import {
   ATTENDANCE_UPDATED_EVENT,
   REGISTERED_EVENTS_KEY,
   type AttendanceRecord,
-  type AttendanceUser,
-  type CertificateStatus,
   type EventStatus,
   type RegisteredEvent,
-  downloadAttendanceCertificate,
-  formatEventDate,
-  getCertificateStatus,
+  getRequirementStatus,
   getCurrentAttendanceUser,
   getEventStatus,
   getRegisteredEventId,
@@ -24,12 +19,12 @@ import {
   setSelectedAttendanceEvent,
 } from '@/lib/attendance';
 
+const attendanceFilters = ['All', 'Yesterday', 'This Week', 'Pick a date'];
+
 type AttendanceEvent = {
   id: string;
   name: string;
-  date: string;
   status: EventStatus;
-  certificate: CertificateStatus;
   registeredEvent: RegisteredEvent;
   record?: AttendanceRecord;
 };
@@ -45,9 +40,7 @@ function buildAttendanceEvents(
     return {
       id,
       name: event.name || 'Event Name',
-      date: formatEventDate(event),
       status: getEventStatus(event),
-      certificate: getCertificateStatus(record),
       registeredEvent: event,
       record,
     };
@@ -57,6 +50,75 @@ function buildAttendanceEvents(
 function getAttendanceEventTime(event: AttendanceEvent) {
   const eventDate = new Date(`${event.registeredEvent.month} ${event.registeredEvent.day}, ${event.registeredEvent.year}`);
   return Number.isNaN(eventDate.getTime()) ? 0 : eventDate.getTime();
+}
+
+function getAttendanceEventDate(event: AttendanceEvent) {
+  const eventDate = new Date(`${event.registeredEvent.month} ${event.registeredEvent.day}, ${event.registeredEvent.year}`);
+  return Number.isNaN(eventDate.getTime()) ? null : eventDate;
+}
+
+function getDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function isSameDate(firstDate: Date, secondDate: Date) {
+  return getDateInputValue(firstDate) === getDateInputValue(secondDate);
+}
+
+function isThisWeek(date: Date) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  return date >= startOfWeek && date <= endOfWeek;
+}
+
+function getTapPairs(record?: AttendanceRecord) {
+  return record?.taps?.length
+    ? record.taps
+    : record?.tapIn || record?.tapOut
+      ? [{ tapIn: record.tapIn, tapOut: record.tapOut }]
+      : [];
+}
+
+function getTimeMinutes(time?: string) {
+  if (!time) return null;
+
+  const parsed = new Date(`January 1, 2026 ${time}`);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  return parsed.getHours() * 60 + parsed.getMinutes();
+}
+
+function getTotalAttendanceMinutes(record?: AttendanceRecord) {
+  return getTapPairs(record).reduce((total, pair) => {
+    const tapIn = getTimeMinutes(pair.tapIn);
+    const tapOut = getTimeMinutes(pair.tapOut);
+
+    if (tapIn === null || tapOut === null) return total;
+    return total + Math.max(0, tapOut - tapIn);
+  }, 0);
+}
+
+function formatAttendanceDuration(totalMinutes: number) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+function getEventTimeDisplay(dateTime?: string) {
+  return dateTime?.split(',').at(-1)?.trim() || 'Event Time';
 }
 
 function isEditableTarget(target: EventTarget | null) {
@@ -70,9 +132,10 @@ function isEditableTarget(target: EventTarget | null) {
 
 export function AttendancePageContent() {
   const [attendanceEvents, setAttendanceEvents] = useState<AttendanceEvent[]>([]);
-  const [sortAsc, setSortAsc] = useState(true);
-  const [currentUser, setCurrentUser] = useState<AttendanceUser | null>(null);
-  const [scanMessage, setScanMessage] = useState('');
+  const [attendanceFilter, setAttendanceFilter] = useState('All');
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [currentTime, setCurrentTime] = useState('');
   const registeredEventsRef = useRef<RegisteredEvent[]>([]);
   const scanBufferRef = useRef('');
   const scanTimeoutRef = useRef<number | null>(null);
@@ -83,7 +146,6 @@ export function AttendancePageContent() {
     const records = readUserAttendanceRecords(user);
 
     registeredEventsRef.current = registeredEvents;
-    setCurrentUser(user);
     setAttendanceEvents(buildAttendanceEvents(registeredEvents, records));
   }, []);
 
@@ -109,6 +171,17 @@ export function AttendancePageContent() {
   }, [loadAttendanceEvents]);
 
   useEffect(() => {
+    const updateClock = () => {
+      setCurrentTime(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }));
+    };
+
+    updateClock();
+    const timer = window.setInterval(updateClock, 30_000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.altKey || event.ctrlKey || event.metaKey || isEditableTarget(event.target)) {
         return;
@@ -125,7 +198,6 @@ export function AttendancePageContent() {
         if (!scannedRfid) return;
 
         const result = recordRfidAttendanceTap(scannedRfid, registeredEventsRef.current);
-        setScanMessage(result.message);
 
         if (result.ok) {
           loadAttendanceEvents();
@@ -153,124 +225,217 @@ export function AttendancePageContent() {
     };
   }, [loadAttendanceEvents]);
 
-  const handleDownload = (event: AttendanceEvent) => {
-    if (!currentUser) return;
-    downloadAttendanceCertificate(event.registeredEvent, currentUser, event.record);
-  };
-
   const sortedAttendanceEvents = useMemo(() => {
     return [...attendanceEvents].sort((firstEvent, secondEvent) => {
       const firstTime = getAttendanceEventTime(firstEvent);
       const secondTime = getAttendanceEventTime(secondEvent);
 
-      return sortAsc ? firstTime - secondTime : secondTime - firstTime;
+      return firstTime - secondTime;
     });
-  }, [attendanceEvents, sortAsc]);
+  }, [attendanceEvents]);
+
+  const ongoingEvent = useMemo(
+    () => sortedAttendanceEvents.find((event) => event.status === 'Ongoing'),
+    [sortedAttendanceEvents],
+  );
+  const viewableEvent = ongoingEvent || sortedAttendanceEvents[0];
+  const latestTotalAttendance = formatAttendanceDuration(getTotalAttendanceMinutes(ongoingEvent?.record));
+  const summaryTapRows = [
+    ...getTapPairs(ongoingEvent?.record).slice(-3).reverse(),
+    ...Array.from({ length: Math.max(0, 3 - getTapPairs(ongoingEvent?.record).length) }, () => ({ tapIn: '', tapOut: '' })),
+  ].slice(0, 3);
+  const completedEvents = sortedAttendanceEvents.filter((event) => {
+    const status = getRequirementStatus(event.record, event.registeredEvent);
+    return status === 'Complete' || status === 'Overtime';
+  });
+  const filteredCompletedEvents = completedEvents.filter((event) => {
+    const eventDate = getAttendanceEventDate(event);
+    if (!eventDate) return attendanceFilter === 'All';
+
+    if (attendanceFilter === 'Yesterday') {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      return isSameDate(eventDate, yesterday);
+    }
+
+    if (attendanceFilter === 'This Week') {
+      return isThisWeek(eventDate);
+    }
+
+    if (attendanceFilter === 'Pick a date') {
+      const eventDateValue = getDateInputValue(eventDate);
+      const startsAfterStartDate = dateRange.start ? eventDateValue >= dateRange.start : true;
+      const endsBeforeEndDate = dateRange.end ? eventDateValue <= dateRange.end : true;
+
+      return startsAfterStartDate && endsBeforeEndDate;
+    }
+
+    return true;
+  });
+
+  const handleFilterClick = (filter: string) => {
+    if (filter === 'Pick a date') {
+      setAttendanceFilter('Pick a date');
+      setShowDatePicker((current) => !current);
+      return;
+    }
+
+    setAttendanceFilter(filter);
+    setShowDatePicker(false);
+  };
+
+  const clearPickedDate = () => {
+    setDateRange({ start: '', end: '' });
+    setAttendanceFilter('All');
+    setShowDatePicker(false);
+  };
 
   return (
     <>
-      <header className="main__header">
-        <div className="main__header-row">
-          <h1 className="main__title">Attendance</h1>
-          <SearchWithClear className="attendance-search" role="search" />
-        </div>
-      </header>
-
       <div className="main__grid-wrap">
-        {attendanceEvents.length > 0 ? (
-          <section className="attendance-shell" aria-label="My events attendance">
-            <div className="attendance-top">
-              <h2 className="attendance-subtitle">My Events</h2>
-              {scanMessage && (
-                <p className="attendance-scan-status" aria-live="polite">
-                  {scanMessage}
-                </p>
+        <section className="attendance-shell" aria-label="My events attendance">
+          <div className="attendance-top">
+            <div>
+              <h2 className="attendance-subtitle">Attendance <span>Overview</span></h2>
+              <p>Check your attendance logs and participation progress in real time.</p>
+            </div>
+            <SearchWithClear className="attendance-search" role="search" />
+          </div>
+
+          <section className="attendance-summary-card" aria-label="Ongoing event attendance summary">
+            <header>
+              <h3>Ongoing Event Attendance Summary</h3>
+              <span>As of {currentTime || 'Recent Time'}</span>
+              {viewableEvent ? (
+                <Link href="/attendance/details" className="open-btn open-btn--ghost" onClick={() => setSelectedAttendanceEvent(viewableEvent.id)}>
+                  View Event
+                </Link>
+              ) : (
+                <button className="open-btn open-btn--ghost" type="button" disabled>
+                  View Event
+                </button>
               )}
+            </header>
+            <div className={`attendance-summary-grid${ongoingEvent ? '' : ' attendance-summary-grid--empty'}`}>
+              <div>
+                <span>Event Name</span>
+                {ongoingEvent && (
+                  <strong className="summary-event-name">{ongoingEvent?.name || 'Event Name'}</strong>
+                )}
+              </div>
+              <div>
+                <span>Tap In Time</span>
+                {ongoingEvent && summaryTapRows.map((tap, index) => (
+                  <strong key={`tap-in-${index}`}>{tap.tapIn || ''}</strong>
+                ))}
+              </div>
+              <div>
+                <span>Tap Out Time</span>
+                {ongoingEvent && summaryTapRows.map((tap, index) => (
+                  <strong key={`tap-out-${index}`}>{tap.tapOut || ''}</strong>
+                ))}
+              </div>
+              <div>
+                <span>Current Total Attendance Time</span>
+                {ongoingEvent && <strong>{latestTotalAttendance}</strong>}
+                {ongoingEvent && <strong />}
+                {ongoingEvent && <strong />}
+              </div>
+              {!ongoingEvent && <p className="attendance-summary-empty">No Ongoing Event</p>}
             </div>
+          </section>
 
-            <div className="table-wrap" aria-label="Attendance list">
-              <table className="attendance-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Event Name</th>
-                    <th scope="col">Date</th>
-                    <th scope="col">Event Status</th>
-                    <th scope="col">E-certificate</th>
-                    <th scope="col" className="col-open" />
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {sortedAttendanceEvents.map((event) => (
-                    <tr key={event.id}>
-                      <td>{event.name}</td>
-                      <td className="cell-muted">{event.date}</td>
-                      <td className="cell-muted">
-                        <span className={`status-pill status-pill--${event.status.toLowerCase()}`}>
-                          {event.status}
-                        </span>
-                      </td>
-                      <td className="cert">
-                        {event.certificate === 'Download' ? (
-                          <button className="cert-download" type="button" onClick={() => handleDownload(event)}>
-                            Download
-                          </button>
-                        ) : (
-                          event.certificate
-                        )}
-                      </td>
-                      <td className="col-open">
-                        <Link
-                          href="/attendance/details"
-                          className="open-btn open-btn--ghost"
-                          onClick={() => setSelectedAttendanceEvent(event.id)}
+          <section className="completed-attendance" aria-label="Completed event attendance">
+            <div className="section-heading-row">
+              <h2>Summary of <span>Event Attended</span></h2>
+              <div className="segmented" role="group" aria-label="Attendance filters">
+                {attendanceFilters.map((filter) => (
+                  <span className="segmented-filter-wrap" key={filter}>
+                    {filter === 'Pick a date' ? (
+                      <>
+                        <button
+                          className={`segmented-date${attendanceFilter === filter ? ' is-active' : ''}${showDatePicker ? ' is-open' : ''}`}
+                          type="button"
+                          onClick={() => handleFilterClick(filter)}
                         >
-                          View Details
-                          <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                            <path
-                              d="M9 6l6 6-6 6"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="footer-controls" aria-label="Attendance filters">
-              <div className="segmented" role="group" aria-label="Attendance controls">
-                <button type="button" aria-pressed={sortAsc} onClick={() => setSortAsc(true)}>
-                  <Image src="/assets/ascending-arrow.svg" alt="" width={16} height={16} aria-hidden="true" />
-                  Ascending
-                </button>
-
-                <button type="button" aria-pressed={!sortAsc} onClick={() => setSortAsc(false)}>
-                  <Image src="/assets/descending-arrow.svg" alt="" width={16} height={16} aria-hidden="true" />
-                  Descending
-                </button>
+                          <span>{filter}</span>
+                        </button>
+                        {showDatePicker && (
+                          <section className="attendance-date-picker" aria-label="Choose attendance date">
+                            <label>
+                              <span>From</span>
+                              <input
+                                type="date"
+                                value={dateRange.start}
+                                onChange={(event) => {
+                                  setDateRange((current) => ({ ...current, start: event.target.value }));
+                                  setAttendanceFilter(filter);
+                                }}
+                              />
+                            </label>
+                            <label>
+                              <span>To</span>
+                              <input
+                                type="date"
+                                value={dateRange.end}
+                                min={dateRange.start || undefined}
+                                onChange={(event) => {
+                                  setDateRange((current) => ({ ...current, end: event.target.value }));
+                                  setAttendanceFilter(filter);
+                                }}
+                              />
+                            </label>
+                            <button className="attendance-date-picker__clear" type="button" onClick={clearPickedDate}>
+                              Clear
+                            </button>
+                          </section>
+                        )}
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        aria-pressed={attendanceFilter === filter}
+                        onClick={() => handleFilterClick(filter)}
+                      >
+                        {filter}
+                      </button>
+                    )}
+                  </span>
+                ))}
               </div>
             </div>
-          </section>
-        ) : (
-          <section className="attendance-empty-state" aria-label="No attendance records">
-            <svg width="82" height="76" viewBox="0 0 82 76" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M30.7499 12.667H18.7916C17.8481 12.667 17.0833 13.3759 17.0833 14.2503V68.0837C17.0833 68.958 17.8481 69.667 18.7916 69.667H66.6249C67.5683 69.667 68.3333 68.958 68.3333 68.0837V14.2503C68.3333 13.3759 67.5683 12.667 66.6249 12.667H54.6666" stroke="#604D18" strokeWidth="2" />
-              <path d="M30.75 20.5833V12.6667H37.4989C37.5454 12.6667 37.5833 12.6316 37.5833 12.5883V9.5C37.5833 6.87667 39.8776 4.75 42.7083 4.75C45.539 4.75 47.8333 6.87667 47.8333 9.5V12.5883C47.8333 12.6316 47.8713 12.6667 47.9177 12.6667H54.6667V20.5833C54.6667 21.4578 53.9017 22.1667 52.9583 22.1667H32.4583C31.5148 22.1667 30.75 21.4578 30.75 20.5833Z" stroke="#604D18" strokeWidth="2" />
-            </svg>
+            <div className="completed-event-grid">
+              {filteredCompletedEvents.length > 0 ? (
+                filteredCompletedEvents.map((event) => {
+                const status = getRequirementStatus(event.record, event.registeredEvent);
 
-            <p>
-              No attendance records found yet. Once you join an
-              <br />
-              event, you can track your attendance here.
-            </p>
+                return (
+                <Link
+                  className="completed-event-card"
+                  href="/attendance/details"
+                  key={event.id}
+                  onClick={() => setSelectedAttendanceEvent(event.id)}
+                >
+                  <div className="completed-event-card__date">
+                    <span>{event.registeredEvent.month || 'MAY'}</span>
+                    <strong>{event.registeredEvent.day || '17'}</strong>
+                  </div>
+                  <div>
+                    <h3>{event.name}</h3>
+                    <p>{event.registeredEvent.venue || 'Event Venue'}</p>
+                    <small>{getEventTimeDisplay(event.registeredEvent.dateTime)}</small>
+                    <small>{status === 'Complete' || status === 'Overtime' ? 'Attendance Completed' : 'Attendance Incomplete'}</small>
+                  </div>
+                </Link>
+                );
+              })
+              ) : (
+                <p className="completed-empty-message">You haven&apos;t completed any joined events yet.</p>
+              )}
+            </div>
           </section>
-        )}
+
+        </section>
       </div>
     </>
   );

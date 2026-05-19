@@ -1,5 +1,6 @@
 'use client';
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ChangeEvent } from "react";
@@ -16,6 +17,20 @@ import {
   readSelectedBrowseEvent,
   registerEventForCurrentUser,
 } from "@/lib/dc-events";
+
+const HOME_SAVED_EVENTS_KEY = 'dcspaceHomeSavedEvents';
+const createEventIconBase = '/svg icons organized events page/svg icons create event form page';
+const detailIcons = {
+  date: `${createEventIconBase}/event-date-icon.svg`,
+  time: `${createEventIconBase}/clock-fill-icon.svg`,
+  venue: `${createEventIconBase}/location-icon.svg`,
+  organizer: `${createEventIconBase}/host-icon.svg`,
+  course: `${createEventIconBase}/course-icon.svg`,
+  department: `${createEventIconBase}/department-icon.svg`,
+  attendance: `${createEventIconBase}/clock-fill-icon.svg`,
+  grace: `${createEventIconBase}/grace-period-icon.svg`,
+  files: `${createEventIconBase}/required-file-icon.svg`,
+};
 
 const fallbackEventDetails: FrontendEvent = {
   id: 'fallback-event',
@@ -86,6 +101,62 @@ function readRequirementFile(file: File): Promise<UploadedRequirementFile> {
   });
 }
 
+function readSavedHomeEvents() {
+  try {
+    return JSON.parse(window.localStorage.getItem(HOME_SAVED_EVENTS_KEY) || '[]') as string[];
+  } catch {
+    return [];
+  }
+}
+
+function writeSavedHomeEvents(eventIds: string[]) {
+  window.localStorage.setItem(HOME_SAVED_EVENTS_KEY, JSON.stringify(eventIds));
+  window.dispatchEvent(new CustomEvent('dcspace-events-updated'));
+}
+
+function formatDatePart(dateTime: string) {
+  return dateTime.split(',').slice(0, -1).join(',').trim() || dateTime || 'Day, Date';
+}
+
+function formatTimePart(dateTime: string) {
+  return dateTime.split(',').at(-1)?.trim() || 'Time';
+}
+
+function formatDeadline(deadline?: string) {
+  if (!deadline) return 'TBA';
+
+  const parsedDate = new Date(`${deadline}T00:00:00`);
+  if (Number.isNaN(parsedDate.getTime())) return deadline;
+
+  return parsedDate.toLocaleDateString('en-US', {
+    month: 'long',
+    day: '2-digit',
+    year: 'numeric',
+  });
+}
+
+function getCurrentEventRegistered(eventId: string) {
+  return readRegisteredEvents().some((event) => getRegisteredEventId(event) === eventId || event.id === eventId);
+}
+
+function DetailRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: keyof typeof detailIcons;
+  label: string;
+  value: string;
+}) {
+  return (
+    <p className="browse-detail-row">
+      <Image src={detailIcons[icon]} width={16} height={16} alt="" />
+      <span>{label}</span>
+      {value && <small>{value}</small>}
+    </p>
+  );
+}
+
 function registeredEventMatchesDate(event: RegisteredEvent, eventDate?: EventDetailsPageContentProps["eventDate"]) {
   if (!eventDate?.month || !eventDate.day || !eventDate.year) {
     return false;
@@ -122,6 +193,8 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
   const [showRequirementWarning, setShowRequirementWarning] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<FrontendEvent>(fallbackEventDetails);
+  const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
+  const [isJoined, setIsJoined] = useState(false);
   const eventRequirements = selectedEvent.requirements || [];
 
   useEffect(() => {
@@ -129,6 +202,8 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
 
     if (!isDashboardSource) {
       setSelectedEvent(browseEvent);
+      setSavedEventIds(readSavedHomeEvents());
+      setIsJoined(getCurrentEventRegistered(browseEvent.id));
       return;
     }
 
@@ -138,7 +213,40 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
       registeredEvents.find((event) => registeredEventMatchesDate(event, eventDate));
 
     setSelectedEvent(registeredEvent ? toEventDetails(registeredEvent, browseEvent) : browseEvent);
+    setSavedEventIds(readSavedHomeEvents());
+    setIsJoined(getCurrentEventRegistered((registeredEvent ? toEventDetails(registeredEvent, browseEvent) : browseEvent).id));
   }, [eventDate, isDashboardSource, source]);
+
+  const toggleSavedEvent = () => {
+    setSavedEventIds((current) => {
+      const nextSavedEventIds = current.includes(selectedEvent.id)
+        ? current.filter((eventId) => eventId !== selectedEvent.id)
+        : [...current, selectedEvent.id];
+
+      writeSavedHomeEvents(nextSavedEventIds);
+      return nextSavedEventIds;
+    });
+  };
+
+  const handleShareEvent = async () => {
+    const shareUrl = window.location.href;
+
+    if (navigator.share) {
+      await navigator.share({
+        title: selectedEvent.name,
+        text: selectedEvent.overview,
+        url: shareUrl,
+      });
+      return;
+    }
+
+    await navigator.clipboard?.writeText(shareUrl);
+  };
+
+  const handleAttendEvent = () => {
+    registerEventForCurrentUser(selectedEvent, []);
+    setIsJoined(true);
+  };
 
   const handleDeleteEvent = () => {
     deleteOrganizedEvent(selectedEvent.id);
@@ -198,6 +306,99 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
   };
 
   const eventDetails = selectedEvent;
+  const isBrowseSource = !isDashboardSource && !isOrganizedSource;
+  const isSaved = savedEventIds.includes(eventDetails.id);
+
+  if (isBrowseSource) {
+    return (
+      <section className="event-details-page event-details-page--browse">
+        <div className="browse-event-detail">
+          <div className="browse-event-detail__banner">
+            {eventDetails.bannerDataUrl ? (
+              <img src={eventDetails.bannerDataUrl} alt="" />
+            ) : (
+              <img src="/assets/Calendar.svg" alt="" />
+            )}
+          </div>
+
+          <header className="browse-event-detail__header">
+            <h2>{eventDetails.name}</h2>
+            <div className="browse-event-detail__actions" aria-label="Event actions">
+              <button
+                className={`browse-event-detail__icon-btn${isSaved ? ' is-saved' : ''}`}
+                type="button"
+                aria-label={isSaved ? 'Remove from saved events' : 'Save event'}
+                onClick={toggleSavedEvent}
+              >
+                <Image
+                  className="browse-event-detail__bookmark-outline"
+                  src="/svg icons navbar/Bookmark.svg"
+                  width={30}
+                  height={30}
+                  alt=""
+                />
+                <Image
+                  className="browse-event-detail__bookmark-fill"
+                  src="/assets/bookmark-fill.svg"
+                  width={30}
+                  height={30}
+                  alt=""
+                />
+              </button>
+              <button className="browse-event-detail__icon-btn" type="button" aria-label="Share event" onClick={() => void handleShareEvent()}>
+                <Image src="/assets/share-icon.svg" width={30} height={30} alt="" />
+              </button>
+            </div>
+          </header>
+
+          <div className="browse-event-detail__body">
+            <div className="browse-event-detail__info">
+              <section>
+                <h3>Date &amp; Time</h3>
+                <DetailRow icon="date" label={formatDatePart(eventDetails.dateTime)} value="" />
+                <DetailRow icon="time" label={formatTimePart(eventDetails.dateTime)} value="" />
+              </section>
+
+              <section>
+                <h3>Location</h3>
+                <DetailRow icon="venue" label={eventDetails.venue || 'Event Venue'} value="" />
+              </section>
+
+              <section>
+                <h3>Hosted By</h3>
+                <DetailRow icon="organizer" label={eventDetails.organizer || 'Organization Name'} value="" />
+                <DetailRow icon="course" label={eventDetails.eventType || 'Course'} value="" />
+                <DetailRow icon="department" label={eventDetails.department || eventDetails.school || 'School/Department'} value="" />
+              </section>
+
+              <section>
+                <h3>Event Requirements</h3>
+                <DetailRow icon="attendance" label="Attendance Time Requirement:" value={eventDetails.minAttendance || 'TBA'} />
+                <DetailRow icon="grace" label="Grace Period:" value={eventDetails.duration || 'TBA'} />
+                <DetailRow
+                  icon="files"
+                  label="Required File(s):"
+                  value={eventRequirements.length ? eventRequirements.join(', ') : 'None'}
+                />
+              </section>
+            </div>
+
+            <aside className="browse-event-detail__cta">
+              <button className="attend-event-button" type="button" onClick={handleAttendEvent}>
+                {isJoined ? 'Event Joined' : 'Attend Event'}
+              </button>
+              <p>Registration Deadline: {formatDeadline(eventDetails.registrationDeadline)}</p>
+            </aside>
+          </div>
+
+          <section className="browse-event-detail__description">
+            <h3>Event Description</h3>
+            <p>{eventDetails.overview || 'Event description will appear here.'}</p>
+          </section>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={`event-details-page${isRedirecting ? " is-exiting" : ""}${showDeleteConfirm ? " is-delete-confirming" : ""}`}>

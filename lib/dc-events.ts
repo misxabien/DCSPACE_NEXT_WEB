@@ -21,10 +21,12 @@ export type FrontendEvent = RegisteredEvent & {
   minAttendance?: string;
   registrationDeadline?: string;
   createdBy?: string;
+  bannerDataUrl?: string;
 };
 
 export type OrganizedEventInput = {
   eventName: string;
+  eventDescription?: string;
   eventDate: string;
   eventEndDate?: string;
   requiredFiles?: string[];
@@ -38,6 +40,7 @@ export type OrganizedEventInput = {
   duration: string;
   minAttendance: string;
   registrationDeadline?: string;
+  bannerDataUrl?: string;
   status?: string;
 };
 
@@ -219,6 +222,7 @@ export function saveOrganizedEvent(input: OrganizedEventInput) {
     venue,
     organizer,
     overview:
+      present(input.eventDescription) ||
       "This event was created from the frontend organize-event flow. The backend can later replace this local record with a saved database event.",
     requirements: input.requiredFiles || [],
     school: present(input.school) || "School",
@@ -227,6 +231,7 @@ export function saveOrganizedEvent(input: OrganizedEventInput) {
     duration: present(input.duration) || "TBA",
     minAttendance: present(input.minAttendance) || "TBA",
     registrationDeadline: present(input.registrationDeadline),
+    bannerDataUrl: present(input.bannerDataUrl),
     createdBy: present(window.localStorage.getItem("dcspaceStudentEmail")) || "local-frontend-user",
     status: present(input.status) || "Pending",
     certificate: "Processing",

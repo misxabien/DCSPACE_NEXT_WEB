@@ -258,7 +258,7 @@ export function HomePageContent() {
                 />
               </button>
 
-              <Link className="home-event-card__link" href="/events/details" onClick={() => setSelectedBrowseEventId(event.id)}>
+              <Link className="home-event-card__link" href="/home/details" onClick={() => setSelectedBrowseEventId(event.id)}>
                 <span className="home-event-card__date">
                   <span>{event.month}</span>
                   <strong>{event.day}</strong>
