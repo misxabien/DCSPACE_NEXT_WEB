@@ -115,6 +115,7 @@ export function OrganizeForm() {
   const [progressIndex, setProgressIndex] = useState(0);
   const [bannerWarning, setBannerWarning] = useState('');
   const [bannerPreview, setBannerPreview] = useState('');
+  const [bannerDataUrl, setBannerDataUrl] = useState('');
 
   const todayDate = getDateInputValue(new Date());
   const totalDuration = getDurationFromTimes(startTime, endTime);
@@ -185,6 +186,7 @@ export function OrganizeForm() {
       URL.revokeObjectURL(bannerPreview);
       setBannerPreview('');
     }
+    setBannerDataUrl('');
 
     if (!file) return;
 
@@ -205,6 +207,14 @@ export function OrganizeForm() {
       }
 
       setBannerPreview(imageUrl);
+
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        if (typeof reader.result === 'string') {
+          setBannerDataUrl(reader.result);
+        }
+      });
+      reader.readAsDataURL(file);
     };
     image.onerror = () => {
       URL.revokeObjectURL(imageUrl);
@@ -244,6 +254,7 @@ export function OrganizeForm() {
 
     return {
       eventName: details.eventName,
+      eventDescription: details.eventDescription,
       eventDate: details.eventDate,
       eventEndDate: details.eventEndDate,
       requiredFiles: details.requiredFiles,
@@ -257,6 +268,7 @@ export function OrganizeForm() {
       duration: totalDuration,
       minAttendance: details.minAttendance,
       registrationDeadline: details.registrationDeadline,
+      bannerDataUrl,
       status,
     };
   };
