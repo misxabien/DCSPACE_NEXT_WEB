@@ -3,11 +3,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { type CSSProperties, useEffect, useState } from 'react';
 import { canOrganizeEvents } from '@/lib/dc-events';
 import {
   type DcNotification,
   NOTIFICATIONS_UPDATED_EVENT,
+  formatNotificationTimeAgo,
+  markNotificationsAsRead,
   readNotifications,
 } from '@/lib/notifications';
 
@@ -19,7 +21,11 @@ export function Sidebar() {
   const [canCreateEvents, setCanCreateEvents] = useState(false);
   const [notifications, setNotifications] = useState<DcNotification[]>([]);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [, setTimeTick] = useState(0);
   const [userName, setUserName] = useState('User Name');
+  const [profilePhotoImage, setProfilePhotoImage] = useState('');
+  const [profilePhotoFit, setProfilePhotoFit] = useState({ zoom: 1, x: 0, y: 0 });
 
   useEffect(() => {
     const refreshAccess = () => setCanCreateEvents(canOrganizeEvents());
@@ -28,8 +34,26 @@ export function Sidebar() {
       const firstName = window.localStorage.getItem('dcspaceFirstName')?.trim();
       const lastName = window.localStorage.getItem('dcspaceLastName')?.trim();
       const fullName = [firstName, lastName].filter(Boolean).join(' ');
+      const savedFit = window.localStorage.getItem('dcspaceProfilePhotoFit');
 
       setUserName(fullName || 'User Name');
+      setProfilePhotoImage(window.localStorage.getItem('dcspaceProfilePhotoImage') || '');
+
+      if (savedFit) {
+        try {
+          const parsed = JSON.parse(savedFit) as Partial<{ zoom: number; x: number; y: number }>;
+
+          setProfilePhotoFit({
+            zoom: typeof parsed.zoom === 'number' ? parsed.zoom : 1,
+            x: typeof parsed.x === 'number' ? parsed.x : 0,
+            y: typeof parsed.y === 'number' ? parsed.y : 0,
+          });
+        } catch {
+          setProfilePhotoFit({ zoom: 1, x: 0, y: 0 });
+        }
+      } else {
+        setProfilePhotoFit({ zoom: 1, x: 0, y: 0 });
+      }
     };
 
     refreshAccess();
@@ -42,6 +66,7 @@ export function Sidebar() {
     window.addEventListener('storage', refreshNotifications);
     window.addEventListener('storage', refreshUserName);
     window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, refreshNotifications);
+    window.addEventListener('dcspace-profile-updated', refreshUserName);
 
     return () => {
       window.removeEventListener('pageshow', refreshAccess);
@@ -51,10 +76,30 @@ export function Sidebar() {
       window.removeEventListener('storage', refreshNotifications);
       window.removeEventListener('storage', refreshUserName);
       window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, refreshNotifications);
+      window.removeEventListener('dcspace-profile-updated', refreshUserName);
     };
   }, []);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => setTimeTick((tick) => tick + 1), 60_000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const handleMarkAllNotificationsRead = () => {
+    markNotificationsAsRead(notifications.map((notification) => notification.id));
+    setNotifications(readNotifications());
+  };
+
+  const handleNotificationClick = (notificationId: string) => {
+    markNotificationsAsRead([notificationId]);
+    setNotifications(readNotifications());
+  };
+
   const hasUnreadNotifications = notifications.some((notification) => !notification.isRead);
+  const profilePhotoStyle = {
+    transform: `translate(${profilePhotoFit.x}%, ${profilePhotoFit.y}%) scale(${profilePhotoFit.zoom})`,
+  } as CSSProperties;
   const pageTitle =
     pathname === '/home'
       ? 'Home'
@@ -71,7 +116,7 @@ export function Sidebar() {
                 : pathname.includes('/notifications')
                   ? 'Notifications'
                   : pathname.includes('/my-profile')
-                    ? 'Profile'
+                    ? 'My Profile'
                     : 'Home';
   const navItems = [
     { href: '/home', label: 'Home', icon: '/svg icons navbar/Home.svg' },
@@ -125,25 +170,73 @@ export function Sidebar() {
       <header className="topbar" aria-label="Page header">
         <h1>{pageTitle}</h1>
         <div className="topbar__right">
-          <Link className="topbar__account" href="/my-profile">
-            {userName}
-          </Link>
-          <Link className="topbar__avatar-link" href="/my-profile" aria-label="Open profile">
-            <Image className="topbar__avatar" src={AVATAR} width={44} height={44} alt="Profile" />
-          </Link>
           <Link
-            className={`topbar__icon-button topbar__notification-button${pathname === '/notifications' ? ' is-active' : ''}`}
-            href="/notifications"
-            aria-label="Notifications"
+            className={`topbar__profile-pill${pathname.includes('/my-profile') ? ' is-active' : ''}`}
+            href="/my-profile"
+            aria-label="Open profile"
           >
-            <Image src="/assets/notif-icon.svg" width={24} height={24} alt="" />
-            {hasUnreadNotifications && <span className="topbar__notification-dot" aria-hidden="true" />}
+            <span>{userName}</span>
+            <span className="topbar__avatar-link">
+              <Image
+                className="topbar__avatar"
+                src={profilePhotoImage || AVATAR}
+                width={44}
+                height={44}
+                alt="Profile"
+                style={profilePhotoImage ? profilePhotoStyle : undefined}
+                unoptimized={Boolean(profilePhotoImage)}
+              />
+            </span>
           </Link>
+          <button
+            className={`topbar__icon-button topbar__notification-button${pathname === '/notifications' || isNotificationsOpen ? ' is-active' : ''}`}
+            type="button"
+            aria-label="Notifications"
+            aria-expanded={isNotificationsOpen}
+            onClick={() => setIsNotificationsOpen((isOpen) => !isOpen)}
+          >
+            <Image
+              src={hasUnreadNotifications ? '/svg icons navbar/one-notif-icon.svg' : '/svg icons navbar/normal-notif-icon.svg'}
+              width={24}
+              height={24}
+              alt=""
+            />
+          </button>
           <button className="topbar__help" type="button" aria-label="Help">
             ?
           </button>
         </div>
       </header>
+
+      <aside className={`notifications-drawer${isNotificationsOpen ? ' is-open' : ''}`} aria-hidden={!isNotificationsOpen}>
+        <header className="notifications-drawer__header">
+          <h2>Notifications</h2>
+          <button type="button" onClick={handleMarkAllNotificationsRead}>
+            Mark as Read
+          </button>
+        </header>
+        <div className="notifications-drawer__list">
+          {notifications.length ? (
+            notifications.map((notification) => (
+              <button
+                className={`notifications-drawer__item${notification.isRead ? '' : ' is-unread'}`}
+                type="button"
+                key={notification.id}
+                onClick={() => handleNotificationClick(notification.id)}
+              >
+                <span className="notifications-drawer__circle" aria-hidden="true" />
+                <span className="notifications-drawer__copy">
+                  <strong>{notification.title}</strong>
+                  <small>{notification.eventName}</small>
+                </span>
+                <time>{formatNotificationTimeAgo(notification.notifiedAt)}</time>
+              </button>
+            ))
+          ) : (
+            <p className="notifications-drawer__empty">No notifications yet.</p>
+          )}
+        </div>
+      </aside>
     </>
   );
 }
