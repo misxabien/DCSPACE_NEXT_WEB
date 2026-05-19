@@ -23,6 +23,14 @@
   color: #6b7df2;
 }
 
+.dashboard-shell h2 .dashboard-greeting-name {
+  display: inline;
+}
+
+.dashboard-shell h2 .dashboard-greeting-name span {
+  color: inherit;
+}
+
 .dashboard-latest-label {
   margin: 0 0 -10px 2px;
   color: #49454f;
