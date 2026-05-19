@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ATTENDANCE_UPDATED_EVENT,
@@ -8,12 +7,9 @@ import {
   type AttendanceRecord,
   type AttendanceUser,
   type RegisteredEvent,
-  downloadAttendanceCertificate,
   formatEventDate,
-  getCertificateStatus,
   getCurrentAttendanceUser,
   getRegisteredEventId,
-  getRequirementStatus,
   getSelectedAttendanceEventId,
   readRegisteredEvents,
   readUserAttendanceRecords,
@@ -30,26 +26,43 @@ function getTimeMinutes(time?: string) {
   return date.getHours() * 60 + date.getMinutes();
 }
 
-function getTotalTimeLabel(record?: AttendanceRecord) {
-  const pairs = record?.taps?.length
+function getTapPairs(record?: AttendanceRecord) {
+  return record?.taps?.length
     ? record.taps
     : record?.tapIn || record?.tapOut
-    ? [{ tapIn: record.tapIn, tapOut: record.tapOut }]
-    : [];
+      ? [{ tapIn: record.tapIn, tapOut: record.tapOut }]
+      : [];
+}
 
-  const totalMinutes = pairs.reduce((total, pair) => {
+function getEventTimeDisplay(dateTime?: string) {
+  return dateTime?.split(',').at(-1)?.trim() || 'Event Time';
+}
+
+function getProgressPercent(record?: AttendanceRecord, event?: RegisteredEvent) {
+  const totalMinutes = getTapPairs(record).reduce((total, pair) => {
     const tapIn = getTimeMinutes(pair.tapIn);
     const tapOut = getTimeMinutes(pair.tapOut);
 
     if (tapIn === null || tapOut === null) return total;
-
     return total + Math.max(0, tapOut - tapIn);
   }, 0);
+  const requiredMinutes = Number(event?.minAttendance?.match(/\d+(\.\d+)?/)?.[0] || 0);
 
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
+  if (!requiredMinutes) return record?.tapIn ? 35 : 0;
+  return Math.min(100, Math.round((totalMinutes / requiredMinutes) * 100));
+}
 
-  return `${hours} hr ${minutes} min`;
+const eventDetailIconBase = '/svg icons organized events page/svg icons create event form page';
+const eventDetailIcons = {
+  date: `${eventDetailIconBase}/event-date-icon.svg`,
+  time: `${eventDetailIconBase}/clock-fill-icon.svg`,
+  venue: `${eventDetailIconBase}/location-icon.svg`,
+  requirement: `${eventDetailIconBase}/clock-fill-icon.svg`,
+  grace: `${eventDetailIconBase}/grace-period-icon.svg`,
+};
+
+function DetailIcon({ type }: { type: keyof typeof eventDetailIcons }) {
+  return <img src={eventDetailIcons[type]} alt="" aria-hidden="true" />;
 }
 
 type AttendanceDetail = {
@@ -122,31 +135,16 @@ export function AttendanceDetailsPageContent() {
 
   const event = detail?.event || placeholderEvent;
   const record = detail?.record;
-  const user = detail?.user;
+  const progressPercent = getProgressPercent(record, event);
 
-  const requirementStatus = getRequirementStatus(record, event);
-  const certificateStatus = getCertificateStatus(record, event);
-  const totalTimeLabel = getTotalTimeLabel(record);
-
-  const savedTapRows =
-    record?.taps?.length
-      ? record.taps
-      : record?.tapIn || record?.tapOut
-      ? [{ tapIn: record.tapIn, tapOut: record.tapOut }]
-      : [{ tapIn: '00-00 AM/PM', tapOut: '00-00 AM/PM' }];
-
+  const savedTapRows = getTapPairs(record);
   const tapRows = [
-    ...savedTapRows,
-    ...Array.from({ length: Math.max(0, 7 - savedTapRows.length) }, () => ({
+    ...(savedTapRows.length ? [...savedTapRows].reverse() : [{ tapIn: '00:00', tapOut: '00:00' }]),
+    ...Array.from({ length: Math.max(0, 4 - Math.max(1, savedTapRows.length)) }, () => ({
       tapIn: '',
       tapOut: '',
     })),
   ];
-
-  const handleDownload = () => {
-    if (!user) return;
-    downloadAttendanceCertificate(event, user, record);
-  };
 
   const handleRfidSubmit = (submitEvent: FormEvent<HTMLFormElement>) => {
     submitEvent.preventDefault();
@@ -182,131 +180,66 @@ export function AttendanceDetailsPageContent() {
       </form>
 
       <div className="details-top">
-        <div className="event-block">
-          <h2 className="event-block__title">{event.name || 'Event Name'}</h2>
-
-          <p className="event-block__sub">
-            Required Attendance Time: {event.minAttendance || 'TBA'}
-          </p>
-
-          {scanMessage && <p className="rfid-scan-message">{scanMessage}</p>}
+        <div>
+          <h2 className="details-heading">Real-Time <span>Attendance Logs</span></h2>
+          <h3>Event Details</h3>
         </div>
-
-        <Link href="/attendance" className="details-back">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M15 6L9 12L15 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M19 6L13 12L19 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Go Back
-        </Link>
       </div>
 
-      <section className="attendance-detail-summary" aria-label="Attendance details">
-        <dl className="attendance-detail-list">
+      <section className="attendance-detail-card" aria-label="Event details">
+        <h2>{event.name || 'Event Name'}</h2>
+        <dl>
           <div>
-            <dt>Date</dt>
+            <DetailIcon type="date" />
+            <dt>Event Date</dt>
             <dd>{formatEventDate(event)}</dd>
           </div>
-
           <div>
-            <dt>Student No.</dt>
-            <dd>{user?.studentNumber || '2025-0000'}</dd>
+            <DetailIcon type="time" />
+            <dt>Event Time</dt>
+            <dd>{getEventTimeDisplay(event.dateTime)}</dd>
           </div>
-
           <div>
-            <dt>Total Attendance Time</dt>
-            <dd>{totalTimeLabel}</dd>
+            <DetailIcon type="venue" />
+            <dt>Event Venue</dt>
+            <dd>{event.venue || 'Event Venue'}</dd>
           </div>
-
           <div>
-            <dt>Attendance Requirement Status</dt>
-            <dd>{requirementStatus}</dd>
+            <DetailIcon type="requirement" />
+            <dt>Attendance Time Requirement</dt>
+            <dd>{event.minAttendance || 'TBA'}</dd>
           </div>
-
           <div>
-            <dt>E-Certificate Status</dt>
-            <dd>
-              {certificateStatus === 'Download' ? (
-                <button className="cert-download" type="button" onClick={handleDownload}>
-                  Download
-                </button>
-              ) : (
-                certificateStatus
-              )}
-            </dd>
+            <DetailIcon type="grace" />
+            <dt>Allowed Grace Period</dt>
+            <dd>{event.duration || 'TBA'}</dd>
           </div>
         </dl>
+        {scanMessage && <p className="rfid-scan-message">{scanMessage}</p>}
       </section>
 
-      <div className="details-table-wrap details-table-wrap--desktop" aria-label="Attendance records">
-        <table className="detail-table detail-table--desktop">
-          <thead>
-            <tr>
-              <th scope="col">Date</th>
-              <th scope="col">Student No.</th>
-              <th scope="col">Tap IN</th>
-              <th scope="col">Tap OUT</th>
-              <th scope="col" className="col-status">
-                Attendance<br />Requirement Status
-              </th>
-              <th scope="col" className="col-cert">
-                E-Certificate<br />Status
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {savedTapRows.map((tap, index) => (
-              <tr key={`${index}-${tap.tapIn}-${tap.tapOut}`}>
-                <td>{index === 0 ? formatEventDate(event) : ''}</td>
-                <td>{index === 0 ? user?.studentNumber || '2025-0000' : ''}</td>
-                <td>{tap.tapIn || ''}</td>
-                <td>{tap.tapOut || ''}</td>
-                <td className="col-status">{index === 0 ? requirementStatus : ''}</td>
-                <td className="col-cert">
-                  {index === 0 ? (
-                    certificateStatus === 'Download' ? (
-                      <button className="cert-download" type="button" onClick={handleDownload}>
-                        Download
-                      </button>
-                    ) : (
-                      certificateStatus
-                    )
-                  ) : (
-                    ''
-                  )}
-                </td>
-              </tr>
-            ))}
-
-            {Array.from({ length: Math.max(0, 5 - savedTapRows.length) }).map((_, index) => (
-              <tr className="detail-empty-row" key={index}>
-                <td colSpan={6} aria-hidden="true" />
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="details-table-wrap details-table-wrap--mobile" aria-label="Attendance records">
-        <table className="detail-table detail-table--mobile">
-          <thead>
-            <tr>
-              <th scope="col">Tap IN</th>
-              <th scope="col">Tap OUT</th>
-            </tr>
-          </thead>
-
-          <tbody>
+      <section className="rfid-activity" aria-label="RFID activity logs">
+        <h2>RFID Activity Logs</h2>
+        <div className="rfid-activity-card">
+          <div className="rfid-activity-card__head">
+            <h3>Tap IN</h3>
+            <h3>Tap OUT</h3>
+          </div>
+          <div className="attendance-progress">
+            <p>Attendance Progress: <strong>{progressPercent}%</strong></p>
+            <span><i style={{ width: `${progressPercent}%` }} /></span>
+            <small>Complete the attendance requirement to receive your certificate.</small>
+          </div>
+          <div className="rfid-activity-rows">
             {tapRows.map((row, index) => (
-              <tr className={index === 0 ? undefined : 'detail-empty-row'} key={`${index}-${row.tapIn}-${row.tapOut}`}>
-                <td>{row.tapIn}</td>
-                <td>{row.tapOut}</td>
-              </tr>
+              <div className="rfid-activity-row" key={`${index}-${row.tapIn}-${row.tapOut}`}>
+                <span>{row.tapIn || '00:00'}</span>
+                <span>{row.tapOut || '00:00'}</span>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
