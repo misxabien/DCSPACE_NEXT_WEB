@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { EmptyState } from "@/components/EmptyState";
 import {
   ATTENDANCE_UPDATED_EVENT,
   REGISTERED_EVENTS_KEY,
@@ -24,7 +23,40 @@ type CertificateCard = {
   eventName: string;
   issuedDate: string;
   issuedDateValue: string;
+  imageSrc: string;
+  isPlaceholder?: boolean;
 };
+
+const certificateTemplateSrc = "/certificates/default-template.png";
+const placeholderCertificates: CertificateCard[] = [
+  {
+    id: "template-certificate-1",
+    certificateName: "Certificate Name",
+    eventName: "Event Name",
+    issuedDate: "Date Issued",
+    issuedDateValue: getDateInputValue(new Date()),
+    imageSrc: certificateTemplateSrc,
+    isPlaceholder: true,
+  },
+  {
+    id: "template-certificate-2",
+    certificateName: "Certificate Name",
+    eventName: "Event Name",
+    issuedDate: "Date Issued",
+    issuedDateValue: getDateInputValue(new Date()),
+    imageSrc: certificateTemplateSrc,
+    isPlaceholder: true,
+  },
+  {
+    id: "template-certificate-3",
+    certificateName: "Certificate Name",
+    eventName: "Event Name",
+    issuedDate: "Date Issued",
+    issuedDateValue: getDateInputValue(new Date()),
+    imageSrc: certificateTemplateSrc,
+    isPlaceholder: true,
+  },
+];
 
 function CertificateIcon() {
   return (
@@ -91,6 +123,7 @@ function buildCertificateCards(events: RegisteredEvent[], records: Record<string
         year: "numeric",
       }),
       issuedDateValue: getDateInputValue(issuedDate),
+      imageSrc: certificateTemplateSrc,
     });
 
     return cards;
@@ -102,6 +135,7 @@ export function CertificatesPageContent() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [selectedCertificate, setSelectedCertificate] = useState<CertificateCard | null>(null);
 
   useEffect(() => {
     const refreshCertificates = () => {
@@ -123,8 +157,13 @@ export function CertificatesPageContent() {
     };
   }, []);
 
+  const visibleCertificates = certificates.length ? certificates : placeholderCertificates;
   const filteredCertificates = useMemo(() => {
-    return certificates.filter((certificate) => {
+    if (!certificates.length) {
+      return visibleCertificates;
+    }
+
+    return visibleCertificates.filter((certificate) => {
       const issuedDate = new Date(`${certificate.issuedDateValue}T00:00:00`);
 
       if (activeFilter === "Yesterday") {
@@ -145,7 +184,7 @@ export function CertificatesPageContent() {
 
       return true;
     });
-  }, [activeFilter, certificates, dateRange]);
+  }, [activeFilter, certificates.length, dateRange, visibleCertificates]);
 
   const handleFilterClick = (filter: string) => {
     if (filter === "Pick a date") {
@@ -216,11 +255,17 @@ export function CertificatesPageContent() {
         </div>
       </section>
 
-      {filteredCertificates.length ? (
-        <section className="cert-grid" aria-label="Certificate cards">
-          {filteredCertificates.map((certificate) => (
-            <article className="cert-card" key={certificate.id}>
-              <div className="cert-card__preview" />
+      <section className="cert-grid" aria-label="Certificate cards">
+        {filteredCertificates.map((certificate) => (
+          <button
+            className="cert-card"
+            type="button"
+            key={certificate.id}
+            onClick={() => setSelectedCertificate(certificate)}
+          >
+              <div className="cert-card__preview">
+                <img src={certificate.imageSrc} alt="" />
+              </div>
               <div className="cert-card__footer">
                 <CertificateIcon />
                 <div>
@@ -229,14 +274,16 @@ export function CertificatesPageContent() {
                   <p className="cert-card__date">Date Issued: {certificate.issuedDate}</p>
                 </div>
               </div>
-            </article>
-          ))}
-        </section>
-      ) : (
-        <EmptyState
-          icon="certificate"
-          message="No certificates received yet. Once you join an event and complete the required attendance, your certificates will appear here."
-        />
+          </button>
+        ))}
+      </section>
+
+      {selectedCertificate && (
+        <div className="certificate-preview-overlay" role="dialog" aria-modal="true" aria-label="Certificate preview" onClick={() => setSelectedCertificate(null)}>
+          <button className="certificate-preview-modal" type="button" onClick={(event) => event.stopPropagation()}>
+            <img src={selectedCertificate.imageSrc} alt={selectedCertificate.certificateName} />
+          </button>
+        </div>
       )}
     </main>
   );
