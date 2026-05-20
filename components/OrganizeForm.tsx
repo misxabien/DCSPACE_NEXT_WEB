@@ -108,6 +108,17 @@ function formatDateLabel(value: string) {
   });
 }
 
+function formatDateRangeLabel(startValue: string, endValue: string) {
+  const startLabel = formatDateLabel(startValue);
+  const endLabel = formatDateLabel(endValue);
+
+  if (!endValue || endValue === 'Not provided' || startValue === endValue) {
+    return startLabel;
+  }
+
+  return `${startLabel} - ${endLabel}`;
+}
+
 function formatTimeLabel(value: string) {
   if (!value || value === 'Not provided') return 'Time';
 
@@ -132,6 +143,7 @@ export function OrganizeForm() {
   const [requiredFileDrafts, setRequiredFileDrafts] = useState<string[]>(['']);
   const [requiredFilesChoice, setRequiredFilesChoice] = useState<'yes' | 'no'>('yes');
   const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [progressIndex, setProgressIndex] = useState(0);
@@ -401,22 +413,57 @@ export function OrganizeForm() {
 
             <h2 className="form-group-title form-group-title--span">Schedule &amp; Venue</h2>
             <span className="form-row form-row--session">
-              <span className="form-row__label">Session(s)</span>
-              <span className="form-row__label form-row__label--inline">Start and End Date*</span>
-              <span className="form-row__label form-row__label--inline">Start Time*</span>
-              <span className="form-row__label form-row__label--inline">End Time*</span>
-              <input
-                className="input-inline"
-                type="date"
-                name="event_date"
-                min={todayDate}
-                value={startDate}
-                onChange={(event) => setStartDate(event.target.value)}
-                required
-              />
-              <input className="input-inline" type="date" name="event_end_date" min={startDate || todayDate} />
-              <input className="input-inline" type="time" name="start_time" value={startTime} onChange={(event) => setStartTime(event.target.value)} required />
-              <input className="input-inline" type="time" name="end_time" value={endTime} onChange={(event) => setEndTime(event.target.value)} required />
+              <span className="form-row__label">Session(s)*</span>
+              <span className="session-fields">
+                <span className="session-field">
+                  <span className="form-row__label form-row__label--inline">Date(s)</span>
+                  <span className="date-fields date-fields--range">
+                    <label className="date-field">
+                      <span>Start Date</span>
+                      <input
+                        className="input-inline"
+                        type="date"
+                        name="event_date"
+                        min={todayDate}
+                        value={startDate}
+                        onChange={(event) => {
+                          const nextStartDate = event.target.value;
+
+                          setStartDate(nextStartDate);
+                          if (endDate && nextStartDate && endDate < nextStartDate) {
+                            setEndDate('');
+                          }
+                        }}
+                        required
+                      />
+                    </label>
+                    <label className="date-field">
+                      <span>End Date</span>
+                      <input
+                        className="input-inline"
+                        type="date"
+                        name="event_end_date"
+                        min={startDate || todayDate}
+                        value={endDate}
+                        onChange={(event) => setEndDate(event.target.value)}
+                      />
+                    </label>
+                  </span>
+                </span>
+                <span className="session-field">
+                  <span className="form-row__label form-row__label--inline">Time</span>
+                  <span className="time-pair">
+                    <label className="date-field">
+                      <span>Start Time</span>
+                      <input className="input-inline" type="time" name="start_time" value={startTime} onChange={(event) => setStartTime(event.target.value)} required />
+                    </label>
+                    <label className="date-field">
+                      <span>End Time</span>
+                      <input className="input-inline" type="time" name="end_time" value={endTime} onChange={(event) => setEndTime(event.target.value)} required />
+                    </label>
+                  </span>
+                </span>
+              </span>
             </span>
 
             <label className="form-row form-row--span2">
@@ -636,7 +683,7 @@ export function OrganizeForm() {
                 <h2>{reviewDetails.eventName === 'Not provided' ? 'Event Title' : reviewDetails.eventName}</h2>
                 <section>
                   <h3>Date &amp; Time</h3>
-                  <p>{formatDateLabel(reviewDetails.eventDate)}</p>
+                  <p>{formatDateRangeLabel(reviewDetails.eventDate, reviewDetails.eventEndDate)}</p>
                   <p>
                     {formatTimeLabel(reviewDetails.startTime)} - {formatTimeLabel(reviewDetails.endTime)}
                   </p>
