@@ -60,6 +60,104 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.loading-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  color: #000000;
+}
+
+.loading-screen__content {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: 24px;
+}
+
+.loading-screen__content p {
+  margin: 0;
+  color: #000000;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: clamp(26px, 4vw, 34px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  text-align: center;
+}
+
+.loading-squares {
+  --loading-main: #f5d29d;
+  --loading-a: #2ca6de;
+  --loading-b: #156884;
+  --loading-c: #448aff;
+  --loading-d: #a0c0f8;
+  width: 42px;
+  height: 42px;
+  position: relative;
+  display: grid;
+  animation: dcspace-loading-orbit 1.08s steps(4, end) infinite;
+}
+
+.loading-squares span {
+  width: 11px;
+  height: 11px;
+  position: absolute;
+  border-radius: 1px;
+  background: var(--loading-d);
+  animation: dcspace-loading-color 1.08s steps(4, end) infinite;
+}
+
+.loading-squares span:nth-child(1) {
+  top: 7px;
+  left: 7px;
+  animation-delay: 0s;
+}
+
+.loading-squares span:nth-child(2) {
+  top: 7px;
+  right: 7px;
+  animation-delay: 0.27s;
+}
+
+.loading-squares span:nth-child(3) {
+  right: 7px;
+  bottom: 7px;
+  animation-delay: 0.54s;
+}
+
+.loading-squares span:nth-child(4) {
+  bottom: 7px;
+  left: 7px;
+  animation-delay: 0.81s;
+}
+
+@keyframes dcspace-loading-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dcspace-loading-color {
+  0% {
+    background: var(--loading-main);
+    box-shadow: 7px 7px 0 rgba(245, 210, 157, 0.28);
+  }
+  25% {
+    background: var(--loading-a);
+    box-shadow: 7px 7px 0 rgba(44, 166, 222, 0.2);
+  }
+  50% {
+    background: var(--loading-b);
+    box-shadow: 7px 7px 0 rgba(21, 104, 132, 0.18);
+  }
+  75% {
+    background: var(--loading-c);
+    box-shadow: 7px 7px 0 rgba(68, 138, 255, 0.18);
+  }
+}
+
 .dm-sans-regular {
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-optical-sizing: auto;
