@@ -246,61 +246,68 @@ export function HomePageContent() {
         </label>
       </header>
 
-      <div className="home-event-grid" aria-label="Upcoming events">
-        {visibleEvents.map((event) => {
-          const isSaved = savedEventIds.includes(event.id);
-          const isPassedEvent = getEventStatus(event) === 'Passed';
-          const matchingRegisteredEvent = registeredEvents.find(
-            (registeredEvent) => getRegisteredEventId(registeredEvent) === event.id || registeredEvent.id === event.id,
-          );
-          const isPassedJoinedEvent = isPassedEvent && Boolean(matchingRegisteredEvent);
-          const matchingAttendanceRecord = matchingRegisteredEvent ? attendanceRecords[getRegisteredEventId(matchingRegisteredEvent)] : undefined;
-          const receivedCertificate = getCertificateStatus(matchingAttendanceRecord, matchingRegisteredEvent || event) === 'Download';
+      {visibleEvents.length > 0 ? (
+        <div className="home-event-grid" aria-label="Upcoming events">
+          {visibleEvents.map((event) => {
+            const isSaved = savedEventIds.includes(event.id);
+            const isPassedEvent = getEventStatus(event) === 'Passed';
+            const matchingRegisteredEvent = registeredEvents.find(
+              (registeredEvent) => getRegisteredEventId(registeredEvent) === event.id || registeredEvent.id === event.id,
+            );
+            const isPassedJoinedEvent = isPassedEvent && Boolean(matchingRegisteredEvent);
+            const matchingAttendanceRecord = matchingRegisteredEvent ? attendanceRecords[getRegisteredEventId(matchingRegisteredEvent)] : undefined;
+            const receivedCertificate = getCertificateStatus(matchingAttendanceRecord, matchingRegisteredEvent || event) === 'Download';
 
-          return (
-            <article className="home-event-card" key={event.id}>
-              <button
-                className={`home-event-card__save${isSaved ? ' is-saved' : ''}`}
-                type="button"
-                aria-label={isSaved ? 'Unsave event' : 'Save event'}
-                onClick={() => toggleSavedEvent(event.id)}
-              >
-                <Image
-                  className="home-event-card__bookmark-outline"
-                  src="/svg icons navbar/Bookmark.svg"
-                  width={24}
-                  height={24}
-                  alt=""
-                />
-                <Image
-                  className="home-event-card__bookmark-fill"
-                  src="/assets/bookmark-fill.svg"
-                  width={24}
-                  height={24}
-                  alt=""
-                />
-              </button>
+            return (
+              <article className="home-event-card" key={event.id}>
+                <button
+                  className={`home-event-card__save${isSaved ? ' is-saved' : ''}`}
+                  type="button"
+                  aria-label={isSaved ? 'Unsave event' : 'Save event'}
+                  onClick={() => toggleSavedEvent(event.id)}
+                >
+                  <Image
+                    className="home-event-card__bookmark-outline"
+                    src="/svg icons navbar/Bookmark.svg"
+                    width={24}
+                    height={24}
+                    alt=""
+                  />
+                  <Image
+                    className="home-event-card__bookmark-fill"
+                    src="/assets/bookmark-fill.svg"
+                    width={24}
+                    height={24}
+                    alt=""
+                  />
+                </button>
 
-              <Link className="home-event-card__link" href="/home/details" onClick={() => setSelectedBrowseEventId(event.id)}>
-                <span className="home-event-card__date">
-                  <span>{event.month}</span>
-                  <strong>{event.day}</strong>
-                </span>
-                <span className="home-event-card__details">
-                  <strong>{event.name}</strong>
-                  <span className="home-event-card__venue">{event.venue}</span>
-                  <span className="home-event-card__time">{getEventTimeDisplay(event.dateTime)}</span>
-                  {isPassedJoinedEvent && (
-                    <span className={`home-event-card__certificate${receivedCertificate ? ' is-received' : ' is-missing'}`}>
-                      {receivedCertificate ? 'Certificate received' : 'No certificate received'}
-                    </span>
-                  )}
-                </span>
-              </Link>
-            </article>
-          );
-        })}
-      </div>
+                <Link className="home-event-card__link" href="/home/details" onClick={() => setSelectedBrowseEventId(event.id)}>
+                  <span className="home-event-card__date">
+                    <span>{event.month}</span>
+                    <strong>{event.day}</strong>
+                  </span>
+                  <span className="home-event-card__details">
+                    <strong>{event.name}</strong>
+                    <span className="home-event-card__venue">{event.venue}</span>
+                    <span className="home-event-card__time">{getEventTimeDisplay(event.dateTime)}</span>
+                    {isPassedJoinedEvent && (
+                      <span className={`home-event-card__certificate${receivedCertificate ? ' is-received' : ' is-missing'}`}>
+                        {receivedCertificate ? 'Certificate received' : 'No certificate received'}
+                      </span>
+                    )}
+                  </span>
+                </Link>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <section className="home-empty-state" aria-label="No upcoming events">
+          <Image src="/svg empty state icons/homepage-emtpy-icon.svg" width={240} height={213} alt="" priority />
+          <p>There&apos;s nothing here yet. New events will appear soon.</p>
+        </section>
+      )}
     </section>
   );
 }
