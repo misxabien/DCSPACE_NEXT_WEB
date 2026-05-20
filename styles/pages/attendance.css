@@ -10,6 +10,7 @@
   --font: var(--font-ui), "Poppins", system-ui, sans-serif;
 }
 
+main.main,
 .main {
   flex: 1;
   min-width: 0;
@@ -18,9 +19,13 @@
   background: var(--attendance-bg);
   overflow-y: visible;
   scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
+main.main::-webkit-scrollbar,
 .main::-webkit-scrollbar {
+  width: 0;
+  height: 0;
   display: none;
 }
 
@@ -45,8 +50,9 @@
   margin: 0;
   color: #000000;
   font-family: var(--font-display), "Montserrat", sans-serif;
-  font-size: clamp(24px, 2.5vw, 31px);
+  font-size: clamp(30px, 3.4vw, 42px);
   font-weight: 800;
+  letter-spacing: 0.02em;
   line-height: 1.05;
 }
 
@@ -74,6 +80,101 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1;
+}
+
+.attendance-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: -6px;
+  padding-left: 5px;
+}
+
+.attendance-filter-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.attendance-filter {
+  min-width: 60px;
+  height: 20px;
+  border: 1px solid #c7cbd4;
+  border-radius: 999px;
+  background: #efefef;
+  color: #1d1d1d;
+  cursor: pointer;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 14px;
+}
+
+.attendance-filter:hover,
+.attendance-filter.is-active {
+  border-color: #20a8f4;
+  color: #20a8f4;
+}
+
+.attendance-filter-wrap .attendance-filter.is-open,
+.attendance-filter-wrap .attendance-filter[aria-pressed="true"] {
+  border-color: #20a8f4;
+  color: #20a8f4;
+}
+
+.attendance-filter.has-date-picker::after {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid currentColor;
+  margin-left: 3px;
+  transition: transform 0.18s ease;
+}
+
+.attendance-filter.has-date-picker.is-open::after {
+  transform: rotate(180deg);
+}
+
+.attendance-date-picker {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 8;
+  width: 216px;
+  border: 1px solid #c7cbd4;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(31, 35, 60, 0.12);
+  padding: 12px;
+}
+
+.attendance-date-picker label {
+  display: grid;
+  gap: 5px;
+  color: #1d1d1d;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.attendance-date-picker input {
+  width: 100%;
+  height: 30px;
+  border: 1px solid #d7dae2;
+  border-radius: 6px;
+  color: #1d1d1d;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 11px;
+  padding: 0 8px;
 }
 
 .attendance-event-grid {

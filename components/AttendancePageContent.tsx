@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ATTENDANCE_UPDATED_EVENT,
   REGISTERED_EVENTS_KEY,
@@ -18,6 +18,8 @@ import {
   recordRfidAttendanceTap,
   setSelectedAttendanceEvent,
 } from '@/lib/attendance';
+
+const attendanceFilters = ['All', 'Yesterday', 'This Week', 'Pick a date'];
 
 type AttendanceEvent = {
   id: string;
@@ -50,6 +52,82 @@ function getAttendanceEventTime(event: AttendanceEvent) {
   return Number.isNaN(eventDate.getTime()) ? 0 : eventDate.getTime();
 }
 
+function getAttendanceEventDate(event: AttendanceEvent) {
+  const eventDate = new Date(`${event.registeredEvent.month} ${event.registeredEvent.day}, ${event.registeredEvent.year}`);
+  if (Number.isNaN(eventDate.getTime())) return null;
+
+  eventDate.setHours(0, 0, 0, 0);
+  return eventDate;
+}
+
+function getDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function getDateFromInput(value: string) {
+  if (!value) return null;
+
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function isSameDate(firstDate: Date, secondDate: Date) {
+  return getDateInputValue(firstDate) === getDateInputValue(secondDate);
+}
+
+function isThisWeek(date: Date) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+  return date >= startOfWeek && date <= endOfWeek;
+}
+
+function matchesAttendanceFilter(
+  event: AttendanceEvent,
+  activeFilter: string,
+  dateRange: { start: string; end: string },
+) {
+  if (activeFilter === 'All') return true;
+
+  const eventDate = getAttendanceEventDate(event);
+  if (!eventDate) return true;
+
+  if (activeFilter === 'Yesterday') {
+    const yesterday = new Date();
+    yesterday.setHours(0, 0, 0, 0);
+    yesterday.setDate(yesterday.getDate() - 1);
+    return isSameDate(eventDate, yesterday);
+  }
+
+  if (activeFilter === 'This Week') {
+    return isThisWeek(eventDate);
+  }
+
+  if (activeFilter === 'Pick a date') {
+    const startDate = getDateFromInput(dateRange.start);
+    const endDate = getDateFromInput(dateRange.end || dateRange.start);
+
+    if (!startDate || !endDate) return true;
+
+    return eventDate >= (startDate <= endDate ? startDate : endDate) && eventDate <= (startDate <= endDate ? endDate : startDate);
+  }
+
+  return true;
+}
+
 function getEventTimeDisplay(dateTime?: string) {
   return dateTime?.split(',').at(-1)?.trim() || 'Event Time';
 }
@@ -69,6 +147,11 @@ function isEditableTarget(target: EventTarget | null) {
 
 export function AttendancePageContent() {
   const [attendanceEvents, setAttendanceEvents] = useState<AttendanceEvent[]>([]);
+  const [completedFilter, setCompletedFilter] = useState('All');
+  const [incompleteFilter, setIncompleteFilter] = useState('All');
+  const [completedDateRange, setCompletedDateRange] = useState({ start: '', end: '' });
+  const [incompleteDateRange, setIncompleteDateRange] = useState({ start: '', end: '' });
+  const [openDatePicker, setOpenDatePicker] = useState<'completed' | 'incomplete' | null>(null);
   const registeredEventsRef = useRef<RegisteredEvent[]>([]);
   const scanBufferRef = useRef('');
   const scanTimeoutRef = useRef<number | null>(null);
@@ -168,6 +251,65 @@ export function AttendancePageContent() {
     const status = getRequirementStatus(event.record, event.registeredEvent);
     return event.status === 'Passed' && status !== 'Complete' && status !== 'Overtime';
   });
+  const filteredCompletedEvents = completedEvents.filter((event) => (
+    matchesAttendanceFilter(event, completedFilter, completedDateRange)
+  ));
+  const filteredIncompleteEvents = incompleteEvents.filter((event) => (
+    matchesAttendanceFilter(event, incompleteFilter, incompleteDateRange)
+  ));
+
+  const renderAttendanceFilters = (
+    group: 'completed' | 'incomplete',
+    activeFilter: string,
+    dateRange: { start: string; end: string },
+    setActiveFilter: (filter: string) => void,
+    setDateRange: Dispatch<SetStateAction<{ start: string; end: string }>>,
+  ) => (
+    <div className="attendance-filters" aria-label={`${group} attendance filters`}>
+      {attendanceFilters.map((filter) => (
+        <span className="attendance-filter-wrap" key={filter}>
+          <button
+            className={`attendance-filter${filter === 'Pick a date' ? ' has-date-picker' : ''}${activeFilter === filter ? ' is-active' : ''}${filter === 'Pick a date' && openDatePicker === group ? ' is-open' : ''}`}
+            type="button"
+            aria-pressed={activeFilter === filter}
+            onClick={() => {
+              setActiveFilter(filter);
+              setOpenDatePicker(filter === 'Pick a date' ? (openDatePicker === group ? null : group) : null);
+            }}
+          >
+            {filter}
+          </button>
+          {filter === 'Pick a date' && openDatePicker === group && (
+            <section className="attendance-date-picker" aria-label={`Choose ${group} attendance date`}>
+              <label>
+                <span>From</span>
+                <input
+                  type="date"
+                  value={dateRange.start}
+                  onChange={(event) => {
+                    setDateRange((current) => ({ ...current, start: event.target.value }));
+                    setActiveFilter('Pick a date');
+                  }}
+                />
+              </label>
+              <label>
+                <span>To</span>
+                <input
+                  type="date"
+                  value={dateRange.end}
+                  min={dateRange.start || undefined}
+                  onChange={(event) => {
+                    setDateRange((current) => ({ ...current, end: event.target.value }));
+                    setActiveFilter('Pick a date');
+                  }}
+                />
+              </label>
+            </section>
+          )}
+        </span>
+      ))}
+    </div>
+  );
 
   const renderAttendanceCard = (event: AttendanceEvent) => (
     <article className="attendance-event-card" key={event.id}>
@@ -218,8 +360,15 @@ export function AttendancePageContent() {
 
           <section className="attendance-section" aria-label="Completed attendance">
             <h2>Attendance Completed</h2>
+            {renderAttendanceFilters(
+              'completed',
+              completedFilter,
+              completedDateRange,
+              setCompletedFilter,
+              setCompletedDateRange,
+            )}
             <div className="attendance-event-grid">
-              {completedEvents.length ? completedEvents.map(renderAttendanceCard) : (
+              {filteredCompletedEvents.length ? filteredCompletedEvents.map(renderAttendanceCard) : (
                 <p className="completed-empty-message">Completed attendance records will appear here.</p>
               )}
             </div>
@@ -227,8 +376,15 @@ export function AttendancePageContent() {
 
           <section className="attendance-section" aria-label="Incomplete attendance">
             <h2>Incomplete Attendance</h2>
+            {renderAttendanceFilters(
+              'incomplete',
+              incompleteFilter,
+              incompleteDateRange,
+              setIncompleteFilter,
+              setIncompleteDateRange,
+            )}
             <div className="attendance-event-grid">
-              {incompleteEvents.length ? incompleteEvents.map(renderAttendanceCard) : (
+              {filteredIncompleteEvents.length ? filteredIncompleteEvents.map(renderAttendanceCard) : (
                 <p className="completed-empty-message">Incomplete attendance records will appear here.</p>
               )}
             </div>

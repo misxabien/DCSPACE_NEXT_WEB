@@ -17,8 +17,9 @@
   margin: 0 0 18px;
   color: #000000;
   font-family: var(--font-display), "Montserrat", sans-serif;
-  font-size: 36px;
+  font-size: clamp(30px, 3.4vw, 42px);
   font-weight: 800;
+  letter-spacing: 0.02em;
   line-height: 1;
 }
 
@@ -362,10 +363,6 @@
 @media (max-width: 700px) {
   .saved-events-page {
     padding: 22px 18px 38px;
-  }
-
-  .saved-events-page__copy h2 {
-    font-size: 32px;
   }
 
   .saved-events-grid {
