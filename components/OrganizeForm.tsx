@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { EmptyState } from '@/components/EmptyState';
+import { getCurrentAttendanceUser } from '@/lib/attendance';
 import { canOrganizeEvents, saveOrganizedEvent } from '@/lib/dc-events';
 
 type ReviewDetails = {
@@ -19,6 +20,8 @@ type ReviewDetails = {
   surveyFormLink: string;
   minAttendance: string;
   gracePeriod: string;
+  attendanceAccess: 'all' | 'specific';
+  allowedCourses: string[];
   requiredFiles: string[];
 };
 
@@ -35,12 +38,31 @@ const emptyReviewDetails: ReviewDetails = {
   surveyFormLink: '',
   minAttendance: '',
   gracePeriod: '',
+  attendanceAccess: 'all',
+  allowedCourses: [],
   requiredFiles: [],
 };
 
 const progressSteps = ['Event Details', 'Attendance Setup', 'Requirements & Files', 'Review & Submit'];
 const bannerRatio = 1170 / 504;
 const bannerRatioTolerance = 0.05;
+const courseOptions = [
+  'BSN',
+  'BSRT',
+  'BSPT',
+  'BS Bio',
+  'BS Pharm',
+  'BS MLS',
+  'BSA',
+  'BS Psych',
+  'BEEd',
+  'BSEd',
+  'BSBA-FM',
+  'BSBA-MM',
+  'BSTM',
+  'BMA',
+  'BSIT',
+];
 
 function getDateInputValue(date: Date) {
   const year = date.getFullYear();
@@ -116,6 +138,9 @@ export function OrganizeForm() {
   const [bannerWarning, setBannerWarning] = useState('');
   const [bannerPreview, setBannerPreview] = useState('');
   const [bannerDataUrl, setBannerDataUrl] = useState('');
+  const [attendanceAccess, setAttendanceAccess] = useState<'all' | 'specific'>('all');
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [isCourseDropdownOpen, setIsCourseDropdownOpen] = useState(false);
 
   const todayDate = getDateInputValue(new Date());
   const totalDuration = getDurationFromTimes(startTime, endTime);
@@ -123,6 +148,10 @@ export function OrganizeForm() {
   const canAddRequiredFile = requiredFileDrafts.every((file) => file.trim());
   const isReviewStep = progressIndex === progressSteps.length - 1;
   const isFormComplete = isReviewStep ? Boolean(formRef.current?.checkValidity()) : false;
+  const currentUser = typeof window === 'undefined' ? null : getCurrentAttendanceUser();
+  const hostOrganization = currentUser?.organizationPart || 'Organization Name';
+  const hostCourse = currentUser?.course || 'Course';
+  const hostDepartment = currentUser?.school || 'School/Department';
 
   useEffect(() => {
     setCanCreate(canOrganizeEvents());
@@ -159,6 +188,8 @@ export function OrganizeForm() {
       surveyFormLink: getFormValue(formData, 'survey_form_link'),
       minAttendance: getFormValue(formData, 'min_attendance'),
       gracePeriod: getFormValue(formData, 'grace_period'),
+      attendanceAccess,
+      allowedCourses: attendanceAccess === 'specific' ? selectedCourses : [],
       requiredFiles,
     };
   };
@@ -249,6 +280,21 @@ export function OrganizeForm() {
     setRequiredFileDrafts(['']);
   };
 
+  const handleAttendanceAccessChange = (access: 'all' | 'specific') => {
+    setAttendanceAccess(access);
+
+    if (access === 'all') {
+      setSelectedCourses([]);
+      setIsCourseDropdownOpen(false);
+    }
+  };
+
+  const toggleSelectedCourse = (course: string) => {
+    setSelectedCourses((courses) =>
+      courses.includes(course) ? courses.filter((selectedCourse) => selectedCourse !== course) : [...courses, course],
+    );
+  };
+
   const getOrganizedEventPayload = (status: 'Draft' | 'Pending') => {
     const details = getReviewDetails();
 
@@ -259,14 +305,16 @@ export function OrganizeForm() {
       eventEndDate: details.eventEndDate,
       requiredFiles: details.requiredFiles,
       venue: details.venue,
-      courseOrganizer: 'Organization Name',
-      school: 'School',
-      department: 'School/Department',
+      courseOrganizer: hostOrganization,
+      school: hostDepartment,
+      department: hostDepartment,
       startTime: details.startTime,
       endTime: details.endTime,
       eventType: details.eventType,
       duration: totalDuration,
       minAttendance: details.minAttendance,
+      attendanceAccess: details.attendanceAccess,
+      allowedCourses: details.allowedCourses,
       registrationDeadline: details.registrationDeadline,
       bannerDataUrl,
       status,
@@ -400,6 +448,73 @@ export function OrganizeForm() {
               <span className="form-row__label">Grace Period*</span>
               <input className="input-inline" type="text" name="grace_period" placeholder="Enter the grace period" required />
             </label>
+            <div className="form-row form-row--span2 attendance-access">
+              <span className="form-row__label">Who can attend this event?*</span>
+              <div className="attendance-access__body">
+                <div className="attendance-access__choices">
+                  <label>
+                    <input
+                      type="radio"
+                      name="attendance_access"
+                      value="all"
+                      checked={attendanceAccess === 'all'}
+                      onChange={() => handleAttendanceAccessChange('all')}
+                    />
+                    <span>All Courses</span>
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="attendance_access"
+                      value="specific"
+                      checked={attendanceAccess === 'specific'}
+                      onChange={() => handleAttendanceAccessChange('specific')}
+                    />
+                    <span>Specific Courses Only</span>
+                  </label>
+                </div>
+
+                {attendanceAccess === 'specific' && (
+                  <div className="course-multiselect">
+                    <input
+                      className="course-multiselect__validator"
+                      type="text"
+                      name="selected_courses"
+                      value={selectedCourses.join(', ')}
+                      required
+                      readOnly
+                      tabIndex={-1}
+                      aria-hidden="true"
+                    />
+                    <button
+                      className="course-multiselect__button"
+                      type="button"
+                      aria-haspopup="listbox"
+                      aria-expanded={isCourseDropdownOpen}
+                      onClick={() => setIsCourseDropdownOpen((isOpen) => !isOpen)}
+                    >
+                      <span>{selectedCourses.length ? selectedCourses.join(', ') : 'Please select the course'}</span>
+                      <span aria-hidden="true">⌄</span>
+                    </button>
+
+                    {isCourseDropdownOpen && (
+                      <div className="course-multiselect__menu" role="listbox" aria-label="Select courses">
+                        {courseOptions.map((course) => (
+                          <label className="course-multiselect__option" key={course}>
+                            <input
+                              type="checkbox"
+                              checked={selectedCourses.includes(course)}
+                              onChange={() => toggleSelectedCourse(course)}
+                            />
+                            <span>{course}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -532,14 +647,20 @@ export function OrganizeForm() {
                 </section>
                 <section>
                   <h3>Hosted By</h3>
-                  <p>Organization Name</p>
-                  <p>Course</p>
-                  <p>School/Department</p>
+                  <p>{hostOrganization}</p>
+                  <p>{hostCourse}</p>
+                  <p>{hostDepartment}</p>
                 </section>
                 <section>
                   <h3>Event Requirements</h3>
                   <p>Attendance Time Requirement: {reviewDetails.minAttendance}</p>
                   <p>Grace Period: {reviewDetails.gracePeriod}</p>
+                  <p>
+                    Eligible Courses:{' '}
+                    {reviewDetails.attendanceAccess === 'specific' && reviewDetails.allowedCourses.length
+                      ? reviewDetails.allowedCourses.join(', ')
+                      : 'All Courses'}
+                  </p>
                   <p>Required File(s): {reviewDetails.requiredFiles.length ? reviewDetails.requiredFiles.join(', ') : 'None'}</p>
                 </section>
                 <section>

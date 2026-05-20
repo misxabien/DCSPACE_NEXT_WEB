@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import {
   type AttendanceRecord,
@@ -438,22 +439,22 @@ export function DashboardPageContent() {
           </section>
 
           <section className="dashboard-summary" aria-label="Officer dashboard summary">
-            <article className="dashboard-summary-card dashboard-summary-card--joined">
+            <Link className="dashboard-summary-card dashboard-summary-card--joined" href="/dashboard/events-joined">
               <h3>Events Joined</h3>
               <p>{registeredEvents.length}</p>
-            </article>
-            <article className="dashboard-summary-card dashboard-summary-card--saved">
+            </Link>
+            <Link className="dashboard-summary-card dashboard-summary-card--saved" href="/events">
               <h3>Saved Events</h3>
               <p>{savedEventIds.length}</p>
-            </article>
-            <article className="dashboard-summary-card dashboard-summary-card--certificates">
+            </Link>
+            <Link className="dashboard-summary-card dashboard-summary-card--certificates" href="/certificates">
               <h3>Certificates Earned</h3>
               <p>{certificatesEarned}</p>
-            </article>
-            <article className="dashboard-summary-card dashboard-summary-card--upcoming">
+            </Link>
+            <Link className="dashboard-summary-card dashboard-summary-card--upcoming" href="/events-organized">
               <h3>Events Organized</h3>
               <p>{organizedEvents.length}</p>
-            </article>
+            </Link>
           </section>
 
           <section className="officer-top-grid">
@@ -638,18 +639,18 @@ export function DashboardPageContent() {
         </section>
 
         <section className="dashboard-summary" aria-label="Dashboard summary">
-          <article className="dashboard-summary-card dashboard-summary-card--joined">
+          <Link className="dashboard-summary-card dashboard-summary-card--joined" href="/dashboard/events-joined">
             <h3>Events Joined</h3>
             <p>{registeredEvents.length}</p>
-          </article>
-          <article className="dashboard-summary-card dashboard-summary-card--saved">
+          </Link>
+          <Link className="dashboard-summary-card dashboard-summary-card--saved" href="/events">
             <h3>Saved Events</h3>
             <p>{savedEventIds.length}</p>
-          </article>
-          <article className="dashboard-summary-card dashboard-summary-card--certificates">
+          </Link>
+          <Link className="dashboard-summary-card dashboard-summary-card--certificates" href="/certificates">
             <h3>Certificates Earned</h3>
             <p>{certificatesEarned}</p>
-          </article>
+          </Link>
           <article className="dashboard-summary-card dashboard-summary-card--upcoming">
             <h3>Upcoming Events</h3>
             <p>{upcomingSoonCount}</p>

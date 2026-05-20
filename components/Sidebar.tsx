@@ -103,7 +103,7 @@ export function Sidebar() {
   const pageTitle =
     pathname === '/home'
       ? 'Home'
-      : pathname === '/dashboard'
+      : pathname === '/dashboard' || pathname.startsWith('/dashboard/')
         ? 'Dashboard'
         : pathname.includes('/events-organized') || pathname.includes('/organize') || pathname.includes('/organized-event')
           ? 'My Organized Events'

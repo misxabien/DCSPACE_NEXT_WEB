@@ -275,6 +275,30 @@
   font-size: 11px;
 }
 
+.home-event-card__certificate {
+  width: fit-content;
+  max-width: 100%;
+  min-height: 22px;
+  border-radius: 3px;
+  display: inline-flex;
+  align-items: center;
+  color: #000000;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-top: 10px;
+  padding: 5px 8px;
+}
+
+.home-event-card__certificate.is-received {
+  background: #f4be5e;
+}
+
+.home-event-card__certificate.is-missing {
+  background: #b12b2b;
+  color: #ffffff;
+}
+
 .home-event-card:hover .home-event-card__date span,
 .home-event-card:hover .home-event-card__details,
 .home-event-card:hover .home-event-card__details strong,

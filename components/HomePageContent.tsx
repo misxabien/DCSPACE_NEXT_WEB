@@ -3,6 +3,15 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import {
+  getCertificateStatus,
+  getCurrentAttendanceUser,
+  getEventStatus,
+  getRegisteredEventId,
+  readRegisteredEvents,
+  readUserAttendanceRecords,
+  type RegisteredEvent,
+} from '@/lib/attendance';
 import { type FrontendEvent, readBrowseEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
 
 const HOME_SAVED_EVENTS_KEY = 'dcspaceHomeSavedEvents';
@@ -98,6 +107,8 @@ export function HomePageContent() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
+  const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, ReturnType<typeof readUserAttendanceRecords>[string]>>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
@@ -105,23 +116,28 @@ export function HomePageContent() {
     const refreshEvents = () => {
       setEvents(readBrowseEvents());
       setSavedEventIds(readSavedHomeEvents());
+      setRegisteredEvents(readRegisteredEvents());
+      setAttendanceRecords(readUserAttendanceRecords(getCurrentAttendanceUser()));
     };
 
     refreshEvents();
     window.addEventListener('pageshow', refreshEvents);
     window.addEventListener('storage', refreshEvents);
     window.addEventListener('dcspace-events-updated', refreshEvents);
+    window.addEventListener('dcspace-registered-events-updated', refreshEvents);
 
     return () => {
       window.removeEventListener('pageshow', refreshEvents);
       window.removeEventListener('storage', refreshEvents);
       window.removeEventListener('dcspace-events-updated', refreshEvents);
+      window.removeEventListener('dcspace-registered-events-updated', refreshEvents);
     };
   }, []);
 
   const visibleEvents = useMemo(
     () =>
       events
+        .filter((event) => !registeredEvents.some((registeredEvent) => getRegisteredEventId(registeredEvent) === event.id || registeredEvent.id === event.id))
         .filter((event) => matchesFilter(event, activeFilter, dateRange))
         .filter((event) => {
           const value = searchTerm.trim().toLowerCase();
@@ -134,7 +150,7 @@ export function HomePageContent() {
             field?.toLowerCase().includes(value),
           );
         }),
-    [activeFilter, dateRange, events, searchTerm],
+    [activeFilter, dateRange, events, registeredEvents, searchTerm],
   );
 
   const toggleSavedEvent = (eventId: string) => {
@@ -233,6 +249,13 @@ export function HomePageContent() {
       <div className="home-event-grid" aria-label="Upcoming events">
         {visibleEvents.map((event) => {
           const isSaved = savedEventIds.includes(event.id);
+          const isPassedEvent = getEventStatus(event) === 'Passed';
+          const matchingRegisteredEvent = registeredEvents.find(
+            (registeredEvent) => getRegisteredEventId(registeredEvent) === event.id || registeredEvent.id === event.id,
+          );
+          const isPassedJoinedEvent = isPassedEvent && Boolean(matchingRegisteredEvent);
+          const matchingAttendanceRecord = matchingRegisteredEvent ? attendanceRecords[getRegisteredEventId(matchingRegisteredEvent)] : undefined;
+          const receivedCertificate = getCertificateStatus(matchingAttendanceRecord, matchingRegisteredEvent || event) === 'Download';
 
           return (
             <article className="home-event-card" key={event.id}>
@@ -267,6 +290,11 @@ export function HomePageContent() {
                   <strong>{event.name}</strong>
                   <span className="home-event-card__venue">{event.venue}</span>
                   <span className="home-event-card__time">{getEventTimeDisplay(event.dateTime)}</span>
+                  {isPassedJoinedEvent && (
+                    <span className={`home-event-card__certificate${receivedCertificate ? ' is-received' : ' is-missing'}`}>
+                      {receivedCertificate ? 'Certificate received' : 'No certificate received'}
+                    </span>
+                  )}
                 </span>
               </Link>
             </article>

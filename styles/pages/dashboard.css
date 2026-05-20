@@ -81,6 +81,15 @@
   gap: 16px;
   font-family: var(--font-ui), "Poppins", sans-serif;
   padding: 16px;
+  text-decoration: none;
+  transition: transform 0.18s ease, filter 0.18s ease;
+}
+
+a.dashboard-summary-card:hover,
+a.dashboard-summary-card:focus-visible {
+  filter: brightness(1.03);
+  outline: none;
+  transform: translateY(-2px);
 }
 
 .dashboard-summary-card h3,
@@ -304,6 +313,193 @@
 
 .dashboard-feed--notifications li span {
   background: #6b7df2;
+}
+
+.joined-events-page {
+  min-height: calc(100vh - 72px);
+  background: #efefef;
+  color: #000000;
+}
+
+.joined-events-shell {
+  display: grid;
+  gap: 18px;
+  padding: 24px 32px 56px;
+}
+
+.joined-events-shell h2 {
+  margin: 0;
+  color: #000000;
+  font-family: var(--font-display), "Montserrat", sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.joined-events-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.joined-events-filter-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.joined-events-filter {
+  min-width: 46px;
+  height: 22px;
+  border: 1px solid #d6d6d6;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #49454f;
+  cursor: pointer;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  padding: 0 16px;
+}
+
+.joined-events-filter.is-active,
+.joined-events-filter:hover {
+  border-color: #8ab6ff;
+  color: #2ca6de;
+}
+
+.joined-date-picker {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 220px;
+  border: 1px solid #d6d6d6;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  background: #ffffff;
+  padding: 12px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.joined-date-picker label {
+  display: grid;
+  gap: 4px;
+  color: #49454f;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.joined-date-picker input {
+  height: 30px;
+  border: 1px solid #d6d6d6;
+  border-radius: 4px;
+  color: #49454f;
+  font: inherit;
+  padding: 0 8px;
+}
+
+.joined-events-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 26px;
+}
+
+.joined-event-card {
+  min-height: 205px;
+  border: 1px solid #9d9d9d;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 3px 4px 2px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  transition: background-color 0.18s ease, transform 0.18s ease;
+}
+
+.joined-event-card:hover,
+.joined-event-card:focus-within {
+  background: #f5d29d;
+}
+
+.joined-event-card__link {
+  min-height: 205px;
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  align-items: end;
+  gap: 22px;
+  color: #000000;
+  text-decoration: none;
+  padding: 0 34px 28px 30px;
+}
+
+.joined-event-card__date {
+  display: grid;
+  justify-items: center;
+  align-self: end;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  line-height: 0.95;
+}
+
+.joined-event-card__date span {
+  color: #000000;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.joined-event-card__date strong {
+  color: #19a7ef;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 0.9;
+}
+
+.joined-event-card__details {
+  display: grid;
+  gap: 5px;
+  align-self: end;
+  color: #000000;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+}
+
+.joined-event-card__details strong {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.05;
+}
+
+.joined-event-card__details span {
+  color: #8ab6ff;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.joined-event-card__details small {
+  color: #000000;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.joined-event-card:hover .joined-event-card__date span,
+.joined-event-card:hover .joined-event-card__details,
+.joined-event-card:hover .joined-event-card__details strong,
+.joined-event-card:hover .joined-event-card__details small {
+  color: #ffffff;
+}
+
+.joined-event-card:hover .joined-event-card__date strong,
+.joined-event-card:hover .joined-event-card__details span {
+  color: #6b7df2;
+}
+
+.joined-events-empty {
+  margin: 120px 0 0;
+  color: rgba(0, 0, 0, 0.5);
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
 }
 
 .dashboard-shell--officer {
