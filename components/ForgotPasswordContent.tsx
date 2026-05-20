@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { LoadingScreen } from '@/components/LoadingScreen';
 
 type ForgotStep = 'email' | 'code' | 'password';
 
@@ -11,6 +12,14 @@ export function ForgotPasswordContent() {
   const [step, setStep] = useState<ForgotStep>('email');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
+
+  const handleSaveNewPassword = () => {
+    setIsSavingPassword(true);
+    window.setTimeout(() => {
+      router.push('/login');
+    }, 900);
+  };
 
   return (
     <div className="login-scope forgot-scope">
@@ -104,7 +113,7 @@ export function ForgotPasswordContent() {
                     <button className="forgot-back" type="button" onClick={() => setStep('code')}>
                       Go back to Verification Code
                     </button>
-                    <button className="forgot-primary" type="button">
+                    <button className="forgot-primary" type="button" onClick={handleSaveNewPassword}>
                       Save New Password
                     </button>
                   </div>
@@ -137,6 +146,7 @@ export function ForgotPasswordContent() {
           </div>
         </aside>
       </main>
+      {isSavingPassword && <LoadingScreen context="reset-password-save" />}
     </div>
   );
 }

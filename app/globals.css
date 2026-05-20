@@ -63,6 +63,9 @@ body {
 .loading-screen {
   min-height: 100vh;
   min-height: 100dvh;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
   display: grid;
   place-items: center;
   background: #ffffff;

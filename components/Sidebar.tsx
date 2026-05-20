@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type CSSProperties, useEffect, useState } from 'react';
+import { LoadingScreen } from '@/components/LoadingScreen';
 import { canOrganizeEvents } from '@/lib/dc-events';
 import {
   type DcNotification,
@@ -22,6 +23,7 @@ export function Sidebar() {
   const [notifications, setNotifications] = useState<DcNotification[]>([]);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [, setTimeTick] = useState(0);
   const [userName, setUserName] = useState('User Name');
   const [profilePhotoImage, setProfilePhotoImage] = useState('');
@@ -171,11 +173,13 @@ export function Sidebar() {
           })}
         </nav>
 
-        <Link className="sidebar__logout" href="/login">
+        <Link className="sidebar__logout" href="/login" onClick={() => setIsLoggingOut(true)}>
           <Image src="/svg icons navbar/logout-icon.svg" width={18} height={18} alt="" />
           <span>Log out</span>
         </Link>
       </aside>
+
+      {isLoggingOut && <LoadingScreen context="logout" />}
 
       <header className="topbar" aria-label="Page header">
         <h1>

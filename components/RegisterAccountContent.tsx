@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { LoadingScreen } from '@/components/LoadingScreen';
 
 type RegisterStep = 'personal' | 'school' | 'account' | 'verify';
 
@@ -50,6 +51,7 @@ export function RegisterAccountContent() {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [privacyModalClosing, setPrivacyModalClosing] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
 
   const passwordChecks = [
     formData.password.length >= 8,
@@ -148,6 +150,7 @@ export function RegisterAccountContent() {
       return;
     }
 
+    setIsCreatingAccount(true);
     window.localStorage.setItem('dcspaceFirstName', formData.firstName.trim());
     window.localStorage.setItem('dcspaceLastName', formData.lastName.trim());
     window.localStorage.setItem('dcspaceStudentNumber', formData.studentNumber.trim());
@@ -159,7 +162,6 @@ export function RegisterAccountContent() {
     window.localStorage.setItem('dcspaceStudentEmail', formData.schoolEmail.trim());
     window.sessionStorage.removeItem('dcspacePrivacySeen');
 
-    showToast('Created the account');
     window.setTimeout(() => router.push('/login'), 900);
   };
 
@@ -512,6 +514,7 @@ export function RegisterAccountContent() {
           </div>
         )}
       </main>
+      {isCreatingAccount && <LoadingScreen context="create-account-submit" />}
     </div>
   );
 }

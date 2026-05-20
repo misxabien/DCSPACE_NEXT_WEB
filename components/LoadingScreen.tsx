@@ -7,6 +7,8 @@ type LoadingContext =
   | 'login'
   | 'register'
   | 'forgot-password'
+  | 'reset-password-save'
+  | 'create-account-submit'
   | 'home'
   | 'dashboard'
   | 'attendance-overview'
@@ -18,6 +20,7 @@ type LoadingContext =
   | 'attendance-details'
   | 'profile'
   | 'feedback'
+  | 'logout'
   | 'create-event'
   | 'event-details'
   | 'general';
@@ -35,22 +38,12 @@ const loadingMessages: Record<LoadingContext, string[]> = {
   ],
   login: [
     'Signing you in...',
-    'Verifying your credentials...',
-    'Preparing your dashboard...',
     'Logging you in...',
   ],
-  register: [
-    'Creating your account...',
-    'Setting up your profile...',
-    'Preparing your account...',
-    'Registering your information...',
-  ],
-  'forgot-password': [
-    'Verifying your account...',
-    'Updating your password...',
-    'Securing your account...',
-    'Processing password reset...',
-  ],
+  register: ['Loading Sign Up Form'],
+  'forgot-password': ['Loading Reset Password Form'],
+  'reset-password-save': ['Saving your New Password'],
+  'create-account-submit': ['Creating your account...'],
   home: [
     'Loading events...',
     'Finding available events...',
@@ -98,11 +91,8 @@ const loadingMessages: Record<LoadingContext, string[]> = {
     'Fetching account information...',
     'Preparing profile details...',
   ],
-  feedback: [
-    'Submitting feedback...',
-    'Sending your feedback...',
-    'Processing your response...',
-  ],
+  feedback: ['Loading Feedback Form'],
+  logout: ['Logging out...'],
   'create-event': [
     'Preparing event form...',
     'Loading event details...',
