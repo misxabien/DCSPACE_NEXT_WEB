@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { getRegisteredEventId, readRegisteredEvents, type RegisteredEvent } from '@/lib/attendance';
@@ -71,6 +72,10 @@ function matchesFilter(event: RegisteredEvent, activeFilter: string, dateRange: 
 
 function getEventTime(event: RegisteredEvent) {
   return event.dateTime?.split(',').at(-1)?.trim() || 'Event Time';
+}
+
+function getEventBanner(event: RegisteredEvent) {
+  return (event as RegisteredEvent & { bannerDataUrl?: string }).bannerDataUrl || '';
 }
 
 export function JoinedEventsPageContent() {
@@ -164,14 +169,21 @@ export function JoinedEventsPageContent() {
                   href="/dashboard/events-joined/details"
                   onClick={() => setSelectedBrowseEventId(getRegisteredEventId(event))}
                 >
-                  <span className="joined-event-card__date">
-                    <span>{event.month || 'MAY'}</span>
-                    <strong>{event.day || '17'}</strong>
+                  <span className="joined-event-card__media" aria-hidden="true">
+                    {getEventBanner(event) && (
+                      <Image src={getEventBanner(event)} alt="" fill unoptimized />
+                    )}
                   </span>
-                  <span className="joined-event-card__details">
-                    <strong>{event.name || 'Event Name'}</strong>
-                    <span>{event.venue || 'Event Venue'}</span>
-                    <small>{getEventTime(event)}</small>
+                  <span className="joined-event-card__content">
+                    <span className="joined-event-card__date">
+                      <span>{event.month || 'MAY'}</span>
+                      <strong>{event.day || '17'}</strong>
+                    </span>
+                    <span className="joined-event-card__details">
+                      <strong>{event.name || 'Event Name'}</strong>
+                      <span>{event.venue || 'Event Venue'}</span>
+                      <small>{getEventTime(event)}</small>
+                    </span>
                   </span>
                 </Link>
               </article>

@@ -13,23 +13,12 @@ import {
   readRegisteredEvents,
   readUserAttendanceRecords,
 } from '@/lib/attendance';
-import { canOrganizeEvents, readBrowseEvents, readOrganizedEvents, type FrontendEvent } from '@/lib/dc-events';
-import { readNotifications, type DcNotification } from '@/lib/notifications';
+import { canOrganizeEvents, readOrganizedEvents, setSelectedBrowseEventId, type FrontendEvent } from '@/lib/dc-events';
 
 const HOME_SAVED_EVENTS_KEY = 'dcspaceHomeSavedEvents';
-const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const greetingNameColors = ['#6B7DF2', '#2CA6DE', '#8AB6FF', '#BA7710'];
 
-type AnalyticsMode = 'hours' | 'month';
-type BreakdownMode = 'day' | 'week' | 'month';
-type BreakdownKey = 'complete' | 'incomplete' | 'late' | 'early';
-
-const breakdownItems: Array<{ key: BreakdownKey; label: string; color: string }> = [
-  { key: 'complete', label: 'Completed Attendance', color: '#6B7DF2' },
-  { key: 'incomplete', label: 'Incomplete Attendance', color: '#2CA6DE' },
-  { key: 'late', label: 'Late Attendance', color: '#F5D29D' },
-  { key: 'early', label: 'Early Time-Out', color: '#156884' },
-];
+type JoinedFilter = 'all' | 'ongoing' | 'upcoming' | 'past';
 
 function readSavedEventIds() {
   try {
@@ -107,61 +96,56 @@ function getTodayDisplay() {
   });
 }
 
-function getCountdownDisplay(event?: RegisteredEvent) {
-  if (!event) {
-    return 'Date Countdown';
-  }
-
+function getJoinedFilterStatus(event: RegisteredEvent): Exclude<JoinedFilter, 'all'> {
   const daysUntil = getDaysUntil(event);
 
-  if (daysUntil === null) {
-    return 'Date Countdown';
+  if (daysUntil === 0) {
+    return 'ongoing';
   }
 
-  if (daysUntil <= 0) {
-    return 'Today';
+  if (daysUntil !== null && daysUntil > 0) {
+    return 'upcoming';
   }
 
-  return `${daysUntil} day${daysUntil === 1 ? '' : 's'}`;
+  return 'past';
 }
 
-function getTapMinutes(time?: string) {
-  if (!time) {
-    return null;
-  }
+function formatDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
 
-  const parsedTime = new Date(`January 1, 2026 ${time}`);
-
-  if (Number.isNaN(parsedTime.getTime())) {
-    return null;
-  }
-
-  return parsedTime.getHours() * 60 + parsedTime.getMinutes();
+  return `${year}-${month}-${day}`;
 }
 
-function getRecordMinutes(record?: AttendanceRecord) {
-  const pairs = record?.taps?.length
-    ? record.taps
-    : record?.tapIn || record?.tapOut
-      ? [{ tapIn: record.tapIn, tapOut: record.tapOut }]
-      : [];
+function formatFilterDateLabel(dateKey: string) {
+  const date = new Date(`${dateKey}T00:00:00`);
 
-  return pairs.reduce((total, pair) => {
-    const tapInMinutes = getTapMinutes(pair.tapIn);
-    const tapOutMinutes = getTapMinutes(pair.tapOut);
+  if (Number.isNaN(date.getTime())) {
+    return 'Pick a date';
+  }
 
-    if (tapInMinutes === null || tapOutMinutes === null) {
-      return total;
-    }
-
-    return total + Math.max(0, tapOutMinutes - tapInMinutes);
-  }, 0);
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
-function getMonthIndex(event: RegisteredEvent) {
-  const eventDate = getEventDate(event);
+function getEventBanner(event: RegisteredEvent) {
+  return (event as RegisteredEvent & { bannerDataUrl?: string }).bannerDataUrl || '';
+}
 
-  return eventDate ? eventDate.getMonth() : -1;
+function getCalendarDays(anchorDate: Date) {
+  const firstDay = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1);
+  const startDate = new Date(firstDay);
+  startDate.setDate(firstDay.getDate() - firstDay.getDay());
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + index);
+
+    return date;
+  });
 }
 
 export function DashboardPageContent() {
@@ -170,13 +154,11 @@ export function DashboardPageContent() {
   const [organizedEvents, setOrganizedEvents] = useState<FrontendEvent[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
-  const [savedEvents, setSavedEvents] = useState<RegisteredEvent[]>([]);
-  const [notifications, setNotifications] = useState<DcNotification[]>([]);
   const [isOfficer, setIsOfficer] = useState(false);
-  const [analyticsMode, setAnalyticsMode] = useState<AnalyticsMode>('hours');
-  const [breakdownMode, setBreakdownMode] = useState<BreakdownMode>('day');
-  const [selectedBreakdown, setSelectedBreakdown] = useState<BreakdownKey | null>(null);
-  const [selectedCourseEventId, setSelectedCourseEventId] = useState('');
+  const [joinedFilter, setJoinedFilter] = useState<JoinedFilter>('all');
+  const [selectedJoinedDateRange, setSelectedJoinedDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
 
   useEffect(() => {
     const refreshDashboard = () => {
@@ -187,16 +169,7 @@ export function DashboardPageContent() {
       setOrganizedEvents(readOrganizedEvents());
       setAttendanceRecords(readUserAttendanceRecords(user));
       setIsOfficer(canOrganizeEvents());
-      const nextSavedEventIds = readSavedEventIds();
-      const browseEvents = readBrowseEvents();
-
-      setSavedEventIds(nextSavedEventIds);
-      setSavedEvents(
-        nextSavedEventIds
-          .map((eventId) => browseEvents.find((event) => event.id === eventId))
-          .filter(Boolean) as RegisteredEvent[],
-      );
-      setNotifications(readNotifications());
+      setSavedEventIds(readSavedEventIds());
     };
 
     refreshDashboard();
@@ -205,7 +178,6 @@ export function DashboardPageContent() {
     window.addEventListener('dcspace-events-updated', refreshDashboard);
     window.addEventListener('dcspace-registered-events-updated', refreshDashboard);
     window.addEventListener('dcspace-attendance-updated', refreshDashboard);
-    window.addEventListener('dcspace-notifications-updated', refreshDashboard);
 
     return () => {
       window.removeEventListener('pageshow', refreshDashboard);
@@ -213,20 +185,8 @@ export function DashboardPageContent() {
       window.removeEventListener('dcspace-events-updated', refreshDashboard);
       window.removeEventListener('dcspace-registered-events-updated', refreshDashboard);
       window.removeEventListener('dcspace-attendance-updated', refreshDashboard);
-      window.removeEventListener('dcspace-notifications-updated', refreshDashboard);
     };
   }, []);
-
-  const latestUpcomingEvent = useMemo(
-    () =>
-      registeredEvents
-        .filter((event) => {
-          const daysUntil = getDaysUntil(event);
-          return daysUntil !== null && daysUntil >= 0;
-        })
-        .sort((firstEvent, secondEvent) => (getDaysUntil(firstEvent) ?? 9999) - (getDaysUntil(secondEvent) ?? 9999))[0],
-    [registeredEvents],
-  );
 
   const certificatesEarned = useMemo(
     () =>
@@ -246,87 +206,6 @@ export function DashboardPageContent() {
     [registeredEvents],
   );
 
-  const monthlyHours = useMemo(() => {
-    const values = Array.from({ length: 12 }, () => 0);
-
-    registeredEvents.forEach((event) => {
-      const monthIndex = getMonthIndex(event);
-      const record = attendanceRecords[getRegisteredEventId(event)];
-
-      if (monthIndex >= 0) {
-        values[monthIndex] += getRecordMinutes(record) / 60;
-      }
-    });
-
-    return values;
-  }, [attendanceRecords, registeredEvents]);
-
-  const monthlyActivity = useMemo(() => {
-    const values = Array.from({ length: 12 }, () => 0);
-
-    registeredEvents.forEach((event) => {
-      const monthIndex = getMonthIndex(event);
-
-      if (monthIndex >= 0) {
-        values[monthIndex] += 1;
-      }
-    });
-
-    return values;
-  }, [registeredEvents]);
-
-  const chartValues = analyticsMode === 'hours' ? monthlyHours : monthlyActivity;
-  const chartMax = Math.max(...chartValues, 1);
-  const recentActivity = useMemo(() => {
-    const joinedActivities = registeredEvents.slice(-2).map((event) => `Joined "${event.name || 'Event Name'}"`);
-    const savedActivities = savedEvents.slice(-2).map((event) => `Bookmarked "${event.name || 'Event Name'}"`);
-    const attendanceActivities = registeredEvents
-      .filter((event) => isAttendanceComplete(attendanceRecords[getRegisteredEventId(event)]))
-      .slice(-2)
-      .map((event) => `Completed attendance requirement in "${event.name || 'Event Name'}"`);
-    const certificateActivities = registeredEvents
-      .filter((event) => getCertificateStatus(attendanceRecords[getRegisteredEventId(event)], event) === 'Download')
-      .slice(-2)
-      .map((event) => `Received certificate for "${event.name || 'Event Name'}"`);
-
-    return [...joinedActivities, ...savedActivities, ...attendanceActivities, ...certificateActivities].slice(-4);
-  }, [attendanceRecords, registeredEvents, savedEvents]);
-
-  const notificationPreview = useMemo(() => {
-    const upcomingEventAlerts = registeredEvents
-      .filter((event) => {
-        const daysUntil = getDaysUntil(event);
-        return daysUntil !== null && daysUntil >= 1 && daysUntil <= 3;
-      })
-      .map((event) => `${event.name || 'Event Name'} starts ${getCountdownDisplay(event).toLowerCase()} away`);
-
-    const certificateAlerts = registeredEvents
-      .filter((event) => getCertificateStatus(attendanceRecords[getRegisteredEventId(event)], event) === 'Download')
-      .map((event) => `Certificate ready for ${event.name || 'Event Name'}`);
-    const attendanceAlerts = registeredEvents
-      .filter((event) => isAttendanceComplete(attendanceRecords[getRegisteredEventId(event)]))
-      .map((event) => `Attendance requirement completed for ${event.name || 'Event Name'}`);
-
-    return [
-      ...notifications.map((notification) => `${notification.title} ${notification.eventName}`),
-      ...upcomingEventAlerts,
-      ...certificateAlerts,
-      ...attendanceAlerts,
-    ].slice(0, 4);
-  }, [attendanceRecords, notifications, registeredEvents]);
-
-  const totalHours = monthlyHours.reduce((total, value) => total + value, 0);
-  const activeMonthIndex = monthlyActivity.indexOf(Math.max(...monthlyActivity));
-  const upcomingOrganizedEvent = useMemo(
-    () =>
-      organizedEvents
-        .filter((event) => {
-          const daysUntil = getDaysUntil(event);
-          return daysUntil !== null && daysUntil >= 1 && daysUntil <= 3;
-        })
-        .sort((firstEvent, secondEvent) => (getDaysUntil(firstEvent) ?? 9999) - (getDaysUntil(secondEvent) ?? 9999))[0],
-    [organizedEvents],
-  );
   const ongoingOrganizedEvent = useMemo(
     () => organizedEvents.find((event) => getDaysUntil(event) === 0),
     [organizedEvents],
@@ -353,67 +232,79 @@ export function DashboardPageContent() {
   const pendingEvents = organizedEvents.filter((event) => !event.status || ['created', 'pending'].includes(event.status.toLowerCase()));
   const approvedEvents = organizedEvents.filter((event) => event.status?.toLowerCase() === 'approved');
   const rejectedEvents = organizedEvents.filter((event) => event.status?.toLowerCase() === 'rejected');
-  const organizedPassedEvents = organizedEvents.filter((event) => {
-    const daysUntil = getDaysUntil(event);
-    return daysUntil !== null && daysUntil < 0;
-  });
-  const selectedCourseEvent = organizedPassedEvents.find((event) => event.id === selectedCourseEventId) || organizedPassedEvents[0];
-  const courseRows = useMemo(() => {
-    const rows = new Map<string, number>();
-    const relevantEvents = selectedCourseEvent
-      ? registeredEvents.filter((event) => event.id === selectedCourseEvent.id)
-      : registeredEvents.filter((event) => organizedEvents.some((organizedEvent) => organizedEvent.id === event.id));
-
-    relevantEvents.forEach((event) => {
-      const course = event.organizer?.split('-')[0]?.trim() || getCurrentAttendanceUser().course || 'Course';
-      rows.set(course, (rows.get(course) || 0) + 1);
-    });
-
-    return Array.from(rows.entries())
-      .map(([course, count]) => ({ course, count }))
-      .sort((first, second) => second.count - first.count)
-      .slice(0, 3);
-  }, [organizedEvents, registeredEvents, selectedCourseEvent]);
-  const topEvents = organizedPassedEvents
-    .map((event) => ({
-      name: event.name || 'Event Name',
-      count: registeredEvents.filter((registeredEvent) => registeredEvent.id === event.id).length,
-    }))
-    .sort((first, second) => first.count - second.count)
-    .slice(0, 5);
-  const breakdownCounts = {
-    complete: organizedEvents.reduce((count, event) => {
-      const eventRegistrations = registeredEvents.filter((registeredEvent) => registeredEvent.id === event.id);
-      return count + eventRegistrations.filter((registeredEvent) => isAttendanceComplete(attendanceRecords[getRegisteredEventId(registeredEvent)])).length;
-    }, 0),
-    incomplete: organizedEvents.reduce((count, event) => {
-      const eventRegistrations = registeredEvents.filter((registeredEvent) => registeredEvent.id === event.id);
-      return count + eventRegistrations.filter((registeredEvent) => !isAttendanceComplete(attendanceRecords[getRegisteredEventId(registeredEvent)])).length;
-    }, 0),
-    late: 0,
-    early: 0,
-  };
-  const breakdownTotal = Math.max(
-    breakdownCounts.complete + breakdownCounts.incomplete + breakdownCounts.late + breakdownCounts.early,
-    0,
+  const joinedEventDates = useMemo(
+    () =>
+      registeredEvents
+        .map((event) => getEventDate(event))
+        .filter(Boolean) as Date[],
+    [registeredEvents],
   );
-  const pieSegments = breakdownItems.map((item) => ({
-    ...item,
-    value: breakdownCounts[item.key],
-    percent: breakdownTotal ? Math.round((breakdownCounts[item.key] / breakdownTotal) * 100) : 0,
-  }));
-  const totalBreakdownPercent = breakdownTotal ? pieSegments.reduce((total, segment) => total + segment.percent, 0) : 0;
-  let pieStart = 0;
-  const pieGradient = breakdownTotal
-    ? pieSegments
-        .map((segment) => {
-          const end = pieStart + segment.percent;
-          const value = `${segment.color} ${pieStart}% ${end}%`;
-          pieStart = end;
-          return value;
-        })
-        .join(', ')
-    : '#1C1D21 0% 100%';
+  const selectedJoinedStartDate = useMemo(
+    () => (selectedJoinedDateRange.start ? new Date(`${selectedJoinedDateRange.start}T00:00:00`) : null),
+    [selectedJoinedDateRange.start],
+  );
+  const selectedJoinedEndDate = useMemo(
+    () => (selectedJoinedDateRange.end ? new Date(`${selectedJoinedDateRange.end}T00:00:00`) : selectedJoinedStartDate),
+    [selectedJoinedDateRange.end, selectedJoinedStartDate],
+  );
+  const filteredJoinedEvents = useMemo(
+    () =>
+      registeredEvents.filter((event) => {
+        const eventDate = getEventDate(event);
+
+        if (joinedFilter !== 'all' && getJoinedFilterStatus(event) !== joinedFilter) {
+          return false;
+        }
+
+        if (
+          selectedJoinedStartDate &&
+          selectedJoinedEndDate &&
+          (!eventDate || eventDate < selectedJoinedStartDate || eventDate > selectedJoinedEndDate)
+        ) {
+          return false;
+        }
+
+        return true;
+      }),
+    [joinedFilter, registeredEvents, selectedJoinedEndDate, selectedJoinedStartDate],
+  );
+  const calendarBaseDate =
+    selectedJoinedStartDate || joinedEventDates.find((date) => date.getTime() >= new Date().setHours(0, 0, 0, 0)) || joinedEventDates[0] || new Date();
+  const calendarAnchor = new Date(calendarBaseDate.getFullYear(), calendarBaseDate.getMonth() + calendarMonthOffset, 1);
+  const calendarDays = getCalendarDays(calendarAnchor);
+  const joinedDateKeys = new Set(joinedEventDates.map((date) => formatDateInputValue(date)));
+  const selectedRangeStartTime = selectedJoinedStartDate?.getTime() ?? null;
+  const selectedRangeEndTime = selectedJoinedEndDate?.getTime() ?? null;
+  const calendarMonthLabel = calendarAnchor.toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+  const dateFilterLabel = selectedJoinedDateRange.start
+    ? selectedJoinedDateRange.end
+      ? `${formatFilterDateLabel(selectedJoinedDateRange.start)} - ${formatFilterDateLabel(selectedJoinedDateRange.end)}`
+      : formatFilterDateLabel(selectedJoinedDateRange.start)
+    : 'Pick a date';
+  const handleJoinedDatePick = (dateKey: string) => {
+    if (!selectedJoinedDateRange.start || selectedJoinedDateRange.end) {
+      setSelectedJoinedDateRange({ start: dateKey, end: '' });
+      setCalendarMonthOffset(0);
+      return;
+    }
+
+    if (dateKey === selectedJoinedDateRange.start) {
+      setIsDatePickerOpen(false);
+      return;
+    }
+
+    const startDate = new Date(`${selectedJoinedDateRange.start}T00:00:00`);
+    const nextDate = new Date(`${dateKey}T00:00:00`);
+
+    setSelectedJoinedDateRange(
+      nextDate < startDate ? { start: dateKey, end: selectedJoinedDateRange.start } : { start: selectedJoinedDateRange.start, end: dateKey },
+    );
+    setCalendarMonthOffset(0);
+    setIsDatePickerOpen(false);
+  };
 
   if (isOfficer) {
     return (
@@ -422,21 +313,6 @@ export function DashboardPageContent() {
           <h2>
             Hello, <ColorfulGreetingName name={firstName} />
           </h2>
-
-          <p className="dashboard-latest-label">Upcoming Organized Event:</p>
-          <section className={`dashboard-upcoming-banner${upcomingOrganizedEvent ? '' : ' is-empty'}`} aria-label="Upcoming organized event">
-            {upcomingOrganizedEvent ? (
-              <>
-                <span>{upcomingOrganizedEvent.name || 'Event Name'}</span>
-                <span>{getDateDisplay(upcomingOrganizedEvent)}</span>
-                <span>{getEventTime(upcomingOrganizedEvent)}</span>
-                <span>{registeredEvents.filter((event) => event.id === upcomingOrganizedEvent.id).length} Registered</span>
-                <span>{getCountdownDisplay(upcomingOrganizedEvent)}</span>
-              </>
-            ) : (
-              <span>No Upcoming Organized Event</span>
-            )}
-          </section>
 
           <section className="dashboard-summary" aria-label="Officer dashboard summary">
             <Link className="dashboard-summary-card dashboard-summary-card--joined" href="/dashboard/events-joined">
@@ -520,7 +396,7 @@ export function DashboardPageContent() {
 
             <article className="dashboard-panel officer-actions">
               <h3>Quick Actions</h3>
-              <a href="/events-organized">
+              <a href="/events-organized/create">
                 <Image src="/svg icons for user-dashboard/plus-square-fill.svg" width={18} height={18} alt="" />
                 Create Event
               </a>
@@ -530,88 +406,14 @@ export function DashboardPageContent() {
               </a>
               <button type="button">
                 <Image src="/svg icons for user-dashboard/close-registration.svg" width={18} height={18} alt="" />
-                Close Registration
+                Send Announcements
               </button>
-              <button type="button">
+              <a href="/submit-feedback">
                 <Image src="/svg icons for user-dashboard/submit-feedback-icon.svg" width={18} height={18} alt="" />
                 Submit Feedback
-              </button>
+              </a>
             </article>
           </section>
-
-          <h2 className="officer-section-title">Attendance Analytics</h2>
-          <section className="officer-analytics-grid">
-            <article className="dashboard-panel officer-breakdown">
-              <header>
-                <h3>Attendance Breakdown</h3>
-                <div className="officer-breakdown__filters">
-                  {(['day', 'week', 'month'] as BreakdownMode[]).map((mode) => (
-                    <button
-                      className={breakdownMode === mode ? 'is-active' : ''}
-                      type="button"
-                      onClick={() => setBreakdownMode(mode)}
-                      key={mode}
-                    >
-                      {mode}
-                    </button>
-                  ))}
-                  <span style={{ transform: `translateX(${(['day', 'week', 'month'] as BreakdownMode[]).indexOf(breakdownMode) * 100}%)` }} />
-                </div>
-              </header>
-              <div className="officer-breakdown__body">
-                <button
-                  className={`officer-pie${selectedBreakdown ? ` is-${selectedBreakdown}` : ''}`}
-                  type="button"
-                  style={{ background: `conic-gradient(${pieGradient})` }}
-                  onClick={() => setSelectedBreakdown((current) => (current ? null : 'complete'))}
-                >
-                  <span>{`${totalBreakdownPercent}%`}</span>
-                </button>
-                <div className="officer-breakdown__legend">
-                  {pieSegments.map((segment) => (
-                    <button type="button" onClick={() => setSelectedBreakdown(segment.key)} key={segment.key}>
-                      <span style={{ background: segment.color }} />
-                      {segment.label}
-                      <strong>{segment.percent}%</strong>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {!breakdownTotal && <p className="officer-empty officer-empty--breakdown">No records yet</p>}
-            </article>
-
-            <article className="dashboard-panel officer-courses">
-              <header>
-                <h3>Top Participating Courses</h3>
-                <select value={selectedCourseEvent?.id || ''} onChange={(event) => setSelectedCourseEventId(event.target.value)}>
-                  <option value="">Pick Event Name</option>
-                  {organizedPassedEvents.map((event) => (
-                    <option value={event.id} key={event.id}>
-                      {event.name}
-                    </option>
-                  ))}
-                </select>
-              </header>
-              {(courseRows.length ? courseRows : [{ course: 'No records yet', count: 0 }]).map((row) => (
-                <p key={row.course}>
-                  <span />
-                  {row.course}
-                  <strong>{row.count} Attendees</strong>
-                </p>
-              ))}
-            </article>
-          </section>
-
-          <article className="dashboard-panel officer-top-events">
-            <h3>Top Events</h3>
-            {(topEvents.length ? topEvents : [{ name: 'No records yet', count: 0 }]).map((event) => (
-              <p key={event.name}>
-                <span />
-                {event.name}
-                <strong>{event.count} Attendees</strong>
-              </p>
-            ))}
-          </article>
         </div>
       </section>
     );
@@ -623,20 +425,6 @@ export function DashboardPageContent() {
         <h2>
           Hello, <ColorfulGreetingName name={firstName} />
         </h2>
-
-        <p className="dashboard-latest-label">Latest Upcoming Event:</p>
-        <section className={`dashboard-upcoming-banner${latestUpcomingEvent ? '' : ' is-empty'}`} aria-label="Latest upcoming event">
-          {latestUpcomingEvent ? (
-            <>
-              <span>{latestUpcomingEvent.name || 'Event Name'}</span>
-              <span>{getDateDisplay(latestUpcomingEvent)}</span>
-              <span>{getEventTime(latestUpcomingEvent)}</span>
-              <span>{getCountdownDisplay(latestUpcomingEvent)}</span>
-            </>
-          ) : (
-            <span>No Latest Upcoming Event</span>
-          )}
-        </section>
 
         <section className="dashboard-summary" aria-label="Dashboard summary">
           <Link className="dashboard-summary-card dashboard-summary-card--joined" href="/dashboard/events-joined">
@@ -657,72 +445,156 @@ export function DashboardPageContent() {
           </article>
         </section>
 
-        <section className="dashboard-lower-grid">
-          <article className="dashboard-panel dashboard-analytics">
-            <header className="dashboard-panel__header">
-              <h3>Attendance Analytics</h3>
-              <div className="dashboard-analytics__filters" aria-label="Attendance analytics filters">
+        <section className="dashboard-joined-section" aria-label="Events joined">
+          <div className="dashboard-joined-main">
+            <h3 className="dashboard-joined-title">
+              Events <span>Joined</span>
+            </h3>
+            <div className="joined-events-filters dashboard-joined-filters">
+              {(['all', 'ongoing', 'upcoming', 'past'] as JoinedFilter[]).map((filter) => (
                 <button
-                  className={analyticsMode === 'hours' ? 'is-active' : ''}
+                  className={`joined-events-filter${joinedFilter === filter ? ' is-active' : ''}`}
                   type="button"
-                  onClick={() => setAnalyticsMode('hours')}
+                  onClick={() => setJoinedFilter(filter)}
+                  key={filter}
                 >
-                  <span className="dashboard-filter-dot dashboard-filter-dot--hours" />
-                  Total Hours Attended
+                  {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)}
                 </button>
+              ))}
+              <div className="dashboard-date-filter-wrap">
                 <button
-                  className={analyticsMode === 'month' ? 'is-active' : ''}
+                  className={`dashboard-date-filter${selectedJoinedDateRange.start ? ' has-value' : ''}${isDatePickerOpen ? ' is-open' : ''}`}
                   type="button"
-                  onClick={() => setAnalyticsMode('month')}
+                  onClick={() => setIsDatePickerOpen((current) => !current)}
                 >
-                  <span className="dashboard-filter-dot dashboard-filter-dot--month" />
-                  Most Active Month
+                  <span>{dateFilterLabel}</span>
                 </button>
+                {isDatePickerOpen && (
+                  <div className="dashboard-date-picker" aria-label="Pick joined event date">
+                    <header>
+                      <button type="button" aria-label="Previous month" onClick={() => setCalendarMonthOffset((current) => current - 1)}>&lt;</button>
+                      <strong>{calendarMonthLabel}</strong>
+                      <button type="button" aria-label="Next month" onClick={() => setCalendarMonthOffset((current) => current + 1)}>&gt;</button>
+                    </header>
+                    <div className="dashboard-calendar-weekdays" aria-hidden="true">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                        <span key={day}>{day}</span>
+                      ))}
+                    </div>
+                    <div className="dashboard-calendar-days">
+                      {calendarDays.map((date) => {
+                        const key = formatDateInputValue(date);
+                        const time = date.getTime();
+                        const isCurrentMonth = date.getMonth() === calendarAnchor.getMonth();
+                        const isJoinedDate = joinedDateKeys.has(key);
+                        const isSelected =
+                          time === selectedRangeStartTime ||
+                          (selectedRangeEndTime !== null && time === selectedRangeEndTime);
+                        const isInRange =
+                          selectedRangeStartTime !== null &&
+                          selectedRangeEndTime !== null &&
+                          time > selectedRangeStartTime &&
+                          time < selectedRangeEndTime;
+
+                        return (
+                          <button
+                            className={`${isCurrentMonth ? '' : 'is-muted'}${isJoinedDate ? ' is-joined' : ''}${isSelected ? ' is-selected' : ''}${isInRange ? ' is-in-range' : ''}`}
+                            type="button"
+                            onClick={() => handleJoinedDatePick(key)}
+                            key={`picker-${key}`}
+                          >
+                            {date.getDate()}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
-            </header>
-
-            <div className={`dashboard-chart dashboard-chart--${analyticsMode}`} aria-label="Attendance chart">
-              {chartValues.map((value, index) => (
-                <div className="dashboard-chart__bar-wrap" key={monthLabels[index]}>
-                  <span
-                    className={`dashboard-chart__bar${value > 0 && value === chartMax ? ' is-peak' : ''}`}
-                    style={{ height: `${Math.max(8, (value / chartMax) * 100)}%` }}
-                    title={`${monthLabels[index]}: ${analyticsMode === 'hours' ? `${value.toFixed(1)} hrs` : `${value} events`}`}
-                  />
-                  <small>{monthLabels[index]}</small>
-                </div>
-              ))}
+              {selectedJoinedDateRange.start && (
+                <button
+                  className="dashboard-date-clear"
+                  type="button"
+                  onClick={() => {
+                    setSelectedJoinedDateRange({ start: '', end: '' });
+                    setCalendarMonthOffset(0);
+                  }}
+                >
+                  Clear
+                </button>
+              )}
             </div>
-            <p className="dashboard-chart__summary">
-              {analyticsMode === 'hours'
-                ? `${totalHours.toFixed(1)} total hours attended`
-                : `${monthLabels[Math.max(0, activeMonthIndex)]} is your most active month`}
-            </p>
-          </article>
 
-          <article className="dashboard-panel dashboard-feed">
-            <h3>Recent Activity</h3>
-            <ul>
-              {(recentActivity.length ? recentActivity : ['No recent activity yet']).map((activity, index) => (
-                <li key={`${activity}-${index}`}>
-                  <span />
-                  {activity}
-                </li>
-              ))}
-            </ul>
-          </article>
+            {filteredJoinedEvents.length ? (
+              <div className="joined-events-grid dashboard-joined-grid">
+                {filteredJoinedEvents.map((event) => (
+                  <article className="joined-event-card" key={getRegisteredEventId(event)}>
+                    <Link
+                      className="joined-event-card__link"
+                      href="/dashboard/events-joined/details"
+                      onClick={() => setSelectedBrowseEventId(getRegisteredEventId(event))}
+                    >
+                      <span className="joined-event-card__media" aria-hidden="true">
+                        {getEventBanner(event) && (
+                          <Image src={getEventBanner(event)} alt="" fill unoptimized />
+                        )}
+                      </span>
+                      <span className="joined-event-card__content">
+                        <span className="joined-event-card__date">
+                          <span>{event.month || 'MAY'}</span>
+                          <strong>{event.day || '17'}</strong>
+                        </span>
+                        <span className="joined-event-card__details">
+                          <strong>{event.name || 'Event Name'}</strong>
+                          <span>{event.venue || 'Event Venue'}</span>
+                          <small>{getEventTime(event)}</small>
+                        </span>
+                      </span>
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="joined-events-empty dashboard-joined-empty">No joined events found.</p>
+            )}
+          </div>
 
-          <article className="dashboard-panel dashboard-feed dashboard-feed--notifications">
-            <h3>Notification Preview</h3>
-            <ul>
-              {(notificationPreview.length ? notificationPreview : ['No notifications yet']).map((notification, index) => (
-                <li key={`${notification}-${index}`}>
-                  <span />
-                  {notification}
-                </li>
-              ))}
-            </ul>
-          </article>
+          <aside className="dashboard-calendar" aria-label="Joined events calendar">
+            <h3>Calendar</h3>
+            <div className="dashboard-calendar-card">
+              <header>
+                <button type="button" aria-label="Previous month" onClick={() => setCalendarMonthOffset((current) => current - 1)}>&lt;</button>
+                <strong>{calendarMonthLabel}</strong>
+                <button type="button" aria-label="Next month" onClick={() => setCalendarMonthOffset((current) => current + 1)}>&gt;</button>
+              </header>
+              <div className="dashboard-calendar-weekdays" aria-hidden="true">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                  <span key={day}>{day}</span>
+                ))}
+              </div>
+              <div className="dashboard-calendar-days">
+                {calendarDays.map((date) => {
+                  const key = formatDateInputValue(date);
+                  const isCurrentMonth = date.getMonth() === calendarAnchor.getMonth();
+                  const isJoinedDate = joinedDateKeys.has(key);
+
+                  return (
+                    <button
+                      className={`${isCurrentMonth ? '' : 'is-muted'}${isJoinedDate ? ' is-joined' : ''}`}
+                      type="button"
+                      onClick={() => {
+                        setSelectedJoinedDateRange({ start: key, end: '' });
+                        setCalendarMonthOffset(0);
+                      }}
+                      key={key}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </aside>
         </section>
       </div>
     </section>
