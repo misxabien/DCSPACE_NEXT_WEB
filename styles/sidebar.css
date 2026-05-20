@@ -337,7 +337,7 @@
   bottom: 0;
   z-index: 39;
   width: max(50vw, 420px);
-  background: #8ab6ff;
+  background: rgba(245, 210, 157, 0.95);
   color: #ffffff;
   box-shadow: -14px 0 28px rgba(21, 104, 132, 0.18);
   opacity: 0;
@@ -413,7 +413,7 @@
 }
 
 .notifications-drawer__item:not(.is-unread) {
-  background: #8ab6ff;
+  background: rgba(245, 210, 157, 0.95);
 }
 
 .notifications-drawer__item:hover,
