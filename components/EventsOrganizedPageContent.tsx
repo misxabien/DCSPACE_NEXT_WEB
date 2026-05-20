@@ -103,13 +103,17 @@ export function EventsOrganizedPageContent() {
 
   const renderEventCard = (event: FrontendEvent, approval = false) => {
     const status = approval ? getApprovalStatus(event) : statusMeta[getEventStatus(event)].label;
+    const handleOpenEventDetails = () => {
+      window.sessionStorage.setItem('dcspaceDashboardView', 'organized');
+      setSelectedBrowseEventId(event.id);
+    };
 
     return (
       <article className="organized-event-card" key={event.id}>
         <Link
           className="organized-event-card__link"
           href="/dashboard/organized-event"
-          onClick={() => setSelectedBrowseEventId(event.id)}
+          onClick={handleOpenEventDetails}
         >
           <span className="organized-event-card__media" aria-hidden="true">
             {event.bannerDataUrl && <Image src={event.bannerDataUrl} alt="" fill unoptimized />}

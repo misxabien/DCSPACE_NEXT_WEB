@@ -98,29 +98,31 @@ export function Sidebar() {
 
   const hasUnreadNotifications = notifications.some((notification) => !notification.isRead);
   const isSubmitFeedbackPage = pathname.includes('/submit-feedback');
+  const isOrganizedEventPath =
+    pathname.includes('/events-organized') || pathname.includes('/organize') || pathname.includes('/organized-event');
   const profilePhotoStyle = {
     transform: `translate(${profilePhotoFit.x}%, ${profilePhotoFit.y}%) scale(${profilePhotoFit.zoom})`,
   } as CSSProperties;
   const pageTitle =
     pathname === '/home'
       ? 'Home'
-      : pathname === '/dashboard' || pathname.startsWith('/dashboard/')
-        ? 'Dashboard'
-        : pathname.includes('/events-organized') || pathname.includes('/organize') || pathname.includes('/organized-event')
+      : isOrganizedEventPath
           ? 'My Organized Events'
-          : pathname.includes('/attendance')
-            ? 'Attendance'
-            : pathname.includes('/certificates')
-              ? 'Certificates'
-              : pathname.includes('/events')
-                ? 'My Saved Events'
-              : pathname.includes('/submit-feedback')
-                ? 'My Profile'
-                : pathname.includes('/notifications')
-                  ? 'Notifications'
-                  : pathname.includes('/my-profile')
+          : pathname === '/dashboard' || pathname.startsWith('/dashboard/')
+            ? 'Dashboard'
+            : pathname.includes('/attendance')
+              ? 'Attendance'
+              : pathname.includes('/certificates')
+                ? 'Certificates'
+                : pathname.includes('/events')
+                  ? 'My Saved Events'
+                  : pathname.includes('/submit-feedback')
                     ? 'My Profile'
-                    : 'Home';
+                    : pathname.includes('/notifications')
+                      ? 'Notifications'
+                      : pathname.includes('/my-profile')
+                        ? 'My Profile'
+                        : 'Home';
   const navItems = [
     { href: '/home', label: 'Home', icon: '/svg icons navbar/Home.svg' },
     { href: '/dashboard', label: 'Dashboard', icon: '/svg icons navbar/Layout.svg' },
@@ -153,7 +155,12 @@ export function Sidebar() {
 
         <nav className="sidebar__nav">
           {navItems.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const active =
+              item.href === '/events-organized'
+                ? isOrganizedEventPath
+                : item.href === '/dashboard'
+                  ? (pathname === item.href || pathname.startsWith(`${item.href}/`)) && !isOrganizedEventPath
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
               <Link className={`sidebar__link${active ? ' is-active' : ''}`} href={item.href} aria-current={active ? 'page' : undefined} key={item.label}>
