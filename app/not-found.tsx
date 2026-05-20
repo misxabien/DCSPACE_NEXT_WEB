@@ -1,28 +1,27 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import "@/styles/pages/not-found.css";
+import type { Metadata } from 'next';
+import Image from 'next/image';
+import '@/styles/pages/not-found.css';
 
 export const metadata: Metadata = {
-  title: "Page not found — DC Space",
-  description: "This page could not be found.",
+  title: 'Page not found - DC Space',
+  description: 'This page could not be found.',
 };
 
 export default function NotFound() {
   return (
     <section className="not-found" aria-labelledby="not-found-heading">
       <div className="not-found__inner">
-        <p className="not-found__code" aria-hidden="true">
-          404
-        </p>
-        <h1 id="not-found-heading" className="not-found__title">
-          We couldn&apos;t find that page
+        <Image
+          className="not-found__image"
+          src="/assets/404 not found.svg"
+          width={540}
+          height={360}
+          alt=""
+          priority
+        />
+        <h1 id="not-found-heading" className="not-found__message">
+          Oops! The page you&apos;re looking for could not be found.
         </h1>
-        <p className="not-found__lede">The link may be broken or the page was removed.</p>
-        <div className="not-found__actions">
-          <Link href="/" className="not-found__btn">
-            Back to home
-          </Link>
-        </div>
       </div>
     </section>
   );

@@ -1,75 +1,43 @@
-/* 404 — full-viewport, no app shell; uses root body gradient + DC Space palette */
-
 .not-found {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--main-pad-y) var(--main-pad-x);
-  min-height: 100dvh;
   min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  padding: clamp(28px, 6vw, 72px) 24px;
 }
 
 .not-found__inner {
-  width: min(520px, 100%);
+  width: min(100%, 760px);
+  display: grid;
+  justify-items: center;
+  gap: clamp(22px, 3vw, 34px);
   text-align: center;
 }
 
-.not-found__code {
-  font-family: var(--font-display), "Montserrat", system-ui, sans-serif;
-  font-size: clamp(4rem, 12vw, 6.5rem);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.04em;
-  color: var(--nav-active);
-  text-shadow: 0 3px 0 rgba(92, 136, 229, 0.22);
-  margin: 0 0 8px;
+.not-found__image {
+  width: min(100%, 560px);
+  height: auto;
+  display: block;
 }
 
-.not-found__title {
-  font-family: var(--font-display), "Montserrat", system-ui, sans-serif;
-  font-size: clamp(1.35rem, 3.2vw, 1.75rem);
-  font-weight: 700;
-  color: var(--brown-icon);
-  margin: 0 0 14px;
-  line-height: 1.25;
-}
-
-.not-found__lede {
-  font-family: var(--font), sans-serif;
-  font-size: 1.05rem;
-  line-height: 1.55;
-  color: rgba(42, 33, 24, 0.78);
-  margin: 0 auto 28px;
-  max-width: 38ch;
-}
-
-.not-found__actions {
-  display: flex;
-  justify-content: center;
-}
-
-.not-found__btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 46px;
-  padding: 0 24px;
-  border-radius: var(--card-radius);
-  font-family: var(--font-ui), "Poppins", system-ui, sans-serif;
-  font-size: 0.95rem;
+.not-found__message {
+  margin: 0;
+  color: #156884;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: clamp(22px, 3vw, 28px);
   font-weight: 600;
-  border: 2px solid var(--btn-gold-border);
-  background: linear-gradient(180deg, var(--btn-gold) 0%, #d4b24f 100%);
-  color: var(--btn-brown);
-  box-shadow: 0 2px 0 var(--brown-shadow);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  text-shadow: 2px 2px 0 rgba(44, 166, 222, 0.28);
 }
 
-.not-found__btn:hover {
-  filter: brightness(1.04);
-  box-shadow: 0 3px 8px rgba(60, 40, 28, 0.2);
-}
+@media (max-width: 640px) {
+  .not-found__inner {
+    gap: 20px;
+  }
 
-.not-found__btn:focus-visible {
-  outline: 2px solid var(--nav-active);
-  outline-offset: 3px;
+  .not-found__message {
+    max-width: 18ch;
+  }
 }
