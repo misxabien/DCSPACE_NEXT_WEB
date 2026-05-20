@@ -284,75 +284,12 @@ export function MyProfileContent() {
 }
 
 function ProfileField({ label, value }: { label: string; value: string }) {
-  const [displayValue, setDisplayValue] = useState(value);
-  const [originalValue, setOriginalValue] = useState(value);
-  const [draftValue, setDraftValue] = useState(value);
-  const [fieldState, setFieldState] = useState<'view' | 'editing' | 'review'>('view');
-
-  useEffect(() => {
-    if (fieldState !== 'view') return;
-
-    setDisplayValue(value);
-    setOriginalValue(value);
-    setDraftValue(value);
-  }, [fieldState, value]);
-
-  const handleEdit = () => {
-    setOriginalValue(displayValue);
-    setDraftValue(displayValue);
-    setFieldState('editing');
-  };
-
-  const handleSave = () => {
-    const nextValue = draftValue.trim();
-
-    if (!nextValue) return;
-
-    setDisplayValue(nextValue);
-    setFieldState('review');
-  };
-
-  const handleUndo = () => {
-    setDisplayValue(originalValue);
-    setDraftValue(originalValue);
-    setFieldState('view');
-  };
-
   return (
     <div className="profile-field">
       <div>
         <strong>{label}</strong>
-        {value && fieldState === 'editing' ? (
-          <input
-            type="text"
-            value={draftValue}
-            aria-label={`Edit ${label}`}
-            onChange={(event) => setDraftValue(event.target.value)}
-          />
-        ) : (
-          value && <span>{displayValue}</span>
-        )}
+        {value && <span>{value}</span>}
       </div>
-      {value && fieldState === 'view' && (
-        <button type="button" onClick={handleEdit}>
-          Edit
-        </button>
-      )}
-      {value && fieldState === 'editing' && (
-        <button type="button" onClick={handleSave}>
-          Save
-        </button>
-      )}
-      {value && fieldState === 'review' && (
-        <span className="profile-field__review-actions">
-          <button className="profile-field__undo" type="button" onClick={handleUndo}>
-            Undo Changes
-          </button>
-          <button type="button" disabled>
-            In Review
-          </button>
-        </span>
-      )}
     </div>
   );
 }
