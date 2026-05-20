@@ -1,4 +1,4 @@
-import { REGISTERED_EVENTS_KEY, type RegisteredEvent, type UploadedRequirementFile } from "@/lib/attendance";
+import { REGISTERED_EVENTS_KEY, type RegisteredEvent, type UploadedRequirementFile } from '@/lib/attendance';
 
 export const ORGANIZED_EVENTS_KEY = 'dcspaceOrganizedEvents';
 export const SELECTED_BROWSE_EVENT_KEY = 'dcspaceSelectedBrowseEventId';
@@ -89,6 +89,32 @@ function readJson<T>(storage: Storage, key: string, fallback: T): T {
   }
 }
 
+function writeJsonSafely<T>(storage: Storage, key: string, value: T) {
+  try {
+    storage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function compactRegisteredEvents(events: RegisteredEvent[]) {
+  return events.map((event) => {
+    const compactEvent = event as RegisteredEvent & { bannerDataUrl?: string; overview?: string };
+
+    return {
+      ...compactEvent,
+      bannerDataUrl: '',
+      overview: compactEvent.overview ? compactEvent.overview.slice(0, 800) : compactEvent.overview,
+    };
+  });
+}
+
+function replaceWithCompactRegisteredEvents(events: RegisteredEvent[]) {
+  window.localStorage.removeItem(REGISTERED_EVENTS_KEY);
+  writeJsonSafely(window.localStorage, REGISTERED_EVENTS_KEY, compactRegisteredEvents(events));
+}
+
 function present(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : '';
 }
@@ -135,7 +161,7 @@ function datePartsFromInput(dateValue: string) {
 }
 
 function getEventDateDisplay(input: OrganizedEventInput, startDate: ReturnType<typeof datePartsFromInput>) {
-  if (!input.eventEndDate || input.eventEndDate === "Not provided") {
+  if (!input.eventEndDate || input.eventEndDate === 'Not provided') {
     return startDate.longDate;
   }
 
@@ -187,7 +213,7 @@ export function deleteOrganizedEvent(eventId: string) {
 
   writeOrganizedEvents(organizedEvents);
   window.localStorage.setItem(REGISTERED_EVENTS_KEY, JSON.stringify(registeredEvents));
-  window.dispatchEvent(new CustomEvent("dcspace-registered-events-updated"));
+  window.dispatchEvent(new CustomEvent('dcspace-registered-events-updated'));
 
   if (window.localStorage.getItem(SELECTED_BROWSE_EVENT_KEY) === eventId) {
     window.localStorage.removeItem(SELECTED_BROWSE_EVENT_KEY);
@@ -210,9 +236,9 @@ export function readBrowseEvents() {
 export function saveOrganizedEvent(input: OrganizedEventInput) {
   const dateParts = datePartsFromInput(input.eventDate);
   const eventDateDisplay = getEventDateDisplay(input, dateParts);
-  const eventName = present(input.eventName) || "Event Name";
-  const venue = present(input.venue) || "Event Venue";
-  const organizer = present(input.courseOrganizer) || "Event Organizer";
+  const eventName = present(input.eventName) || 'Event Name';
+  const venue = present(input.venue) || 'Event Venue';
+  const organizer = present(input.courseOrganizer) || 'Event Organizer';
   const startTime = formatTime(present(input.startTime));
   const endTime = formatTime(present(input.endTime));
   const id = normalizeKey(`${eventName}-${dateParts.year}-${dateParts.month}-${dateParts.day}-${organizer}`);
@@ -227,20 +253,20 @@ export function saveOrganizedEvent(input: OrganizedEventInput) {
     organizer,
     overview:
       present(input.eventDescription) ||
-      "This event was created from the frontend organize-event flow. The backend can later replace this local record with a saved database event.",
+      'This event was created from the frontend organize-event flow. The backend can later replace this local record with a saved database event.',
     requirements: input.requiredFiles || [],
-    school: present(input.school) || "School",
-    department: present(input.department) || "Department",
-    eventType: present(input.eventType) || "Event",
-    duration: present(input.duration) || "TBA",
-    minAttendance: present(input.minAttendance) || "TBA",
+    school: present(input.school) || 'School',
+    department: present(input.department) || 'Department',
+    eventType: present(input.eventType) || 'Event',
+    duration: present(input.duration) || 'TBA',
+    minAttendance: present(input.minAttendance) || 'TBA',
     attendanceAccess: input.attendanceAccess || 'all',
     allowedCourses: input.attendanceAccess === 'specific' ? input.allowedCourses || [] : [],
     registrationDeadline: present(input.registrationDeadline),
     bannerDataUrl: present(input.bannerDataUrl),
-    createdBy: present(window.localStorage.getItem("dcspaceStudentEmail")) || "local-frontend-user",
-    status: present(input.status) || "Pending",
-    certificate: "Processing",
+    createdBy: present(window.localStorage.getItem('dcspaceStudentEmail')) || 'local-frontend-user',
+    status: present(input.status) || 'Pending',
+    certificate: 'Processing',
   };
   const existing = readOrganizedEvents().filter((item) => item.id !== id);
 
@@ -277,8 +303,10 @@ export function registerEventForCurrentUser(event: FrontendEvent, requirementFil
         : registeredEvent,
     );
 
-    window.localStorage.setItem(REGISTERED_EVENTS_KEY, JSON.stringify(updatedEvents));
-    window.dispatchEvent(new CustomEvent("dcspace-registered-events-updated"));
+    if (!writeJsonSafely(window.localStorage, REGISTERED_EVENTS_KEY, updatedEvents)) {
+      replaceWithCompactRegisteredEvents(updatedEvents);
+    }
+    window.dispatchEvent(new CustomEvent('dcspace-registered-events-updated'));
 
     return updatedEvents;
   }
@@ -287,14 +315,16 @@ export function registerEventForCurrentUser(event: FrontendEvent, requirementFil
     ...registeredEvents,
     {
       ...event,
-      status: "Registered",
-      certificate: "Pending",
+      status: 'Registered',
+      certificate: 'Pending',
       requirementFile: firstRequirementFile,
       requirementFiles,
     },
   ];
 
-  window.localStorage.setItem(REGISTERED_EVENTS_KEY, JSON.stringify(nextRegisteredEvents));
+  if (!writeJsonSafely(window.localStorage, REGISTERED_EVENTS_KEY, nextRegisteredEvents)) {
+    replaceWithCompactRegisteredEvents(nextRegisteredEvents);
+  }
   window.dispatchEvent(new CustomEvent('dcspace-registered-events-updated'));
 
   return nextRegisteredEvents;

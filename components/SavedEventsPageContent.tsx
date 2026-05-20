@@ -241,8 +241,8 @@ export function SavedEventsPageContent() {
                 aria-label="Unsave event"
                 onClick={() => removeSavedEvent(event.id)}
               >
-                <Image className="saved-event-card__bookmark-outline" src="/svg icons navbar/Bookmark.svg" width={24} height={24} alt="" />
-                <Image className="saved-event-card__bookmark-fill" src="/assets/bookmark-fill.svg" width={24} height={24} alt="" />
+                <span className="saved-event-card__bookmark-outline" aria-hidden="true" />
+                <span className="saved-event-card__bookmark-fill" aria-hidden="true" />
               </button>
 
               <Link className="saved-event-card__link" href="/events/details" onClick={() => setSelectedBrowseEventId(event.id)}>

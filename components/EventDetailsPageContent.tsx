@@ -1,10 +1,10 @@
 'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import type { ChangeEvent } from "react";
-import { startTransition, useEffect, useState } from "react";
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import type { ChangeEvent } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import {
   getCertificateStatus,
   getCurrentAttendanceUser,
@@ -14,14 +14,14 @@ import {
   readUserAttendanceRecords,
   type RegisteredEvent,
   type UploadedRequirementFile,
-} from "@/lib/attendance";
+} from '@/lib/attendance';
 import {
   canOrganizeEvents,
   deleteOrganizedEvent,
   type FrontendEvent,
   readSelectedBrowseEvent,
   registerEventForCurrentUser,
-} from "@/lib/dc-events";
+} from '@/lib/dc-events';
 
 const HOME_SAVED_EVENTS_KEY = 'dcspaceHomeSavedEvents';
 const createEventIconBase = '/svg icons organized events page/svg icons create event form page';
@@ -51,7 +51,7 @@ const fallbackEventDetails: FrontendEvent = {
   requirements: ["Parent's Consent Form"],
 };
 
-type EventDetailsSource = "events" | "dashboard" | "organized";
+type EventDetailsSource = 'events' | 'dashboard' | 'organized';
 
 type EventDetailsPageContentProps = {
   source?: EventDetailsSource;
@@ -88,20 +88,20 @@ function readRequirementFile(file: File): Promise<UploadedRequirementFile> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.addEventListener("load", () => {
-      if (typeof reader.result !== "string") {
-        reject(new Error("Unable to read uploaded file."));
+    reader.addEventListener('load', () => {
+      if (typeof reader.result !== 'string') {
+        reject(new Error('Unable to read uploaded file.'));
         return;
       }
 
       resolve({
         name: file.name,
-        type: file.type || "application/octet-stream",
+        type: file.type || 'application/octet-stream',
         size: file.size,
         dataUrl: reader.result,
       });
     });
-    reader.addEventListener("error", () => reject(reader.error || new Error("Unable to read uploaded file.")));
+    reader.addEventListener('error', () => reject(reader.error || new Error('Unable to read uploaded file.')));
     reader.readAsDataURL(file);
   });
 }
@@ -162,7 +162,7 @@ function DetailRow({
   );
 }
 
-function registeredEventMatchesDate(event: RegisteredEvent, eventDate?: EventDetailsPageContentProps["eventDate"]) {
+function registeredEventMatchesDate(event: RegisteredEvent, eventDate?: EventDetailsPageContentProps['eventDate']) {
   if (!eventDate?.month || !eventDate.day || !eventDate.year) {
     return false;
   }
@@ -187,10 +187,10 @@ function toEventDetails(event: RegisteredEvent, fallback: FrontendEvent): Fronte
   };
 }
 
-export function EventDetailsPageContent({ source = "events", eventDate }: EventDetailsPageContentProps) {
+export function EventDetailsPageContent({ source = 'events', eventDate }: EventDetailsPageContentProps) {
   const router = useRouter();
-  const isDashboardSource = source === "dashboard";
-  const isOrganizedSource = source === "organized";
+  const isDashboardSource = source === 'dashboard';
+  const isOrganizedSource = source === 'organized';
   const registeredEventStatus = getRegisteredEventStatusLabel(eventDate);
   const [showRequirements, setShowRequirements] = useState(false);
   const [showRequirementSuccess, setShowRequirementSuccess] = useState(false);
@@ -272,23 +272,29 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
   const handleDeleteEvent = () => {
     deleteOrganizedEvent(selectedEvent.id);
     setShowDeleteConfirm(false);
-    window.sessionStorage.setItem("dcspaceDashboardView", "organized");
-    router.push("/dashboard");
+    window.sessionStorage.setItem('dcspaceDashboardView', 'organized');
+    router.push('/dashboard');
   };
 
   const handleConfirm = async () => {
+    /*
+    Temporarily disabled so the submit flow can continue to the success popup
+    even before required event files are uploaded.
     const missingRequirements = eventRequirements.some((requirement) => !selectedRequirementFiles[requirement]);
 
     if (missingRequirements) {
       setShowRequirementWarning(true);
       return;
     }
+    */
 
     const requirementFiles = await Promise.all(
-      eventRequirements.map(async (requirementName) => ({
-        ...(await readRequirementFile(selectedRequirementFiles[requirementName])),
-        requirementName,
-      })),
+      eventRequirements
+        .filter((requirementName) => selectedRequirementFiles[requirementName])
+        .map(async (requirementName) => ({
+          ...(await readRequirementFile(selectedRequirementFiles[requirementName])),
+          requirementName,
+        })),
     );
 
     registerEventForCurrentUser(selectedEvent, requirementFiles);
@@ -299,8 +305,12 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
     if (!isDashboardSource && !isOrganizedSource) {
       setShowRequirementSuccess(true);
       window.setTimeout(() => {
+        setRegisteredEvents(readRegisteredEvents());
         setShowRequirements(false);
         setShowRequirementSuccess(false);
+        startTransition(() => {
+          router.replace('/events/details');
+        });
       }, 2200);
       return;
     }
@@ -349,9 +359,9 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
   const isPassedBrowseEvent = getEventStatus(eventDetails) === 'Passed';
   const isPassedJoinedBrowseEvent = isPassedBrowseEvent && Boolean(matchingRegisteredEvent);
   const receivedCertificate = getCertificateStatus(matchingAttendanceRecord, matchingRegisteredEvent || eventDetails) === 'Download';
-  const isPendingAdminApproval = eventDetails.status?.toLowerCase() === 'pending';
-  const isPendingFileApproval =
-    isJoined && eventRequirements.length > 0 && Boolean(matchingRegisteredEvent?.requirementFiles?.length || matchingRegisteredEvent?.requirementFile);
+  // Temporarily disabled with the pending admin approval message in the CTA.
+  // const isPendingAdminApproval = eventDetails.status?.toLowerCase() === 'pending';
+  const isPendingFileApproval = isJoined && eventRequirements.length > 0;
 
   if (isBrowseSource) {
     return (
@@ -382,20 +392,8 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
                 aria-label={isSaved ? 'Remove from saved events' : 'Save event'}
                 onClick={toggleSavedEvent}
               >
-                <Image
-                  className="browse-event-detail__bookmark-outline"
-                  src="/svg icons navbar/Bookmark.svg"
-                  width={30}
-                  height={30}
-                  alt=""
-                />
-                <Image
-                  className="browse-event-detail__bookmark-fill"
-                  src="/assets/bookmark-fill.svg"
-                  width={30}
-                  height={30}
-                  alt=""
-                />
+                <span className="browse-event-detail__bookmark-outline" aria-hidden="true" />
+                <span className="browse-event-detail__bookmark-fill" aria-hidden="true" />
               </button>
               <button className="browse-event-detail__icon-btn" type="button" aria-label="Share event" onClick={() => void handleShareEvent()}>
                 <Image src="/assets/share-icon.svg" width={30} height={30} alt="" />
@@ -436,12 +434,15 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
             </div>
 
             <aside className="browse-event-detail__cta">
+              {/*
+              Temporarily disabled. Restore this branch when pending admin approval messaging is needed again.
               {isPendingAdminApproval ? (
                 <p className="event-pending-admin-message">
                   This event is still pending from being approved by the admin.{' '}
                   <Link href="/submit-feedback">Submit Feedback.</Link>
                 </p>
-              ) : isPassedJoinedBrowseEvent ? (
+              ) : */}
+              {isPassedJoinedBrowseEvent ? (
                 <button
                   className={`event-certificate-status${receivedCertificate ? ' is-received' : ' is-missing'}`}
                   type="button"
@@ -452,7 +453,7 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
                 </button>
               ) : isPendingFileApproval ? (
                 <button className="attend-event-button attend-event-button--pending" type="button">
-                  Pending file submission approval
+                  Pending File Submission Approval
                 </button>
               ) : isJoined ? (
                 <button className="attend-event-button attend-event-button--joined" type="button">
@@ -488,7 +489,7 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
   }
 
   return (
-    <section className={`event-details-page${isRedirecting ? " is-exiting" : ""}${showDeleteConfirm ? " is-delete-confirming" : ""}`}>
+    <section className={`event-details-page${isRedirecting ? ' is-exiting' : ''}${showDeleteConfirm ? ' is-delete-confirming' : ''}`}>
       {isDashboardSource ? (
         <section className="registered-details-tabs" aria-label="Dashboard sections">
           <Link className="registered-details-back" href="/dashboard">
@@ -622,15 +623,15 @@ function SubmittedRequirementLink({
   requirement: string;
   file: UploadedRequirementFile;
 }) {
-  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 
   return (
     <span className="submitted-requirement">
       <a
         className="submitted-requirement__link"
         href={file.dataUrl}
-        target={isPdf ? "_blank" : undefined}
-        rel={isPdf ? "noreferrer" : undefined}
+        target={isPdf ? '_blank' : undefined}
+        rel={isPdf ? 'noreferrer' : undefined}
         download={isPdf ? undefined : file.name}
       >
         {requirement}
