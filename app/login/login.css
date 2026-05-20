@@ -399,6 +399,10 @@
   filter: brightness(0) invert(1);
 }
 
+.login-scope .role--faculty .role__btn:first-child img {
+  filter: brightness(0) saturate(100%) invert(55%) sepia(88%) saturate(1233%) hue-rotate(166deg) brightness(92%) contrast(90%);
+}
+
 .login-scope .sr-only {
   position: absolute;
   width: 1px;
@@ -649,7 +653,7 @@
   height: 36px;
   border: 0;
   border-radius: 3px;
-  background: #6b7df2;
+  background: #448aff;
   color: #fff;
   box-shadow: 0 2px 3px rgba(50, 59, 77, 0.32);
   font-family: var(--font-poppins), sans-serif;
@@ -668,11 +672,28 @@
 }
 
 .login-scope .register-step--account h2 {
-  margin-bottom: 26px;
+  margin-bottom: 18px;
 }
 
 .login-scope .register-field--compact {
-  margin-bottom: 34px;
+  margin-bottom: 20px;
+}
+
+.login-scope .register-step--verify h2 {
+  margin-bottom: 8px;
+}
+
+.login-scope .register-verify-copy {
+  margin: 0 0 64px;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.login-scope .register-field--verify {
+  margin-bottom: 0;
 }
 
 .login-scope .register-password-field {
@@ -756,7 +777,7 @@
 }
 
 .login-scope .password-match {
-  margin: -26px 0 0 4px;
+  margin: -15px 0 0 4px;
   font-family: var(--font-poppins), sans-serif;
   font-size: 13px;
   font-weight: 400;
