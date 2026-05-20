@@ -186,7 +186,7 @@ export function HomePageContent() {
       <header className="home-page__header">
         <div className="home-page__copy">
           <h2>
-            Upcoming <span>Events</span>
+            Explore <span>Events</span>
           </h2>
           <div className="home-page__filters" aria-label="Event filters">
             {filters.map((filter) => (
@@ -283,19 +283,24 @@ export function HomePageContent() {
                 </button>
 
                 <Link className="home-event-card__link" href="/home/details" onClick={() => setSelectedBrowseEventId(event.id)}>
-                  <span className="home-event-card__date">
-                    <span>{event.month}</span>
-                    <strong>{event.day}</strong>
+                  <span className="home-event-card__media" aria-hidden="true">
+                    {event.bannerDataUrl && <Image src={event.bannerDataUrl} alt="" fill unoptimized />}
                   </span>
-                  <span className="home-event-card__details">
-                    <strong>{event.name}</strong>
-                    <span className="home-event-card__venue">{event.venue}</span>
-                    <span className="home-event-card__time">{getEventTimeDisplay(event.dateTime)}</span>
-                    {isPassedJoinedEvent && (
-                      <span className={`home-event-card__certificate${receivedCertificate ? ' is-received' : ' is-missing'}`}>
-                        {receivedCertificate ? 'Certificate received' : 'No certificate received'}
+                  <span className="home-event-card__content">
+                    <span className="home-event-card__date">
+                      <span>{event.month}</span>
+                      <strong>{event.day}</strong>
+                    </span>
+                    <span className="home-event-card__details">
+                      <strong>{event.name}</strong>
+                      <span className="home-event-card__venue">{event.venue}</span>
+                      <span className="home-event-card__time">{getEventTimeDisplay(event.dateTime)}</span>
+                      {isPassedJoinedEvent && (
+                        <span className={`home-event-card__certificate${receivedCertificate ? ' is-received' : ' is-missing'}`}>
+                          {receivedCertificate ? 'Certificate received' : 'No certificate received'}
+                        </span>
+                      )}
                       </span>
-                    )}
                   </span>
                 </Link>
               </article>
