@@ -350,7 +350,7 @@ export function AttendancePageContent() {
           </div>
 
           <section className="attendance-section" aria-label="Ongoing event attendance">
-            <h2>Ongoing Event Attendance</h2>
+            <h2>Ongoing Attendance</h2>
             <div className="attendance-event-grid">
               {ongoingEvents.length ? ongoingEvents.map(renderAttendanceCard) : (
                 <p className="completed-empty-message">No active events at the moment.</p>
@@ -359,7 +359,7 @@ export function AttendancePageContent() {
           </section>
 
           <section className="attendance-section" aria-label="Completed attendance">
-            <h2>Attendance Completed</h2>
+            <h2>Completed Attendance</h2>
             {renderAttendanceFilters(
               'completed',
               completedFilter,

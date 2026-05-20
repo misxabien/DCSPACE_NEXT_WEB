@@ -117,14 +117,14 @@ main.main::-webkit-scrollbar,
 
 .attendance-filter:hover,
 .attendance-filter.is-active {
-  border-color: #20a8f4;
-  color: #20a8f4;
+  border-color: #D49434;
+  color: #D49434;
 }
 
 .attendance-filter-wrap .attendance-filter.is-open,
 .attendance-filter-wrap .attendance-filter[aria-pressed="true"] {
-  border-color: #20a8f4;
-  color: #20a8f4;
+  border-color: #D49434;
+  color: #D49434;
 }
 
 .attendance-filter.has-date-picker::after {
