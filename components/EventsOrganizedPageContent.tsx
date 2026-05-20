@@ -2,8 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import type { CSSProperties } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { type RegisteredEvent, readRegisteredEvents } from '@/lib/attendance';
 import { type FrontendEvent, readOrganizedEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
 
@@ -50,17 +49,6 @@ function getEventStatus(event: FrontendEvent): StatusKey {
   return 'upcoming';
 }
 
-function getDaysUntil(event: FrontendEvent) {
-  const eventDate = getEventDate(event);
-
-  if (!eventDate) return Number.POSITIVE_INFINITY;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  eventDate.setHours(0, 0, 0, 0);
-
-  return Math.ceil((eventDate.getTime() - today.getTime()) / 86_400_000);
-}
 
 function getApprovalStatus(event: FrontendEvent) {
   const rawStatus = event.status?.toLowerCase() || '';
@@ -98,31 +86,6 @@ export function EventsOrganizedPageContent() {
     };
   }, []);
 
-  const counts = useMemo(
-    () =>
-      events.reduce<Record<StatusKey, number>>(
-        (current, event) => {
-          current[getEventStatus(event)] += 1;
-          return current;
-        },
-        { upcoming: 0, ongoing: 0, completed: 0, pending: 0 },
-      ),
-    [events],
-  );
-  const totalCount = Math.max(events.length, 1);
-  const pieStops = (Object.keys(statusMeta) as StatusKey[]).reduce(
-    (current, key) => {
-      const percent = (counts[key] / totalCount) * 100;
-      const stop = `${statusMeta[key].color} ${current.start}% ${current.start + percent}%`;
-
-      return {
-        start: current.start + percent,
-        stops: [...current.stops, stop],
-      };
-    },
-    { start: 0, stops: [] as string[] },
-  ).stops;
-
   const visibleEvents = events
     .filter((event) => eventFilter === 'All' || statusMeta[getEventStatus(event)].label === eventFilter)
     .filter((event) => {
@@ -135,13 +98,6 @@ export function EventsOrganizedPageContent() {
       );
     });
   const approvalEvents = events.filter((event) => approvalFilter === 'All' || getApprovalStatus(event) === approvalFilter);
-  const timelineEvents = events
-    .filter((event) => {
-      const days = getDaysUntil(event);
-      return days >= 1 && days <= 3;
-    })
-    .sort((first, second) => getDaysUntil(first) - getDaysUntil(second))
-    .slice(0, 3);
 
   const getRegisteredCount = (eventId: string) => registeredEvents.filter((event) => event.id === eventId).length;
 
@@ -223,7 +179,11 @@ export function EventsOrganizedPageContent() {
             />
           </label>
         </div>
-        <div className="organized-event-grid">{visibleEvents.map((event) => renderEventCard(event))}</div>
+        {visibleEvents.length ? (
+          <div className="organized-event-grid">{visibleEvents.map((event) => renderEventCard(event))}</div>
+        ) : (
+          <p className="organized-empty">You haven’t organized any events yet.</p>
+        )}
       </section>
 
       <section className="organized-section">
@@ -246,49 +206,13 @@ export function EventsOrganizedPageContent() {
             </div>
           </div>
         </div>
-        <div className="organized-event-grid">{approvalEvents.map((event) => renderEventCard(event, true))}</div>
+        {approvalEvents.length ? (
+          <div className="organized-event-grid">{approvalEvents.map((event) => renderEventCard(event, true))}</div>
+        ) : (
+          <p className="organized-empty">You have no pending event requests.</p>
+        )}
       </section>
 
-      <section className="organized-section organized-summary">
-        <h2>
-          Quick <span>Summary</span>
-        </h2>
-        <div className="organized-summary__grid">
-          <article className="organized-panel organized-timeline">
-            <h3>Upcoming Events Timeline</h3>
-            {timelineEvents.length ? (
-              timelineEvents.map((event) => (
-                <p key={event.id}>
-                  <span className="organized-dot" />
-                  <strong>{event.name || 'Event Name'}</strong>
-                  <small>{event.dateTime}</small>
-                </p>
-              ))
-            ) : (
-              <p className="organized-empty">No upcoming events</p>
-            )}
-          </article>
-          <article className="organized-panel organized-status-counts">
-            <h3>Events Status Counts</h3>
-            <div className="organized-status-counts__body">
-              <div
-                className="organized-status-pie"
-                style={{ background: events.length ? `conic-gradient(${pieStops.join(', ')})` : '#1c1d21' }}
-                aria-hidden="true"
-              />
-              <div className="organized-status-legend">
-                {(Object.keys(statusMeta) as StatusKey[]).map((key) => (
-                  <p key={key}>
-                    <span className="organized-status-dot" style={{ '--dot-color': statusMeta[key].color } as CSSProperties} />
-                    <strong>{statusMeta[key].label}</strong>
-                    <small>{Math.round((counts[key] / totalCount) * 100)}%</small>
-                  </p>
-                ))}
-              </div>
-            </div>
-          </article>
-        </div>
-      </section>
     </section>
   );
 }
