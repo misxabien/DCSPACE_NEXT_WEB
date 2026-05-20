@@ -200,7 +200,6 @@ button.profile-upload {
   line-height: 1.25;
 }
 
-.profile-field button,
 .profile-feedback a {
   min-width: 66px;
   min-height: 20px;
@@ -218,56 +217,8 @@ button.profile-upload {
   text-decoration: none;
 }
 
-.profile-field button,
 .profile-feedback a {
   cursor: pointer;
-}
-
-.profile-field button:disabled {
-  cursor: default;
-}
-
-.profile-field input {
-  width: min(100%, 190px);
-  min-height: 24px;
-  border: 1px solid #ececec;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #6b6b6b;
-  font-family: var(--font-ui), "Poppins", sans-serif;
-  font-size: 10px;
-  font-weight: 500;
-  padding: 3px 10px;
-}
-
-.profile-field input:focus {
-  border-color: rgba(107, 125, 242, 0.5);
-  outline: 2px solid rgba(107, 125, 242, 0.16);
-}
-
-.profile-field__review-actions {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  flex: 0 0 auto;
-}
-
-.profile-field__review-actions .profile-field__undo {
-  min-width: 0;
-  background: transparent;
-  color: #515151;
-  font-size: 9px;
-  padding: 0;
-  text-decoration: none;
-}
-
-.profile-field__review-actions .profile-field__undo:hover,
-.profile-field__review-actions .profile-field__undo:focus-visible {
-  background: transparent;
-  outline: none;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 
 .profile-side {
