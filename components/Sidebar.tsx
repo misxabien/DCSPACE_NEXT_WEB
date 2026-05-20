@@ -97,6 +97,7 @@ export function Sidebar() {
   };
 
   const hasUnreadNotifications = notifications.some((notification) => !notification.isRead);
+  const isSubmitFeedbackPage = pathname.includes('/submit-feedback');
   const profilePhotoStyle = {
     transform: `translate(${profilePhotoFit.x}%, ${profilePhotoFit.y}%) scale(${profilePhotoFit.zoom})`,
   } as CSSProperties;
@@ -113,6 +114,8 @@ export function Sidebar() {
               ? 'Certificates'
               : pathname.includes('/events')
                 ? 'My Saved Events'
+              : pathname.includes('/submit-feedback')
+                ? 'My Profile'
                 : pathname.includes('/notifications')
                   ? 'Notifications'
                   : pathname.includes('/my-profile')
@@ -168,10 +171,18 @@ export function Sidebar() {
       </aside>
 
       <header className="topbar" aria-label="Page header">
-        <h1>{pageTitle}</h1>
+        <h1>
+          {isSubmitFeedbackPage ? (
+            <Link className="topbar__title-link" href="/my-profile">
+              {pageTitle}
+            </Link>
+          ) : (
+            pageTitle
+          )}
+        </h1>
         <div className="topbar__right">
           <Link
-            className={`topbar__profile-pill${pathname.includes('/my-profile') ? ' is-active' : ''}`}
+            className={`topbar__profile-pill${pathname.includes('/my-profile') || pathname.includes('/submit-feedback') ? ' is-active' : ''}`}
             href="/my-profile"
             aria-label="Open profile"
           >

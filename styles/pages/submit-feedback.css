@@ -4,94 +4,280 @@
   align-items: start;
   background: #efefef;
   color: #000000;
-  padding: 32px 36px 56px;
+  padding: 24px 32px 56px;
 }
 
 .submit-feedback-panel {
-  width: min(100%, 760px);
-  border: 1px solid #ececec;
+  position: relative;
+  width: 100%;
+  min-height: 420px;
   border-radius: 8px;
   display: grid;
-  gap: 18px;
+  align-content: start;
+  gap: 10px;
   background: #ffffff;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
-  padding: 28px;
+  box-shadow: 0 12px 27px rgba(0, 0, 0, 0.22);
+  padding: 34px 44px 24px;
 }
 
 .submit-feedback-panel h2 {
   margin: 0;
   color: #000000;
   font-family: var(--font-display), "Montserrat", sans-serif;
-  font-size: clamp(28px, 3vw, 38px);
+  font-size: clamp(30px, 3vw, 38px);
   font-weight: 800;
   line-height: 1.05;
 }
 
 .submit-feedback-panel p {
-  max-width: 560px;
-  margin: 0;
-  color: rgba(0, 0, 0, 0.55);
+  margin: 0 0 28px;
+  color: #000000;
   font-family: var(--font-ui), "Poppins", sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.45;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .submit-feedback-form {
   display: grid;
-  gap: 16px;
-}
-
-.submit-feedback-form label {
-  display: grid;
-  gap: 8px;
-  color: #515151;
+  gap: 18px;
   font-family: var(--font-ui), "Poppins", sans-serif;
-  font-size: 14px;
-  font-weight: 700;
 }
 
-.submit-feedback-form input,
-.submit-feedback-form textarea {
+.submit-feedback-form label,
+.submit-feedback-rating {
+  color: #000000;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.submit-feedback-type,
+.submit-feedback-event {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.submit-feedback-type select,
+.submit-feedback-event select {
+  min-width: 148px;
+  height: 30px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  background: #ffffff;
+  background-image: url("/assets/dropdown-fill.svg");
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+  background-size: 10px 10px;
+  color: #000000;
+  font: 600 13px/1 var(--font-ui), "Poppins", sans-serif;
+  appearance: none;
+  padding: 0 32px 0 10px;
+}
+
+.submit-feedback-event select {
+  min-width: 230px;
+}
+
+.submit-feedback-event select:disabled {
+  color: rgba(0, 0, 0, 0.48);
+  cursor: default;
+}
+
+.submit-feedback-rating {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.submit-feedback-rating div {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.submit-feedback-rating button {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  display: inline-grid;
+  place-items: center;
+  background: transparent;
+  color: #000000;
+  cursor: pointer;
+  font-size: 21px;
+  line-height: 1;
+  padding: 0;
+}
+
+.submit-feedback-rating button.is-selected {
+  color: #ffc107;
+}
+
+.submit-feedback-comment {
+  display: grid;
+  gap: 10px;
+}
+
+.submit-feedback-comment textarea {
   width: 100%;
-  border: 1px solid #c9c9c9;
-  border-radius: 4px;
+  min-height: 134px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
   background: #ffffff;
   color: #000000;
-  font: 500 15px/1.4 var(--font-ui), "Poppins", sans-serif;
+  font: 500 14px/1.45 var(--font-ui), "Poppins", sans-serif;
   padding: 12px 14px;
-}
-
-.submit-feedback-form textarea {
-  min-height: 160px;
   resize: vertical;
 }
 
-.submit-feedback-form input:focus,
-.submit-feedback-form textarea:focus {
+.submit-feedback-type select:focus,
+.submit-feedback-event select:focus,
+.submit-feedback-comment textarea:focus {
   border-color: #6b7df2;
   outline: 3px solid rgba(107, 125, 242, 0.18);
 }
 
-.submit-feedback-form button {
-  width: min(100%, 220px);
-  min-height: 48px;
+.submit-feedback-button {
+  width: min(100%, 160px);
+  min-height: 36px;
   border: 0;
-  border-radius: 4px;
+  border-radius: 999px;
   justify-self: end;
-  background: #6b7df2;
-  color: #ffffff;
+  align-self: end;
+  background: rgba(107, 125, 242, 0.3);
+  color: #515151;
   cursor: pointer;
   font-family: var(--font-ui), "Poppins", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 18px;
 }
 
-.submit-feedback-form button:hover,
-.submit-feedback-form button:focus-visible {
-  background: #5e70df;
-  outline: 3px solid rgba(107, 125, 242, 0.22);
-  outline-offset: 2px;
+.submit-feedback-button:hover,
+.submit-feedback-button:focus-visible {
+  background: rgba(107, 125, 242, 0.42);
+  outline: none;
+}
+
+.feedback-success-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.68);
+  padding: 28px;
+  animation: feedbackOverlayIn 0.18s ease both;
+}
+
+.feedback-success-modal {
+  position: relative;
+  width: min(100%, 660px);
+  min-height: 250px;
+  border-radius: 6px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  overflow: hidden;
+  background: #ffffff;
+  color: #49454f;
+  box-shadow: 0 12px 27px rgba(0, 0, 0, 0.25);
+  padding: 48px 34px;
+  text-align: center;
+  animation: feedbackModalIn 0.24s cubic-bezier(0.2, 0.85, 0.22, 1) both;
+}
+
+.feedback-success-modal h3 {
+  margin: 0 0 8px;
+  color: #49454f;
+  font-family: var(--font-display), "Montserrat", sans-serif;
+  font-size: clamp(20px, 2.2vw, 26px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.feedback-success-modal p {
+  margin: 0;
+  color: #49454f;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.feedback-confetti {
+  position: absolute;
+  top: 24px;
+  width: 10px;
+  height: 18px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: feedbackConfettiFall 1.4s ease-out both;
+}
+
+.feedback-confetti--one {
+  left: 18%;
+  background: #2ca6de;
+}
+
+.feedback-confetti--two {
+  left: 33%;
+  background: #ffc107;
+  animation-delay: 0.08s;
+}
+
+.feedback-confetti--three {
+  left: 50%;
+  background: #6b7df2;
+  animation-delay: 0.02s;
+}
+
+.feedback-confetti--four {
+  left: 66%;
+  background: #8ab6ff;
+  animation-delay: 0.12s;
+}
+
+.feedback-confetti--five {
+  left: 80%;
+  background: #ba7710;
+  animation-delay: 0.05s;
+}
+
+@keyframes feedbackOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes feedbackModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes feedbackConfettiFall {
+  0% {
+    opacity: 0;
+    transform: translateY(-18px) rotate(0deg);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(180px) rotate(220deg);
+  }
 }
 
 @media (max-width: 720px) {
@@ -100,10 +286,18 @@
   }
 
   .submit-feedback-panel {
-    padding: 22px;
+    padding: 26px 22px;
   }
 
-  .submit-feedback-form button {
+  .submit-feedback-type,
+  .submit-feedback-event,
+  .submit-feedback-rating {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .submit-feedback-button {
     justify-self: stretch;
     width: 100%;
   }
