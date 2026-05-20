@@ -1,6 +1,9 @@
 .app {
   --sidebar-open-width: 205px;
   --sidebar-closed-width: 58px;
+  --content-pad-left: 28px;
+  --content-pad-right: 36px;
+  --content-pad-mobile: 16px;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
@@ -14,7 +17,7 @@
   width: var(--sidebar-open-width);
   display: flex;
   flex-direction: column;
-  background: #6b7df2;
+  background: #8AB6FF;
   color: #ffffff;
   padding: 30px 14px 18px;
   transition: width 0.2s ease, padding 0.2s ease;
@@ -107,7 +110,7 @@
 
 .sidebar__link:hover,
 .sidebar__link.is-active {
-  background: rgba(255, 255, 255, 0.18);
+  background: #397DEF;
 }
 
 .sidebar__icon {
@@ -211,7 +214,7 @@
   gap: 24px;
   background: #ffffff;
   color: #000000;
-  padding: 0 36px 0 28px;
+  padding: 0 var(--content-pad-right) 0 var(--content-pad-left);
   transition: left 0.2s ease;
 }
 
@@ -250,7 +253,7 @@
 
 .topbar__account,
 .topbar__profile-pill {
-  color: #6b7df2;
+  color: #8AB6FF;
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 14px;
   font-weight: 500;
@@ -269,13 +272,13 @@
 
 .topbar__profile-pill:hover,
 .topbar__profile-pill.is-active {
-  background: rgba(107, 125, 242, 0.3);
+  background: rgba(138, 182, 255, 0.4);
 }
 
 .topbar__avatar-link {
   width: 44px;
   height: 44px;
-  border: 1px solid #6b7df2;
+  border: 1px solid #8AB6FF;
   border-radius: 50%;
   display: inline-flex;
   overflow: hidden;
@@ -298,7 +301,7 @@
   display: inline-grid;
   place-items: center;
   background: transparent;
-  color: #6b7df2;
+  color: #8AB6FF;
   cursor: pointer;
   padding: 0;
   text-decoration: none;
@@ -317,11 +320,11 @@
 
 .topbar__notification-button:hover,
 .topbar__notification-button.is-active {
-  background: rgba(107, 125, 242, 0.4);
+  background: rgba(138, 182, 255, 0.4);
 }
 
 .topbar__help {
-  border: 3px solid #6b7df2;
+  border: 3px solid #8AB6FF;
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 16px;
   font-weight: 600;
@@ -523,7 +526,7 @@
   .sidebar--collapsed + .topbar {
     left: var(--sidebar-closed-width);
     min-height: 64px;
-    padding-inline: 16px;
+    padding-inline: var(--content-pad-mobile);
   }
 
   .topbar h1 {
