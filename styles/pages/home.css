@@ -157,6 +157,31 @@
   gap: 52px;
 }
 
+.home-empty-state {
+  min-height: calc(100vh - 300px);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 24px;
+  padding: 28px 24px 48px;
+  text-align: center;
+}
+
+.home-empty-state img {
+  width: clamp(180px, 24vw, 240px);
+  height: auto;
+}
+
+.home-empty-state p {
+  max-width: 390px;
+  margin: 0;
+  color: rgba(0, 0, 0, 0.5);
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
 .home-event-card {
   position: relative;
   min-height: 250px;
@@ -344,5 +369,13 @@
 
   .home-event-grid {
     grid-template-columns: 1fr;
+  }
+
+  .home-empty-state {
+    min-height: calc(100vh - 280px);
+  }
+
+  .home-empty-state p {
+    font-size: 18px;
   }
 }
