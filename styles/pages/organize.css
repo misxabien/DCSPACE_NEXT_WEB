@@ -215,6 +215,10 @@
         min-height: 470px;
       }
 
+      .organize-form-shell--step-1 .wizard-page {
+        min-height: 310px;
+      }
+
       .wizard-page.is-active {
         display: block;
         animation: dcspace-rise-in 0.26s cubic-bezier(0.2, 0.85, 0.22, 1) both;
@@ -319,6 +323,15 @@
         min-width: 0;
       }
 
+      .form-row.attendance-access {
+        align-items: start;
+      }
+
+      .form-row.attendance-access > .form-row__label {
+        min-height: 34px;
+        align-items: center;
+      }
+
       .form-row--textarea {
         align-items: start;
       }
@@ -414,6 +427,133 @@
 
       .input-inline:focus {
         border-color: var(--nav-active);
+      }
+
+      .attendance-access__body {
+        min-width: 0;
+        display: grid;
+        gap: 10px;
+        justify-items: start;
+      }
+
+      .attendance-access__choices {
+        width: min(100%, 560px);
+        display: grid;
+        grid-template-columns: minmax(120px, 150px) minmax(180px, 1fr);
+        align-items: center;
+        gap: clamp(18px, 5vw, 54px);
+        min-height: 34px;
+      }
+
+      .attendance-access__choices label {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        color: #49454f;
+        cursor: pointer;
+        font-family: var(--font-ui), "Poppins", sans-serif;
+        font-size: 0.82rem;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      .attendance-access__choices input,
+      .required-files__choice input {
+        width: 16px;
+        height: 16px;
+        accent-color: #6b7df2;
+      }
+
+      .course-multiselect {
+        position: relative;
+        width: min(100%, 560px);
+      }
+
+      .course-multiselect__validator {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .course-multiselect__button {
+        width: 100%;
+        min-height: 34px;
+        border: 1px solid var(--input-border);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        background: #ffffff;
+        color: #49454f;
+        cursor: pointer;
+        font-family: var(--font-ui), "Poppins", sans-serif;
+        font-size: 0.76rem;
+        font-weight: 400;
+        padding: 0 14px;
+        text-align: left;
+      }
+
+      .course-multiselect__button span:first-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .course-multiselect__button span:last-child {
+        color: #49454f;
+        font-size: 18px;
+        line-height: 1;
+      }
+
+      .course-multiselect__menu {
+        position: absolute;
+        z-index: 8;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        max-height: 210px;
+        overflow-y: auto;
+        border: 1px solid var(--input-border);
+        border-radius: 6px;
+        background: #ffffff;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+        padding: 6px;
+      }
+
+      .course-multiselect__option {
+        min-height: 30px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-radius: 4px;
+        color: #49454f;
+        cursor: pointer;
+        font-family: var(--font-ui), "Poppins", sans-serif;
+        font-size: 0.76rem;
+        font-weight: 500;
+        padding: 6px 8px;
+      }
+
+      .course-multiselect__option:hover,
+      .course-multiselect__option:focus-within {
+        background: rgba(107, 125, 242, 0.12);
+      }
+
+      .course-multiselect__option input {
+        width: 15px;
+        height: 15px;
+        accent-color: #6b7df2;
+      }
+
+      @media (max-width: 760px) {
+        .attendance-access__choices {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
       }
 
       .date-fields {
@@ -957,8 +1097,12 @@
         align-items: center;
         justify-content: flex-end;
         gap: 18px;
-        margin-top: 32px;
+        margin-top: 22px;
         animation: dcspace-rise-in 0.26s cubic-bezier(0.2, 0.85, 0.22, 1) both;
+      }
+
+      .organize-form-shell--step-1 .form-actions {
+        margin-top: 8px;
       }
 
       .btn-back {

@@ -6,12 +6,17 @@ import { useRouter } from "next/navigation";
 import type { ChangeEvent } from "react";
 import { startTransition, useEffect, useState } from "react";
 import {
+  getCertificateStatus,
+  getCurrentAttendanceUser,
+  getEventStatus,
   getRegisteredEventId,
   readRegisteredEvents,
+  readUserAttendanceRecords,
   type RegisteredEvent,
   type UploadedRequirementFile,
 } from "@/lib/attendance";
 import {
+  canOrganizeEvents,
   deleteOrganizedEvent,
   type FrontendEvent,
   readSelectedBrowseEvent,
@@ -188,6 +193,7 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
   const isOrganizedSource = source === "organized";
   const registeredEventStatus = getRegisteredEventStatusLabel(eventDate);
   const [showRequirements, setShowRequirements] = useState(false);
+  const [showRequirementSuccess, setShowRequirementSuccess] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedRequirementFiles, setSelectedRequirementFiles] = useState<Record<string, File>>({});
   const [showRequirementWarning, setShowRequirementWarning] = useState(false);
@@ -195,11 +201,22 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
   const [selectedEvent, setSelectedEvent] = useState<FrontendEvent>(fallbackEventDetails);
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
   const [isJoined, setIsJoined] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
+  const [canCurrentUserOrganize, setCanCurrentUserOrganize] = useState(false);
+  const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, ReturnType<typeof readUserAttendanceRecords>[string]>>({});
   const eventRequirements = selectedEvent.requirements || [];
 
   useEffect(() => {
     const browseEvent = readSelectedBrowseEvent();
+    const studentEmail = window.localStorage.getItem('dcspaceStudentEmail')?.trim().toLowerCase() || '';
+    const currentUser = getCurrentAttendanceUser();
+    const currentRegisteredEvents = readRegisteredEvents();
 
+    setCurrentUserEmail(studentEmail);
+    setCanCurrentUserOrganize(canOrganizeEvents());
+    setRegisteredEvents(currentRegisteredEvents);
+    setAttendanceRecords(readUserAttendanceRecords(currentUser));
     if (!isDashboardSource) {
       setSelectedEvent(browseEvent);
       setSavedEventIds(readSavedHomeEvents());
@@ -207,10 +224,9 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
       return;
     }
 
-    const registeredEvents = readRegisteredEvents();
     const registeredEvent =
-      registeredEvents.find((event) => event.id && event.id === browseEvent.id) ||
-      registeredEvents.find((event) => registeredEventMatchesDate(event, eventDate));
+      currentRegisteredEvents.find((event) => event.id && event.id === browseEvent.id) ||
+      currentRegisteredEvents.find((event) => registeredEventMatchesDate(event, eventDate));
 
     setSelectedEvent(registeredEvent ? toEventDetails(registeredEvent, browseEvent) : browseEvent);
     setSavedEventIds(readSavedHomeEvents());
@@ -244,6 +260,11 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
   };
 
   const handleAttendEvent = () => {
+    if (eventRequirements.length) {
+      handleOpenRequirements();
+      return;
+    }
+
     registerEventForCurrentUser(selectedEvent, []);
     setIsJoined(true);
   };
@@ -271,9 +292,20 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
     );
 
     registerEventForCurrentUser(selectedEvent, requirementFiles);
+    setIsJoined(true);
+    setRegisteredEvents(readRegisteredEvents());
+    setAttendanceRecords(readUserAttendanceRecords(getCurrentAttendanceUser()));
+
+    if (!isDashboardSource && !isOrganizedSource) {
+      setShowRequirementSuccess(true);
+      window.setTimeout(() => {
+        setShowRequirements(false);
+        setShowRequirementSuccess(false);
+      }, 2200);
+      return;
+    }
 
     setIsRedirecting(true);
-
     window.setTimeout(() => {
       startTransition(() => {
         router.push('/dashboard');
@@ -308,11 +340,27 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
   const eventDetails = selectedEvent;
   const isBrowseSource = !isDashboardSource && !isOrganizedSource;
   const isSaved = savedEventIds.includes(eventDetails.id);
+  const isCreatedByCurrentUser =
+    canCurrentUserOrganize && Boolean(eventDetails.createdBy) && eventDetails.createdBy.trim().toLowerCase() === currentUserEmail;
+  const matchingRegisteredEvent = registeredEvents.find(
+    (event) => getRegisteredEventId(event) === eventDetails.id || event.id === eventDetails.id,
+  );
+  const matchingAttendanceRecord = matchingRegisteredEvent ? attendanceRecords[getRegisteredEventId(matchingRegisteredEvent)] : undefined;
+  const isPassedBrowseEvent = getEventStatus(eventDetails) === 'Passed';
+  const isPassedJoinedBrowseEvent = isPassedBrowseEvent && Boolean(matchingRegisteredEvent);
+  const receivedCertificate = getCertificateStatus(matchingAttendanceRecord, matchingRegisteredEvent || eventDetails) === 'Download';
+  const isPendingAdminApproval = eventDetails.status?.toLowerCase() === 'pending';
+  const isPendingFileApproval =
+    isJoined && eventRequirements.length > 0 && Boolean(matchingRegisteredEvent?.requirementFiles?.length || matchingRegisteredEvent?.requirementFile);
 
   if (isBrowseSource) {
     return (
       <section className="event-details-page event-details-page--browse">
         <div className="browse-event-detail">
+          <button className="browse-event-detail__back" type="button" aria-label="Go to previous page" onClick={() => router.back()}>
+            <Image src="/assets/page-previous.svg" width={26} height={26} alt="" />
+          </button>
+
           <div className="browse-event-detail__banner">
             {eventDetails.bannerDataUrl ? (
               <img src={eventDetails.bannerDataUrl} alt="" />
@@ -322,7 +370,11 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
           </div>
 
           <header className="browse-event-detail__header">
-            <h2>{eventDetails.name}</h2>
+            <div>
+              <h2>{eventDetails.name}</h2>
+              {isCreatedByCurrentUser && <p className="browse-event-detail__owner-note">You created this event.</p>}
+              {isPassedJoinedBrowseEvent && <p className="browse-event-detail__status-note">This event has passed.</p>}
+            </div>
             <div className="browse-event-detail__actions" aria-label="Event actions">
               <button
                 className={`browse-event-detail__icon-btn${isSaved ? ' is-saved' : ''}`}
@@ -384,9 +436,33 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
             </div>
 
             <aside className="browse-event-detail__cta">
-              <button className="attend-event-button" type="button" onClick={handleAttendEvent}>
-                {isJoined ? 'Event Joined' : 'Attend Event'}
-              </button>
+              {isPendingAdminApproval ? (
+                <p className="event-pending-admin-message">
+                  This event is still pending from being approved by the admin.{' '}
+                  <Link href="/submit-feedback">Submit Feedback.</Link>
+                </p>
+              ) : isPassedJoinedBrowseEvent ? (
+                <button
+                  className={`event-certificate-status${receivedCertificate ? ' is-received' : ' is-missing'}`}
+                  type="button"
+                >
+                  {receivedCertificate
+                    ? 'You received a certificate for this event'
+                    : "You didn't receive a certificate for this event"}
+                </button>
+              ) : isPendingFileApproval ? (
+                <button className="attend-event-button attend-event-button--pending" type="button">
+                  Pending file submission approval
+                </button>
+              ) : isJoined ? (
+                <button className="attend-event-button attend-event-button--joined" type="button">
+                  You already joined this event
+                </button>
+              ) : (
+                <button className="attend-event-button" type="button" onClick={handleAttendEvent}>
+                  Attend Event
+                </button>
+              )}
               <p>Registration Deadline: {formatDeadline(eventDetails.registrationDeadline)}</p>
             </aside>
           </div>
@@ -396,6 +472,17 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
             <p>{eventDetails.overview || 'Event description will appear here.'}</p>
           </section>
         </div>
+        {showRequirements && (
+          <RequirementsModal
+            eventRequirements={eventRequirements}
+            selectedRequirementFiles={selectedRequirementFiles}
+            showRequirementSuccess={showRequirementSuccess}
+            showRequirementWarning={showRequirementWarning}
+            onClose={handleCloseRequirements}
+            onConfirm={() => void handleConfirm()}
+            onFileChange={handleRequirementFileChange}
+          />
+        )}
       </section>
     );
   }
@@ -496,62 +583,15 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
       )}
 
       {showRequirements && (
-        <div className="requirements-overlay">
-          <section className="requirements-modal" role="dialog" aria-modal="true" aria-label="Event requirements">
-            <div className="requirements-header">
-              <h2>Requirements:</h2>
-              <button className="close-button" type="button" aria-label="Close requirements" onClick={handleCloseRequirements}>
-                <svg viewBox="0 0 28 28" fill="none" aria-hidden="true">
-                  <path d="M6.67969 24.5977H20.8945C23.3555 24.5977 24.5742 23.3789 24.5742 20.9648V6.65625C24.5742 4.24219 23.3555 3.02344 20.8945 3.02344H6.67969C4.23047 3.02344 3 4.23047 3 6.65625V20.9648C3 23.3906 4.23047 24.5977 6.67969 24.5977ZM6.70312 22.7109C5.53125 22.7109 4.88672 22.0898 4.88672 20.8711V6.75C4.88672 5.53125 5.53125 4.91016 6.70312 4.91016H20.8711C22.0312 4.91016 22.6875 5.53125 22.6875 6.75V20.8711C22.6875 22.0898 22.0312 22.7109 20.8711 22.7109H6.70312Z" fill="currentColor" />
-                  <path d="M10.3125 19.1602C10.6875 19.1602 10.8984 19.0312 11.1914 18.6211L13.7227 15.0117H13.7695L16.3008 18.6211C16.5938 19.0312 16.8047 19.1602 17.1797 19.1602C17.707 19.1602 18.0938 18.8086 18.0938 18.3047C18.0938 18.0703 18.0234 17.8945 17.8711 17.6953L14.9297 13.6758L17.8945 9.64453C18.0586 9.43359 18.1289 9.24609 18.1289 9.02344C18.1289 8.56641 17.7305 8.20312 17.2383 8.20312C16.875 8.20312 16.6406 8.34375 16.3828 8.73047L13.9453 12.3398H13.875L11.3789 8.71875C11.1094 8.34375 10.8867 8.20312 10.4883 8.20312C9.98438 8.20312 9.57422 8.60156 9.57422 9.07031C9.57422 9.32812 9.64453 9.49219 9.82031 9.75L12.6328 13.6172L9.65625 17.7422C9.50391 17.9531 9.44531 18.1172 9.44531 18.3516C9.44531 18.8086 9.82031 19.1602 10.3125 19.1602Z" fill="currentColor" />
-                </svg>
-              </button>
-            </div>
-
-            {eventRequirements.length > 0 ? (
-              <div className="requirements-list">
-                {eventRequirements.map((requirement) => {
-                  const selectedFile = selectedRequirementFiles[requirement];
-
-                  return (
-                    <div className={`file-requirement${selectedFile ? " is-added" : ""}`} key={requirement}>
-                      <label className="file-row">
-                        <span>{requirement}</span>
-                        <FilePlusIcon />
-                        <input
-                          className="requirement-file-input"
-                          type="file"
-                          onChange={(event) => handleRequirementFileChange(requirement, event)}
-                          aria-label={`Upload ${requirement}`}
-                          required
-                        />
-                      </label>
-                      <div className="file-added-strip" aria-hidden={!selectedFile}>
-                        {selectedFile?.name || "File Added!"}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="requirements-empty">No required files for this event.</p>
-            )}
-
-            {showRequirementWarning && (
-              <p className="requirements-warning" role="alert">
-                Please submit the requirements first
-              </p>
-            )}
-
-            <button
-              className={`confirm-button${showRequirementWarning ? " has-warning" : ""}`}
-              type="button"
-              onClick={handleConfirm}
-            >
-              Confirm
-            </button>
-          </section>
-        </div>
+        <RequirementsModal
+          eventRequirements={eventRequirements}
+          selectedRequirementFiles={selectedRequirementFiles}
+          showRequirementSuccess={showRequirementSuccess}
+          showRequirementWarning={showRequirementWarning}
+          onClose={handleCloseRequirements}
+          onConfirm={() => void handleConfirm()}
+          onFileChange={handleRequirementFileChange}
+        />
       )}
 
       {showDeleteConfirm && (
@@ -602,6 +642,85 @@ function SubmittedRequirementLink({
   );
 }
 
+function RequirementsModal({
+  eventRequirements,
+  selectedRequirementFiles,
+  showRequirementSuccess,
+  showRequirementWarning,
+  onClose,
+  onConfirm,
+  onFileChange,
+}: {
+  eventRequirements: string[];
+  selectedRequirementFiles: Record<string, File>;
+  showRequirementSuccess: boolean;
+  showRequirementWarning: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  onFileChange: (requirement: string, event: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div className={`requirements-overlay${showRequirementSuccess ? ' is-success' : ''}`}>
+      <section className="requirements-modal" role="dialog" aria-modal="true" aria-label="Event requirements">
+        {showRequirementSuccess ? (
+          <div className="requirements-success">
+            <span className="confetti confetti--one" aria-hidden="true" />
+            <span className="confetti confetti--two" aria-hidden="true" />
+            <span className="confetti confetti--three" aria-hidden="true" />
+            <span className="confetti confetti--four" aria-hidden="true" />
+            <span className="confetti confetti--five" aria-hidden="true" />
+            <p>Thank you! Your required files have been submitted successfully and are now awaiting review.</p>
+          </div>
+        ) : (
+          <>
+            <button className="close-button" type="button" aria-label="Close requirements" onClick={onClose}>
+              x
+            </button>
+            <div className="requirements-header">
+              <h2>This event contains registration requirements.</h2>
+              <h3>Files Requirement(s)</h3>
+            </div>
+
+            {eventRequirements.length > 0 ? (
+              <div className="requirements-list">
+                {eventRequirements.map((requirement) => {
+                  const selectedFile = selectedRequirementFiles[requirement];
+
+                  return (
+                    <label className="file-requirement-row" key={requirement}>
+                      <span>{requirement}*</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg,image/pdf,image/png,image/jpeg"
+                        onChange={(event) => onFileChange(requirement, event)}
+                        aria-label={`Upload ${requirement}`}
+                        required
+                      />
+                      <small>{selectedFile?.name || 'Valid file formats: PDF, PNG, JPG, JPEG'}</small>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="requirements-empty">No required files for this event.</p>
+            )}
+
+            <button className="confirm-button" type="button" onClick={onConfirm}>
+              Submit
+            </button>
+
+            {showRequirementWarning && (
+              <p className="requirements-warning" role="alert">
+                Please submit the file first
+              </p>
+            )}
+          </>
+        )}
+      </section>
+    </div>
+  );
+}
+
 function CalendarIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -622,17 +741,6 @@ function OrganizerIcon() {
   return (
     <svg viewBox="0 0 18 19" fill="none" aria-hidden="true">
       <path d="M4.5 4.5C4.5 6.981 6.519 9 9 9C11.481 9 13.5 6.981 13.5 4.5C13.5 2.019 11.481 0 9 0C6.519 0 4.5 2.019 4.5 4.5ZM17 19H18V18C18 14.141 14.859 11 11 11H7C3.14 11 0 14.141 0 18V19H17Z" fill="currentColor" />
-    </svg>
-  );
-}
-
-function FilePlusIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-      <path d="M14 2V8H20" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-      <path d="M12 12V18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M9 15H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }

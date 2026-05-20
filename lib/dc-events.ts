@@ -19,6 +19,8 @@ export type FrontendEvent = RegisteredEvent & {
   eventType?: string;
   duration?: string;
   minAttendance?: string;
+  attendanceAccess?: 'all' | 'specific';
+  allowedCourses?: string[];
   registrationDeadline?: string;
   createdBy?: string;
   bannerDataUrl?: string;
@@ -39,6 +41,8 @@ export type OrganizedEventInput = {
   eventType: string;
   duration: string;
   minAttendance: string;
+  attendanceAccess?: 'all' | 'specific';
+  allowedCourses?: string[];
   registrationDeadline?: string;
   bannerDataUrl?: string;
   status?: string;
@@ -230,6 +234,8 @@ export function saveOrganizedEvent(input: OrganizedEventInput) {
     eventType: present(input.eventType) || "Event",
     duration: present(input.duration) || "TBA",
     minAttendance: present(input.minAttendance) || "TBA",
+    attendanceAccess: input.attendanceAccess || 'all',
+    allowedCourses: input.attendanceAccess === 'specific' ? input.allowedCourses || [] : [],
     registrationDeadline: present(input.registrationDeadline),
     bannerDataUrl: present(input.bannerDataUrl),
     createdBy: present(window.localStorage.getItem("dcspaceStudentEmail")) || "local-frontend-user",
