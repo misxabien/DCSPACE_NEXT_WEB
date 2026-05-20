@@ -207,7 +207,11 @@ export function Sidebar() {
             onClick={() => setIsNotificationsOpen((isOpen) => !isOpen)}
           >
             <Image
-              src={hasUnreadNotifications ? '/svg icons navbar/one-notif-icon.svg' : '/svg icons navbar/normal-notif-icon.svg'}
+              src={
+                hasUnreadNotifications
+                  ? '/svg icons navbar/one-notif-icon.svg?v=8ab6ff'
+                  : '/svg icons navbar/normal-notif-icon.svg?v=8ab6ff'
+              }
               width={24}
               height={24}
               alt=""
