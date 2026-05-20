@@ -266,20 +266,8 @@ export function HomePageContent() {
                   aria-label={isSaved ? 'Unsave event' : 'Save event'}
                   onClick={() => toggleSavedEvent(event.id)}
                 >
-                  <Image
-                    className="home-event-card__bookmark-outline"
-                    src="/svg icons navbar/Bookmark.svg"
-                    width={24}
-                    height={24}
-                    alt=""
-                  />
-                  <Image
-                    className="home-event-card__bookmark-fill"
-                    src="/assets/bookmark-fill.svg"
-                    width={24}
-                    height={24}
-                    alt=""
-                  />
+                  <span className="home-event-card__bookmark-outline" aria-hidden="true" />
+                  <span className="home-event-card__bookmark-fill" aria-hidden="true" />
                 </button>
 
                 <Link className="home-event-card__link" href="/home/details" onClick={() => setSelectedBrowseEventId(event.id)}>

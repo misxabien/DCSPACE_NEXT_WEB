@@ -120,18 +120,37 @@
   object-fit: contain;
 }
 
+.browse-event-detail__bookmark-outline,
+.browse-event-detail__bookmark-fill {
+  width: 30px;
+  height: 30px;
+  display: block;
+  background: #ffc107;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
+
+.browse-event-detail__bookmark-outline {
+  mask-image: url("/assets/Bookmark-notfilled.svg");
+  -webkit-mask-image: url("/assets/Bookmark-notfilled.svg");
+}
+
 .browse-event-detail__bookmark-fill {
   position: absolute;
   opacity: 0;
+  mask-image: url("/assets/bookmark-fill.svg");
+  -webkit-mask-image: url("/assets/bookmark-fill.svg");
 }
 
-.browse-event-detail__icon-btn.is-saved .browse-event-detail__bookmark-outline,
-.browse-event-detail__icon-btn:hover .browse-event-detail__bookmark-outline {
+.browse-event-detail__icon-btn.is-saved .browse-event-detail__bookmark-outline {
   opacity: 0;
 }
 
-.browse-event-detail__icon-btn.is-saved .browse-event-detail__bookmark-fill,
-.browse-event-detail__icon-btn:hover .browse-event-detail__bookmark-fill {
+.browse-event-detail__icon-btn.is-saved .browse-event-detail__bookmark-fill {
   opacity: 1;
 }
 
@@ -231,7 +250,6 @@
   cursor: default;
   font-size: 14px;
   font-weight: 800;
-  text-transform: capitalize;
 }
 
 .attend-event-button--pending:hover,
