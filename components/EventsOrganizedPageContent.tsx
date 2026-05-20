@@ -155,17 +155,22 @@ export function EventsOrganizedPageContent() {
           href="/dashboard/organized-event"
           onClick={() => setSelectedBrowseEventId(event.id)}
         >
-          <span className="organized-event-card__date">
-            <span>{event.month}</span>
-            <strong>{event.day}</strong>
+          <span className="organized-event-card__media" aria-hidden="true">
+            {event.bannerDataUrl && <Image src={event.bannerDataUrl} alt="" fill unoptimized />}
           </span>
-          <span className="organized-event-card__details">
-            <strong>{event.name || 'Event Name'}</strong>
-            <span className="organized-event-card__venue">{event.venue || 'Event Venue'}</span>
-            <span className="organized-event-card__time">{getEventTimeDisplay(event.dateTime)}</span>
-            <span className="organized-event-card__status-row">
-              <span>{status}</span>
-              {!approval && <span>{getRegisteredCount(event.id)} Registered</span>}
+          <span className="organized-event-card__content">
+            <span className="organized-event-card__date">
+              <span>{event.month}</span>
+              <strong>{event.day}</strong>
+            </span>
+            <span className="organized-event-card__details">
+              <strong>{event.name || 'Event Name'}</strong>
+              <span className="organized-event-card__venue">{event.venue || 'Event Venue'}</span>
+              <span className="organized-event-card__time">{getEventTimeDisplay(event.dateTime)}</span>
+              <span className="organized-event-card__status-row">
+                <span>{status}</span>
+                {!approval && <span>{getRegisteredCount(event.id)} Registered</span>}
+              </span>
             </span>
           </span>
         </Link>

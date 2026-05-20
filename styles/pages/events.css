@@ -80,12 +80,18 @@
 }
 
 .event-image {
+  position: relative;
   min-height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #ead8a6;
   color: #604d18;
+  overflow: hidden;
+}
+
+.event-image img {
+  object-fit: cover;
 }
 
 .folder-icon {

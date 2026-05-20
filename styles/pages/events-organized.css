@@ -155,6 +155,7 @@
 .organized-event-card {
   position: relative;
   min-height: 250px;
+  overflow: hidden;
   border: 1px solid #8d8d8d;
   border-radius: 8px;
   background: #ffffff;
@@ -171,12 +172,30 @@
 .organized-event-card__link {
   min-height: 250px;
   display: grid;
-  grid-template-columns: 52px 1fr;
-  align-items: start;
-  gap: 22px;
+  grid-template-rows: 150px 1fr;
   color: #000000;
   text-decoration: none;
-  padding: 160px 24px 10px 30px;
+  padding: 0;
+}
+
+.organized-event-card__media {
+  position: relative;
+  min-height: 150px;
+  display: block;
+  background: transparent;
+  overflow: hidden;
+}
+
+.organized-event-card__media img {
+  object-fit: cover;
+}
+
+.organized-event-card__content {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: start;
+  gap: 22px;
+  padding: 18px 24px 10px 30px;
 }
 
 .organized-event-card__date {

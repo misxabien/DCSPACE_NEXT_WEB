@@ -246,14 +246,19 @@ export function SavedEventsPageContent() {
               </button>
 
               <Link className="saved-event-card__link" href="/events/details" onClick={() => setSelectedBrowseEventId(event.id)}>
-                <span className="saved-event-card__date">
-                  <span>{event.month}</span>
-                  <strong>{event.day}</strong>
+                <span className="saved-event-card__media" aria-hidden="true">
+                  {event.bannerDataUrl && <Image src={event.bannerDataUrl} alt="" fill unoptimized />}
                 </span>
-                <span className="saved-event-card__details">
-                  <strong>{event.name}</strong>
-                  <span className="saved-event-card__venue">{event.venue}</span>
-                  <span className="saved-event-card__time">{getEventTimeDisplay(event.dateTime)}</span>
+                <span className="saved-event-card__content">
+                  <span className="saved-event-card__date">
+                    <span>{event.month}</span>
+                    <strong>{event.day}</strong>
+                  </span>
+                  <span className="saved-event-card__details">
+                    <strong>{event.name}</strong>
+                    <span className="saved-event-card__venue">{event.venue}</span>
+                    <span className="saved-event-card__time">{getEventTimeDisplay(event.dateTime)}</span>
+                  </span>
                 </span>
               </Link>
             </article>
