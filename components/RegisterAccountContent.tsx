@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-type RegisterStep = 'personal' | 'school' | 'account';
+type RegisterStep = 'personal' | 'school' | 'account' | 'verify';
 
 type RegisterData = {
   firstName: string;
@@ -14,9 +14,11 @@ type RegisterData = {
   school: string;
   organization: string;
   role: string;
+  rfidTagNumber: string;
   schoolEmail: string;
   password: string;
   confirmPassword: string;
+  verificationCode: string;
 };
 
 const initialData: RegisterData = {
@@ -27,10 +29,16 @@ const initialData: RegisterData = {
   school: '',
   organization: '',
   role: '',
+  rfidTagNumber: '',
   schoolEmail: '',
   password: '',
   confirmPassword: '',
+  verificationCode: '',
 };
+
+function requiredLabel(label: string, value: string) {
+  return `${label}${value.trim() ? '' : '*'}`;
+}
 
 export function RegisterAccountContent() {
   const router = useRouter();
@@ -77,6 +85,7 @@ export function RegisterAccountContent() {
       formData.studentNumber,
       formData.course,
       formData.school,
+      formData.rfidTagNumber,
       formData.schoolEmail,
       formData.password,
       formData.confirmPassword,
@@ -85,9 +94,39 @@ export function RegisterAccountContent() {
     return !requiredValues.some((value) => !value.trim()) && passwordStrength === 'Strong' && passwordMatches;
   };
 
-  const handleFinish = () => {
+  const requiredAccountDetailsAreFilled = () => {
+    const requiredValues = [
+      formData.firstName,
+      formData.lastName,
+      formData.studentNumber,
+      formData.course,
+      formData.school,
+      formData.rfidTagNumber,
+      formData.schoolEmail,
+      formData.password,
+      formData.confirmPassword,
+    ];
+
+    return !requiredValues.some((value) => !value.trim());
+  };
+
+  const handleVerifyAccount = () => {
+    if (requiredAccountDetailsAreFilled() && passwordStrength !== 'Strong') {
+      showToast('Password is too weak');
+      return;
+    }
+
     if (!accountIsComplete()) {
       showToast('Please fill in the required details');
+      return;
+    }
+
+    setStep('verify');
+  };
+
+  const handleVerificationCreate = () => {
+    if (!formData.verificationCode.trim()) {
+      showToast('Please enter the verification code');
       return;
     }
 
@@ -116,6 +155,7 @@ export function RegisterAccountContent() {
     window.localStorage.setItem('dcspaceSchool', formData.school);
     window.localStorage.setItem('dcspaceOrganizationPart', formData.organization.trim());
     window.localStorage.setItem('dcspaceOrganizationRole', formData.role);
+    window.localStorage.setItem('dcspaceRfidNumber', formData.rfidTagNumber.trim());
     window.localStorage.setItem('dcspaceStudentEmail', formData.schoolEmail.trim());
     window.sessionStorage.removeItem('dcspacePrivacySeen');
 
@@ -156,7 +196,7 @@ export function RegisterAccountContent() {
                 <h2>Personal Info</h2>
 
               <label className="register-field">
-                <span>First Name*</span>
+                <span>{requiredLabel('First Name', formData.firstName)}</span>
                 <input
                   name="first_name"
                   type="text"
@@ -167,7 +207,7 @@ export function RegisterAccountContent() {
               </label>
 
               <label className="register-field">
-                <span>Last Name*</span>
+                <span>{requiredLabel('Last Name', formData.lastName)}</span>
                 <input
                   name="last_name"
                   type="text"
@@ -178,7 +218,7 @@ export function RegisterAccountContent() {
               </label>
 
               <label className="register-field">
-                <span>Student Number*</span>
+                <span>{requiredLabel('Student Number', formData.studentNumber)}</span>
                 <input
                   name="student_number"
                   type="text"
@@ -202,7 +242,7 @@ export function RegisterAccountContent() {
               <h2>School Details</h2>
 
               <label className="register-field">
-                <span>Course*</span>
+                <span>{requiredLabel('Course', formData.course)}</span>
                 <select
                   name="course"
                   value={formData.course}
@@ -230,7 +270,7 @@ export function RegisterAccountContent() {
               </label>
 
               <label className="register-field">
-                <span>School/Department*</span>
+                <span>{requiredLabel('School/Department', formData.school)}</span>
                 <select
                   name="school"
                   value={formData.school}
@@ -283,12 +323,24 @@ export function RegisterAccountContent() {
                 </button>
               </div>
             </div>
-            ) : (
+            ) : step === 'account' ? (
               <div className="register-step register-step--account" key="account" aria-label="Account set up">
                 <h2>Account Set Up</h2>
 
                 <label className="register-field register-field--compact">
-                  <span>School*</span>
+                  <span>{requiredLabel('RFID Tag Number', formData.rfidTagNumber)}</span>
+                  <input
+                    name="rfid_tag_number"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Tap your School ID"
+                    value={formData.rfidTagNumber}
+                    onChange={(event) => updateField('rfidTagNumber', event.target.value)}
+                  />
+                </label>
+
+                <label className="register-field register-field--compact">
+                  <span>{requiredLabel('School email', formData.schoolEmail)}</span>
                   <input
                     name="school_email"
                     type="email"
@@ -299,7 +351,7 @@ export function RegisterAccountContent() {
                 </label>
 
                 <label className="register-field register-field--compact register-password-field">
-                  <span>Password*</span>
+                  <span>{requiredLabel('Password', formData.password)}</span>
                   <input
                     name="password"
                     type={showPassword ? 'text' : 'password'}
@@ -339,7 +391,7 @@ export function RegisterAccountContent() {
                 )}
 
                 <label className="register-field register-field--compact register-password-field">
-                  <span>Re-enter your password*</span>
+                  <span>{requiredLabel('Re-enter your password', formData.confirmPassword)}</span>
                   <input
                     name="confirm_password"
                     type={showConfirmPassword ? 'text' : 'password'}
@@ -372,7 +424,33 @@ export function RegisterAccountContent() {
                   <button className="register-back-step" type="button" onClick={() => setStep('school')}>
                     Go back to School Details
                   </button>
-                  <button className="register-continue" type="button" onClick={handleFinish}>
+                  <button className="register-continue" type="button" onClick={handleVerifyAccount}>
+                    Verify Account
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="register-step register-step--verify" key="verify" aria-label="Verify your account">
+                <h2>Verify your Account</h2>
+                <p className="register-verify-copy">Kindly check your email for the verification code.</p>
+
+                <label className="register-field register-field--verify">
+                  <span>{requiredLabel('Verification Code:', formData.verificationCode)}</span>
+                  <input
+                    name="verification_code"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Enter verification code"
+                    value={formData.verificationCode}
+                    onChange={(event) => updateField('verificationCode', event.target.value)}
+                  />
+                </label>
+
+                <div className="register-controls">
+                  <button className="register-back-step" type="button" onClick={() => setStep('account')}>
+                    Go back to Account Setup
+                  </button>
+                  <button className="register-continue" type="button" onClick={handleVerificationCreate}>
                     Create Account
                   </button>
                 </div>
