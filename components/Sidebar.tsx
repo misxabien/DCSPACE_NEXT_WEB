@@ -144,7 +144,7 @@ export function Sidebar() {
             aria-label={isCollapsed ? 'Open sidebar' : 'DC Space'}
             onClick={() => isCollapsed && setIsCollapsed(false)}
           >
-            <Image className="sidebar__logo" src="/dcspace-logo-circle.png" width={58} height={58} alt="" priority />
+            <Image className="sidebar__logo" src="/dcspace-logos/dcspace-logo-circle.png" width={58} height={58} alt="" priority />
             <Image className="sidebar__open-icon" src="/svg icons navbar/open-sidebar-icon.svg" width={18} height={18} alt="" />
           </button>
           <strong className="sidebar__brand-name">DC SPACE</strong>
