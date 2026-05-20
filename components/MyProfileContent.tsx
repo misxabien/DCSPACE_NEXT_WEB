@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { type CSSProperties, useEffect, useMemo, useState } from 'react';
 import { canOrganizeEvents, readOrganizedEvents } from '@/lib/dc-events';
 import {
@@ -249,7 +250,7 @@ export function MyProfileContent() {
           </div>
         </section>
 
-        <section className="profile-side" aria-label="Account summary">
+        <section className="profile-card profile-card--summary profile-side" aria-label="Account summary">
           <div className="profile-info-box profile-statistics">
             <h2>Account Statistics</h2>
             <ProfileStat label="Events Attended" value={attendedEvents.length} />
@@ -269,10 +270,12 @@ export function MyProfileContent() {
             </ul>
           </div>
 
-          <div className="profile-info-box profile-verification">
-            <h2>Account Verification</h2>
-            <ProfileBadge label="Verified SDCA Account" value="Verify Now" />
-            {user?.organizationPart?.trim() && <ProfileBadge label="Organization Officer/Member Verified" value="Verified" />}
+          <div className="profile-info-box profile-feedback">
+            <h2>We&apos;d love to hear your thoughts and suggestions</h2>
+            <div>
+              <span>Submit a Feedback</span>
+              <Link href="/submit-feedback">Send Feedback</Link>
+            </div>
           </div>
         </section>
       </div>
@@ -401,15 +404,6 @@ function ImageAdjustControls({
 function ProfileStat({ label, value }: { label: string; value: number }) {
   return (
     <div className="profile-stat">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function ProfileBadge({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="profile-badge">
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
