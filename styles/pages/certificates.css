@@ -1,7 +1,7 @@
 /* Certificates */
 
 :root {
-  --cert-earned: #8ab6ff;
+  --cert-earned: #156884;
   --cert-icon: #2ca6de;
   --cert-hover: #dbe8ff;
   --cert-hover-text: #658fd5;
@@ -33,6 +33,7 @@
   font-family: var(--font-display), "Montserrat", sans-serif;
   font-size: clamp(30px, 3.4vw, 42px);
   font-weight: 800;
+  letter-spacing: 0.02em;
   line-height: 1;
 }
 

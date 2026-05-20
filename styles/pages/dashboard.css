@@ -14,8 +14,9 @@
   margin: 0;
   color: #000000;
   font-family: var(--font-display), "Montserrat", sans-serif;
-  font-size: 36px;
+  font-size: clamp(30px, 3.4vw, 42px);
   font-weight: 800;
+  letter-spacing: 0.02em;
   line-height: 1;
 }
 
