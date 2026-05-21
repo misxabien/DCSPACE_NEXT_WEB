@@ -22,6 +22,8 @@ export function Sidebar() {
   const [canCreateEvents, setCanCreateEvents] = useState(false);
   const [notifications, setNotifications] = useState<DcNotification[]>([]);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [, setTimeTick] = useState(0);
@@ -88,6 +90,11 @@ export function Sidebar() {
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    setIsMobileNavOpen(false);
+    setIsMobileProfileOpen(false);
+  }, [pathname]);
+
   const handleMarkAllNotificationsRead = () => {
     markNotificationsAsRead(notifications.map((notification) => notification.id));
     setNotifications(readNotifications());
@@ -126,19 +133,49 @@ export function Sidebar() {
                         ? 'My Profile'
                         : 'Home';
   const navItems = [
-    { href: '/home', label: 'Home', icon: '/svg icons navbar/Home.svg' },
-    { href: '/dashboard', label: 'Dashboard', icon: '/svg icons navbar/Layout.svg' },
+    { href: '/home', label: 'Home', icon: '/svg icons navbar/Home.svg', mobileIcon: '/svg icons navbar/svg icon navbar mobile/home-icon.svg' },
+    {
+      href: '/dashboard',
+      label: 'Dashboard',
+      icon: '/svg icons navbar/Layout.svg',
+      mobileIcon: '/svg icons navbar/svg icon navbar mobile/dashboard-icon.svg',
+    },
     ...(canCreateEvents
-      ? [{ href: '/events-organized', label: 'Events Organized', icon: '/svg icons navbar/list-stars.svg' }]
+      ? [
+          {
+            href: '/events-organized',
+            label: 'Events Organized',
+            icon: '/svg icons navbar/list-stars.svg',
+            mobileIcon: '/svg icons navbar/list-stars.svg',
+          },
+        ]
       : []),
-    { href: '/events', label: 'Saved Events', icon: '/svg icons navbar/Bookmark.svg' },
-    { href: '/attendance', label: 'Attendance', icon: '/svg icons navbar/Users.svg' },
-    { href: '/certificates', label: 'Certificates', icon: '/svg icons navbar/certficate-icon.svg' },
+    {
+      href: '/events',
+      label: 'Saved Events',
+      icon: '/svg icons navbar/Bookmark.svg',
+      mobileIcon: '/svg icons navbar/svg icon navbar mobile/saved-events-icon.svg',
+    },
+    {
+      href: '/attendance',
+      label: 'Attendance',
+      icon: '/svg icons navbar/Users.svg',
+      mobileIcon: '/svg icons navbar/svg icon navbar mobile/attendance-icon.svg',
+    },
+    {
+      href: '/certificates',
+      label: 'Certificates',
+      icon: '/svg icons navbar/certficate-icon.svg',
+      mobileIcon: '/svg icons navbar/svg icon navbar mobile/certificates-icon.svg',
+    },
   ];
 
   return (
     <>
-      <aside className={`sidebar${isCollapsed ? ' sidebar--collapsed' : ''}`} aria-label="Primary navigation">
+      <aside
+        className={`sidebar${isCollapsed ? ' sidebar--collapsed' : ''}${isMobileNavOpen ? ' sidebar--mobile-open' : ''}`}
+        aria-label="Primary navigation"
+      >
         <div className="sidebar__brand">
           <button
             className="sidebar__logo-button"
@@ -165,8 +202,15 @@ export function Sidebar() {
                   : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
-              <Link className={`sidebar__link${active ? ' is-active' : ''}`} href={item.href} aria-current={active ? 'page' : undefined} key={item.label}>
-                <Image className="sidebar__icon" src={item.icon} width={22} height={22} alt="" />
+              <Link
+                className={`sidebar__link${active ? ' is-active' : ''}`}
+                href={item.href}
+                aria-current={active ? 'page' : undefined}
+                key={item.label}
+                onClick={() => setIsMobileNavOpen(false)}
+              >
+                <Image className="sidebar__icon sidebar__icon--desktop" src={item.icon} width={22} height={22} alt="" />
+                <Image className="sidebar__icon sidebar__icon--mobile" src={item.mobileIcon} width={28} height={28} alt="" />
                 <span>{item.label}</span>
               </Link>
             );
@@ -181,7 +225,28 @@ export function Sidebar() {
 
       {isLoggingOut && <LoadingScreen context="logout" />}
 
-      <header className="topbar" aria-label="Page header">
+      <header className={`topbar${isMobileNavOpen ? ' topbar--mobile-menu-open' : ''}`} aria-label="Page header">
+        <button
+          className="topbar__mobile-menu"
+          type="button"
+          aria-label={isMobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={isMobileNavOpen}
+          onClick={() => {
+            setIsMobileProfileOpen(false);
+            setIsMobileNavOpen((isOpen) => !isOpen);
+          }}
+        >
+          <Image
+            src={
+              isMobileNavOpen
+                ? '/svg icons navbar/svg icon navbar mobile/close-hamburger.svg'
+                : '/svg icons navbar/svg icon navbar mobile/hamburger-icon.svg'
+            }
+            width={42}
+            height={42}
+            alt=""
+          />
+        </button>
         <h1>
           {isSubmitFeedbackPage ? (
             <Link className="topbar__title-link" href="/my-profile">
@@ -211,6 +276,32 @@ export function Sidebar() {
             </span>
           </Link>
           <button
+            className="topbar__mobile-profile-toggle"
+            type="button"
+            aria-label={isMobileProfileOpen ? 'Close profile menu' : 'Open profile menu'}
+            aria-expanded={isMobileProfileOpen}
+            onClick={() => {
+              setIsMobileNavOpen(false);
+              setIsMobileProfileOpen((isOpen) => !isOpen);
+            }}
+          >
+            {isMobileProfileOpen ? (
+              <Image src="/svg icons navbar/svg icon navbar mobile/close-hamburger.svg" width={42} height={42} alt="" />
+            ) : (
+              <span className="topbar__avatar-link">
+                <Image
+                  className="topbar__avatar"
+                  src={profilePhotoImage || AVATAR}
+                  width={44}
+                  height={44}
+                  alt="Profile"
+                  style={profilePhotoImage ? profilePhotoStyle : undefined}
+                  unoptimized={Boolean(profilePhotoImage)}
+                />
+              </span>
+            )}
+          </button>
+          <button
             className={`topbar__icon-button topbar__notification-button${pathname === '/notifications' || isNotificationsOpen ? ' is-active' : ''}`}
             type="button"
             aria-label="Notifications"
@@ -233,6 +324,41 @@ export function Sidebar() {
           </button>
         </div>
       </header>
+
+      <aside className={`mobile-profile-menu${isMobileProfileOpen ? ' is-open' : ''}`} aria-hidden={!isMobileProfileOpen}>
+        <nav className="mobile-profile-menu__nav" aria-label="Profile navigation">
+          <Link
+            className={`mobile-profile-menu__item mobile-profile-menu__item--profile${
+              pathname.includes('/my-profile') || pathname.includes('/submit-feedback') ? ' is-active' : ''
+            }`}
+            href="/my-profile"
+          >
+            <span>My Profile</span>
+            <span className="mobile-profile-menu__avatar">
+              <Image
+                className="topbar__avatar"
+                src={profilePhotoImage || AVATAR}
+                width={44}
+                height={44}
+                alt=""
+                style={profilePhotoImage ? profilePhotoStyle : undefined}
+                unoptimized={Boolean(profilePhotoImage)}
+              />
+            </span>
+          </Link>
+          <Link
+            className={`mobile-profile-menu__item${pathname === '/notifications' ? ' is-active' : ''}`}
+            href="/notifications"
+          >
+            <span>My Notifications</span>
+            <Image src="/svg icons navbar/svg icon navbar mobile/notification-icon.svg" width={30} height={30} alt="" />
+          </Link>
+          <button className="mobile-profile-menu__item" type="button" onClick={() => setIsMobileProfileOpen(false)}>
+            <span>Tutorial</span>
+            <Image src="/svg icons navbar/svg icon navbar mobile/question-circle-icon.svg" width={30} height={30} alt="" />
+          </button>
+        </nav>
+      </aside>
 
       <aside className={`notifications-drawer${isNotificationsOpen ? ' is-open' : ''}`} aria-hidden={!isNotificationsOpen}>
         <header className="notifications-drawer__header">
