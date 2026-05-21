@@ -352,6 +352,8 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
   const isSaved = savedEventIds.includes(eventDetails.id);
   const isCreatedByCurrentUser =
     canCurrentUserOrganize && Boolean(eventDetails.createdBy) && eventDetails.createdBy.trim().toLowerCase() === currentUserEmail;
+  const currentAttendanceUser = getCurrentAttendanceUser();
+  const organizerCourse = eventDetails.organizerCourse || (isCreatedByCurrentUser ? currentAttendanceUser.course : '') || 'Course';
   const matchingRegisteredEvent = registeredEvents.find(
     (event) => getRegisteredEventId(event) === eventDetails.id || event.id === eventDetails.id,
   );
@@ -417,7 +419,7 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
               <section>
                 <h3>Hosted By</h3>
                 <DetailRow icon="organizer" label={eventDetails.organizer || 'Organization Name'} value="" />
-                <DetailRow icon="course" label={eventDetails.eventType || 'Course'} value="" />
+                <DetailRow icon="course" label={organizerCourse} value="" />
                 <DetailRow icon="department" label={eventDetails.department || eventDetails.school || 'School/Department'} value="" />
               </section>
 
