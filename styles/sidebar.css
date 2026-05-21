@@ -17,7 +17,7 @@
   width: var(--sidebar-open-width);
   display: flex;
   flex-direction: column;
-  background: #8AB6FF;
+  background: #A0C0F8;
   color: #ffffff;
   padding: 30px 14px 18px;
   transition: width 0.2s ease, padding 0.2s ease;
@@ -110,7 +110,7 @@
 
 .sidebar__link:hover,
 .sidebar__link.is-active {
-  background: #397DEF;
+  background: #5C88E5;
 }
 
 .sidebar__icon {
@@ -265,7 +265,7 @@
 
 .topbar__account,
 .topbar__profile-pill {
-  color: #8AB6FF;
+  color: #A0C0F8;
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 14px;
   font-weight: 500;
@@ -284,13 +284,13 @@
 
 .topbar__profile-pill:hover,
 .topbar__profile-pill.is-active {
-  background: rgba(138, 182, 255, 0.4);
+  background: rgba(160, 192, 248, 0.4);
 }
 
 .topbar__avatar-link {
   width: 44px;
   height: 44px;
-  border: 1px solid #8AB6FF;
+  border: 1px solid #A0C0F8;
   border-radius: 50%;
   display: inline-flex;
   overflow: hidden;
@@ -313,7 +313,7 @@
   display: inline-grid;
   place-items: center;
   background: transparent;
-  color: #8AB6FF;
+  color: #A0C0F8;
   cursor: pointer;
   padding: 0;
   text-decoration: none;
@@ -327,16 +327,16 @@
 .topbar__icon-button:hover,
 .topbar__icon-button.is-active,
 .topbar__help:hover {
-  background: rgba(107, 125, 242, 0.12);
+  background: rgba(160, 192, 248, 0.4);
 }
 
 .topbar__notification-button:hover,
 .topbar__notification-button.is-active {
-  background: rgba(138, 182, 255, 0.4);
+  background: rgba(160, 192, 248, 0.4);
 }
 
 .topbar__help {
-  border: 3px solid #8AB6FF;
+  border: 3px solid #A0C0F8;
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 16px;
   font-weight: 600;
@@ -515,7 +515,7 @@
     width: 100vw;
     height: calc(100dvh - 88px);
     padding: 20px 19px 42px;
-    background: #8AB6FF;
+    background: #A0C0F8;
     transform: translateX(-100%);
     transition: transform 0.34s cubic-bezier(0.2, 0.78, 0.2, 1);
     will-change: transform;
@@ -599,7 +599,7 @@
 
   .sidebar__link:hover,
   .sidebar__link.is-active {
-    background: #397DEF;
+    background: #5C88E5;
   }
 
   .sidebar__icon--desktop {
@@ -709,7 +709,7 @@
     left: 0;
     z-index: 45;
     display: block;
-    background: #8AB6FF;
+    background: #A0C0F8;
     padding: 25px 17px 42px;
     pointer-events: none;
     transform: translateX(100%);
@@ -753,7 +753,7 @@
   .mobile-profile-menu__item:hover,
   .mobile-profile-menu__item:focus-visible,
   .mobile-profile-menu__item.is-active {
-    background: #397DEF;
+    background: #5C88E5;
     outline: none;
   }
 
