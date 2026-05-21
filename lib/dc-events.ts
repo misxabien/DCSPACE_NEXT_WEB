@@ -12,6 +12,7 @@ export type FrontendEvent = RegisteredEvent & {
   dateTime: string;
   venue: string;
   organizer: string;
+  organizerCourse?: string;
   overview: string;
   requirements: string[];
   school?: string;
@@ -34,6 +35,7 @@ export type OrganizedEventInput = {
   requiredFiles?: string[];
   venue: string;
   courseOrganizer: string;
+  organizerCourse?: string;
   school: string;
   department: string;
   startTime: string;
@@ -251,6 +253,7 @@ export function saveOrganizedEvent(input: OrganizedEventInput) {
     dateTime: `${eventDateDisplay}, ${startTime} - ${endTime}`,
     venue,
     organizer,
+    organizerCourse: present(input.organizerCourse) || 'Course',
     overview:
       present(input.eventDescription) ||
       'This event was created from the frontend organize-event flow. The backend can later replace this local record with a saved database event.',

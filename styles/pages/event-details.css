@@ -21,6 +21,7 @@
   width: 100%;
   display: grid;
   gap: 22px;
+  font-family: var(--font-ui), "Poppins", sans-serif;
 }
 
 .browse-event-detail__back {
@@ -71,7 +72,7 @@
 .browse-event-detail__header h2 {
   margin: 0;
   color: #000000;
-  font-family: var(--font-display), "Montserrat", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: clamp(28px, 3vw, 34px);
   font-weight: 800;
   line-height: 1.05;
@@ -175,9 +176,9 @@
 .browse-event-detail h3 {
   margin: 0;
   color: #000000;
-  font-family: var(--font-display), "Montserrat", sans-serif;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.1;
 }
 
@@ -189,7 +190,7 @@
   margin: 0;
   color: #000000;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.25;
 }
 
@@ -221,7 +222,7 @@
   cursor: pointer;
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .attend-event-button:hover,
@@ -249,7 +250,7 @@
   color: #000000;
   cursor: default;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .attend-event-button--pending:hover,
@@ -267,7 +268,7 @@
   cursor: default;
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.25;
   padding: 10px 16px;
 }
@@ -285,7 +286,7 @@
   margin: 0;
   color: #000000;
   font-size: 10px;
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .browse-event-detail__cta .event-pending-admin-message {
@@ -293,7 +294,7 @@
   color: #000000;
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 500;
   line-height: 1.35;
   text-align: center;
 }
@@ -323,7 +324,7 @@
   margin: 0;
   color: #000000;
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.36;
   text-align: justify;
 }
@@ -480,8 +481,9 @@
 .event-summary h2 {
   margin: 0 0 14px;
   color: #9d7705;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 34px;
-  font-weight: 900;
+  font-weight: 800;
 }
 
 .event-summary p {
@@ -490,8 +492,9 @@
   gap: 14px;
   margin: 0 0 10px;
   color: #604d18;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 22px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .event-summary p svg {
@@ -509,15 +512,18 @@
 .event-info h3 {
   margin: 0 0 12px;
   color: #604d18;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 24px;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .event-info p {
   max-width: 980px;
   margin: 0 0 26px;
   color: #604d18;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 13px;
+  font-weight: 700;
   line-height: 1.35;
   text-align: justify;
 }
@@ -525,7 +531,9 @@
 .event-info ul {
   margin: 0 0 10px 38px;
   color: #604d18;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 20px;
+  font-weight: 700;
 }
 
 .submitted-requirement {

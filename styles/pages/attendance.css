@@ -220,6 +220,7 @@ main.main::-webkit-scrollbar,
   display: grid;
   grid-template-rows: 128px 1fr;
   color: #000000;
+  font-family: var(--font-ui), "Poppins", sans-serif;
   text-decoration: none;
   padding: 0;
 }
@@ -279,7 +280,7 @@ main.main::-webkit-scrollbar,
 .attendance-event-card__details strong {
   color: inherit;
   font-size: clamp(13px, 5cqi, 16px);
-  font-weight: 600;
+  font-weight: 800;
   line-height: 1.05;
   overflow-wrap: anywhere;
 }
@@ -287,13 +288,13 @@ main.main::-webkit-scrollbar,
 .attendance-event-card__details span {
   color: #8ab6ff;
   font-size: clamp(9px, 3.6cqi, 11px);
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .attendance-event-card__details small {
   color: #000000;
   font-size: clamp(8px, 3.2cqi, 10px);
-  font-weight: 500;
+  font-weight: 700;
   overflow-wrap: anywhere;
 }
 

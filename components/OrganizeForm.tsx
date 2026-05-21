@@ -318,6 +318,7 @@ export function OrganizeForm() {
       requiredFiles: details.requiredFiles,
       venue: details.venue,
       courseOrganizer: hostOrganization,
+      organizerCourse: hostCourse,
       school: hostDepartment,
       department: hostDepartment,
       startTime: details.startTime,

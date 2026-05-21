@@ -1231,6 +1231,7 @@
         margin: 0 auto;
         border-radius: 8px;
         background: #ffffff;
+        font-family: var(--font-ui), "Poppins", sans-serif;
         padding: 18px 44px 36px;
       }
 
@@ -1261,14 +1262,14 @@
         margin: 0 0 22px;
         color: #000000;
         font-size: 28px;
-        font-weight: 700;
+        font-weight: 800;
       }
 
       .review-event-card h3 {
         margin: 0 0 10px;
         color: #000000;
         font-size: 17px;
-        font-weight: 600;
+        font-weight: 700;
       }
 
       .review-event-card section {
@@ -1279,7 +1280,7 @@
         margin: 0 0 8px;
         color: #000000;
         font-size: 14px;
-        font-weight: 400;
+        font-weight: 700;
         line-height: 1.45;
       }
 
