@@ -23,7 +23,7 @@
 }
 
 .home-page__copy h2 span {
-  color: #448aff;
+  color: #A0C0F8;
 }
 
 .home-page__filters {
@@ -116,8 +116,8 @@
 
 .home-page__filter:hover,
 .home-page__filter.is-active {
-  border-color: #20a8f4;
-  color: #20a8f4;
+  border-color: #A0C0F8;
+  color: #A0C0F8;
 }
 
 .home-page__search {

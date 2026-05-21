@@ -311,8 +311,8 @@ export function Sidebar() {
             <Image
               src={
                 hasUnreadNotifications
-                  ? '/svg icons navbar/one-notif-icon.svg?v=8ab6ff'
-                  : '/svg icons navbar/normal-notif-icon.svg?v=8ab6ff'
+                  ? '/svg icons navbar/one-notif-icon.svg?v=a0c0f8'
+                  : '/svg icons navbar/normal-notif-icon.svg?v=a0c0f8'
               }
               width={24}
               height={24}

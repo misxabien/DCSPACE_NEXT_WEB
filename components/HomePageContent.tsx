@@ -137,7 +137,6 @@ export function HomePageContent() {
   const visibleEvents = useMemo(
     () =>
       events
-        .filter((event) => !registeredEvents.some((registeredEvent) => getRegisteredEventId(registeredEvent) === event.id || registeredEvent.id === event.id))
         .filter((event) => matchesFilter(event, activeFilter, dateRange))
         .filter((event) => {
           const value = searchTerm.trim().toLowerCase();
@@ -150,7 +149,7 @@ export function HomePageContent() {
             field?.toLowerCase().includes(value),
           );
         }),
-    [activeFilter, dateRange, events, registeredEvents, searchTerm],
+    [activeFilter, dateRange, events, searchTerm],
   );
 
   const toggleSavedEvent = (eventId: string) => {
@@ -283,9 +282,9 @@ export function HomePageContent() {
                       <strong>{event.name}</strong>
                       <span className="home-event-card__venue">{event.venue}</span>
                       <span className="home-event-card__time">{getEventTimeDisplay(event.dateTime)}</span>
-                      {isPassedJoinedEvent && (
-                        <span className={`home-event-card__certificate${receivedCertificate ? ' is-received' : ' is-missing'}`}>
-                          {receivedCertificate ? 'Certificate received' : 'No certificate received'}
+                      {isPassedJoinedEvent && receivedCertificate && (
+                        <span className="home-event-card__certificate is-received">
+                          Certificate received
                         </span>
                       )}
                       </span>
