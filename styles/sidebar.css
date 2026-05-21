@@ -351,9 +351,9 @@
   bottom: 0;
   z-index: 39;
   width: max(50vw, 420px);
-  background: rgba(245, 210, 157, 0.95);
-  color: #ffffff;
-  box-shadow: -14px 0 28px rgba(21, 104, 132, 0.18);
+  background: rgba(160, 192, 248, 0.95);
+  color: #2D3673;
+  box-shadow: -14px 0 28px rgba(45, 54, 115, 0.18);
   opacity: 0;
   pointer-events: none;
   transform: translateX(100%);
@@ -375,12 +375,12 @@
   justify-content: space-between;
   gap: 18px;
   padding: 0 22px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.36);
+  border-bottom: 1px solid #2D3673;
 }
 
 .notifications-drawer__header h2 {
   margin: 0;
-  color: #ffffff;
+  color: #2D3673;
   font-family: var(--font-display), "Montserrat", sans-serif;
   font-size: 25px;
   font-weight: 800;
@@ -390,7 +390,7 @@
 .notifications-drawer__header button {
   border: 0;
   background: transparent;
-  color: #ffffff;
+  color: #2D3673;
   cursor: pointer;
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 12px;
@@ -413,13 +413,13 @@
   width: 100%;
   min-height: 82px;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.32);
+  border-bottom: 1px solid #2D3673;
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr) 72px;
   align-items: center;
   gap: 18px;
   background: transparent;
-  color: #ffffff;
+  color: #2D3673;
   cursor: pointer;
   font-family: var(--font-ui), "Poppins", sans-serif;
   padding: 0 22px;
@@ -427,17 +427,24 @@
 }
 
 .notifications-drawer__item:not(.is-unread) {
-  background: rgba(245, 210, 157, 0.95);
+  background: transparent;
 }
 
 .notifications-drawer__item:hover,
 .notifications-drawer__item:focus-visible {
-  background: rgba(21, 104, 132, 0.5);
+  background: #203AE1;
+  color: #ffffff;
   outline: none;
 }
 
 .notifications-drawer__item.is-unread {
-  background: rgba(21, 104, 132, 0.5);
+  background: rgba(101, 143, 213, 0.22);
+}
+
+.notifications-drawer__item.is-unread:hover,
+.notifications-drawer__item.is-unread:focus-visible {
+  background: #203AE1;
+  color: #ffffff;
 }
 
 .notifications-drawer__circle {
@@ -463,7 +470,7 @@
 }
 
 .notifications-drawer__copy strong {
-  color: #ffffff;
+  color: currentColor;
   font-size: 14px;
   font-weight: 800;
   line-height: 1.15;
@@ -471,7 +478,7 @@
 
 .notifications-drawer__copy small,
 .notifications-drawer__item time {
-  color: #ffffff;
+  color: currentColor;
   font-size: 11px;
   font-weight: 700;
   line-height: 1.2;
@@ -484,7 +491,7 @@
 .notifications-drawer__empty {
   margin: 0;
   padding: 28px 22px;
-  color: rgba(255, 255, 255, 0.78);
+  color: #2D3673;
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 14px;
   font-weight: 600;

@@ -59,10 +59,14 @@ export function NotificationsPageContent() {
     setNotifications(readNotifications());
   };
 
+  const handleMarkAllRead = () => {
+    markNotificationsAsRead(notifications.map((notification) => notification.id));
+    setNotifications(readNotifications());
+  };
+
   return (
     <main className="notifications-page">
       <header className="notifications-header">
-        <h1>Notifications</h1>
         <div
           className="notifications-categories"
           role="tablist"
@@ -82,6 +86,9 @@ export function NotificationsPageContent() {
             </button>
           ))}
         </div>
+        <button className="notifications-mark-read" type="button" onClick={handleMarkAllRead}>
+          Mark as Read
+        </button>
       </header>
 
       {filteredNotifications.length > 0 ? (

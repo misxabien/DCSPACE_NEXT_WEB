@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { type CSSProperties, useEffect, useState } from 'react';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { canOrganizeEvents } from '@/lib/dc-events';
@@ -19,6 +19,7 @@ const AVATAR =
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [canCreateEvents, setCanCreateEvents] = useState(false);
   const [notifications, setNotifications] = useState<DcNotification[]>([]);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -93,6 +94,7 @@ export function Sidebar() {
   useEffect(() => {
     setIsMobileNavOpen(false);
     setIsMobileProfileOpen(false);
+    setIsNotificationsOpen(false);
   }, [pathname]);
 
   const handleMarkAllNotificationsRead = () => {
@@ -103,6 +105,8 @@ export function Sidebar() {
   const handleNotificationClick = (notificationId: string) => {
     markNotificationsAsRead([notificationId]);
     setNotifications(readNotifications());
+    setIsNotificationsOpen(false);
+    router.push('/notifications');
   };
 
   const hasUnreadNotifications = notifications.some((notification) => !notification.isRead);
@@ -181,13 +185,26 @@ export function Sidebar() {
             className="sidebar__logo-button"
             type="button"
             aria-label={isCollapsed ? 'Open sidebar' : 'DC Space'}
-            onClick={() => isCollapsed && setIsCollapsed(false)}
+            onClick={() => {
+              setIsNotificationsOpen(false);
+              if (isCollapsed) {
+                setIsCollapsed(false);
+              }
+            }}
           >
             <Image className="sidebar__logo" src="/dcspace-logos/dcspace-logo-circle.png" width={58} height={58} alt="" priority />
             <Image className="sidebar__open-icon" src="/svg icons navbar/open-sidebar-icon.svg" width={18} height={18} alt="" />
           </button>
           <strong className="sidebar__brand-name">DC SPACE</strong>
-          <button className="sidebar__toggle" type="button" aria-label="Close sidebar" onClick={() => setIsCollapsed(true)}>
+          <button
+            className="sidebar__toggle"
+            type="button"
+            aria-label="Close sidebar"
+            onClick={() => {
+              setIsNotificationsOpen(false);
+              setIsCollapsed(true);
+            }}
+          >
             <Image src="/svg icons navbar/close-sidebar-icon.svg" width={16} height={16} alt="" />
           </button>
         </div>
@@ -207,7 +224,10 @@ export function Sidebar() {
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 key={item.label}
-                onClick={() => setIsMobileNavOpen(false)}
+                onClick={() => {
+                  setIsNotificationsOpen(false);
+                  setIsMobileNavOpen(false);
+                }}
               >
                 <Image className="sidebar__icon sidebar__icon--desktop" src={item.icon} width={22} height={22} alt="" />
                 <Image className="sidebar__icon sidebar__icon--mobile" src={item.mobileIcon} width={28} height={28} alt="" />
@@ -217,7 +237,14 @@ export function Sidebar() {
           })}
         </nav>
 
-        <Link className="sidebar__logout" href="/login" onClick={() => setIsLoggingOut(true)}>
+        <Link
+          className="sidebar__logout"
+          href="/login"
+          onClick={() => {
+            setIsNotificationsOpen(false);
+            setIsLoggingOut(true);
+          }}
+        >
           <Image src="/svg icons navbar/logout-icon.svg" width={18} height={18} alt="" />
           <span>Log out</span>
         </Link>
@@ -232,6 +259,7 @@ export function Sidebar() {
           aria-label={isMobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
           aria-expanded={isMobileNavOpen}
           onClick={() => {
+            setIsNotificationsOpen(false);
             setIsMobileProfileOpen(false);
             setIsMobileNavOpen((isOpen) => !isOpen);
           }}
@@ -249,7 +277,7 @@ export function Sidebar() {
         </button>
         <h1>
           {isSubmitFeedbackPage ? (
-            <Link className="topbar__title-link" href="/my-profile">
+            <Link className="topbar__title-link" href="/my-profile" onClick={() => setIsNotificationsOpen(false)}>
               {pageTitle}
             </Link>
           ) : (
@@ -261,6 +289,7 @@ export function Sidebar() {
             className={`topbar__profile-pill${pathname.includes('/my-profile') || pathname.includes('/submit-feedback') ? ' is-active' : ''}`}
             href="/my-profile"
             aria-label="Open profile"
+            onClick={() => setIsNotificationsOpen(false)}
           >
             <span>{userName}</span>
             <span className="topbar__avatar-link">
@@ -281,6 +310,7 @@ export function Sidebar() {
             aria-label={isMobileProfileOpen ? 'Close profile menu' : 'Open profile menu'}
             aria-expanded={isMobileProfileOpen}
             onClick={() => {
+              setIsNotificationsOpen(false);
               setIsMobileNavOpen(false);
               setIsMobileProfileOpen((isOpen) => !isOpen);
             }}
@@ -319,7 +349,7 @@ export function Sidebar() {
               alt=""
             />
           </button>
-          <button className="topbar__help" type="button" aria-label="Help">
+          <button className="topbar__help" type="button" aria-label="Help" onClick={() => setIsNotificationsOpen(false)}>
             ?
           </button>
         </div>
@@ -332,6 +362,7 @@ export function Sidebar() {
               pathname.includes('/my-profile') || pathname.includes('/submit-feedback') ? ' is-active' : ''
             }`}
             href="/my-profile"
+            onClick={() => setIsNotificationsOpen(false)}
           >
             <span>My Profile</span>
             <span className="mobile-profile-menu__avatar">
@@ -349,11 +380,19 @@ export function Sidebar() {
           <Link
             className={`mobile-profile-menu__item${pathname === '/notifications' ? ' is-active' : ''}`}
             href="/notifications"
+            onClick={() => setIsNotificationsOpen(false)}
           >
             <span>My Notifications</span>
             <Image src="/svg icons navbar/svg icon navbar mobile/notification-icon.svg" width={30} height={30} alt="" />
           </Link>
-          <button className="mobile-profile-menu__item" type="button" onClick={() => setIsMobileProfileOpen(false)}>
+          <button
+            className="mobile-profile-menu__item"
+            type="button"
+            onClick={() => {
+              setIsNotificationsOpen(false);
+              setIsMobileProfileOpen(false);
+            }}
+          >
             <span>Tutorial</span>
             <Image src="/svg icons navbar/svg icon navbar mobile/question-circle-icon.svg" width={30} height={30} alt="" />
           </button>
