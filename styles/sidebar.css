@@ -1,6 +1,8 @@
 .app {
   --sidebar-open-width: 205px;
   --sidebar-closed-width: 58px;
+  --topbar-height: 72px;
+  --mobile-topbar-height: clamp(56px, 14vw, 64px);
   --content-pad-left: 28px;
   --content-pad-right: 36px;
   --content-pad-mobile: 16px;
@@ -211,7 +213,7 @@
   right: 0;
   left: var(--sidebar-open-width);
   z-index: 40;
-  min-height: 72px;
+  min-height: var(--topbar-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -496,7 +498,7 @@
   flex: 1;
   min-width: 0;
   margin-left: var(--sidebar-open-width);
-  padding-top: 72px;
+  padding-top: var(--topbar-height);
   background: #efefef;
   transition: margin-left 0.2s ease;
 }
@@ -505,15 +507,15 @@
   margin-left: var(--sidebar-closed-width);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .sidebar {
-    top: 88px;
+    top: var(--mobile-topbar-height);
     right: auto;
     bottom: 0;
     left: 0;
     z-index: 45;
     width: 100vw;
-    height: calc(100dvh - 88px);
+    height: calc(100dvh - var(--mobile-topbar-height));
     padding: 20px 19px 42px;
     background: #A0C0F8;
     transform: translateX(-100%);
@@ -617,17 +619,17 @@
   .topbar,
   .sidebar--collapsed + .topbar {
     left: 0;
-    min-height: 88px;
+    min-height: var(--mobile-topbar-height);
     z-index: 60;
     justify-content: flex-start;
-    gap: 20px;
-    padding: 0 20px;
+    gap: clamp(12px, 4vw, 20px);
+    padding: 0 clamp(14px, 5vw, 20px);
   }
 
   .topbar h1 {
     flex: 1;
     min-width: 0;
-    font-size: clamp(30px, 7vw, 38px);
+    font-size: clamp(18px, 5.2vw, 23px);
     line-height: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -635,8 +637,8 @@
   }
 
   .topbar__mobile-menu {
-    width: 48px;
-    height: 48px;
+    width: clamp(36px, 11vw, 44px);
+    height: clamp(36px, 11vw, 44px);
     border: 0;
     display: inline-grid;
     place-items: center;
@@ -647,14 +649,14 @@
   }
 
   .topbar__mobile-menu img {
-    width: 42px;
-    height: 42px;
+    width: clamp(28px, 9vw, 36px);
+    height: clamp(28px, 9vw, 36px);
     object-fit: contain;
   }
 
   .topbar__mobile-profile-toggle {
-    width: 50px;
-    height: 50px;
+    width: clamp(40px, 12vw, 46px);
+    height: clamp(40px, 12vw, 46px);
     border: 0;
     display: inline-grid;
     place-items: center;
@@ -664,8 +666,8 @@
   }
 
   .topbar__mobile-profile-toggle > img {
-    width: 42px;
-    height: 42px;
+    width: clamp(28px, 9vw, 36px);
+    height: clamp(28px, 9vw, 36px);
     object-fit: contain;
   }
 
@@ -686,24 +688,24 @@
 
   .topbar__avatar-link,
   .topbar__avatar {
-    width: 50px;
-    height: 50px;
+    width: clamp(38px, 11vw, 44px);
+    height: clamp(38px, 11vw, 44px);
   }
 
   .main,
   .sidebar--collapsed ~ .main {
     margin-left: 0;
-    padding-top: 88px;
+    padding-top: var(--mobile-topbar-height);
   }
 
   .notifications-drawer {
-    top: 88px;
+    top: var(--mobile-topbar-height);
     width: 100vw;
   }
 
   .mobile-profile-menu {
     position: fixed;
-    top: 88px;
+    top: var(--mobile-topbar-height);
     right: 0;
     bottom: 0;
     left: 0;
@@ -793,6 +795,27 @@
     display: inline-flex;
     flex: 0 0 auto;
     overflow: hidden;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1024px) {
+  .topbar h1 {
+    font-size: clamp(22px, 3.2vw, 30px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 380px) {
+  .topbar,
+  .sidebar--collapsed + .topbar {
+    gap: 10px;
+    padding-inline: 12px;
+  }
+
+  .topbar h1 {
+    font-size: clamp(17px, 5vw, 21px);
   }
 }
 
