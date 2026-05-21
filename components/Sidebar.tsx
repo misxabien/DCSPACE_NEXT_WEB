@@ -157,7 +157,7 @@ export function Sidebar() {
     {
       href: '/events',
       label: 'Saved Events',
-      icon: '/svg icons navbar/Bookmark.svg',
+      icon: '/svg icons navbar/svg icon navbar mobile/saved-events-icon.svg',
       mobileIcon: '/svg icons navbar/svg icon navbar mobile/saved-events-icon.svg',
     },
     {
