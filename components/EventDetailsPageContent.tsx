@@ -466,12 +466,12 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
               )}
               <p>Registration Deadline: {formatDeadline(eventDetails.registrationDeadline)}</p>
             </aside>
-          </div>
 
-          <section className="browse-event-detail__description">
-            <h3>Event Description</h3>
-            <p>{eventDetails.overview || 'Event description will appear here.'}</p>
-          </section>
+            <section className="browse-event-detail__description">
+              <h3>Event Description</h3>
+              <p>{eventDetails.overview || 'Event description will appear here.'}</p>
+            </section>
+          </div>
         </div>
         {showRequirements && (
           <RequirementsModal

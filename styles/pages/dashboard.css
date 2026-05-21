@@ -651,12 +651,12 @@ a.dashboard-summary-card:focus-visible {
 .joined-events-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 26px;
+  gap: 52px;
 }
 
 .joined-event-card {
   min-width: 0;
-  min-height: 205px;
+  min-height: 250px;
   display: flex;
   container-type: inline-size;
   border: 1px solid #9d9d9d;
@@ -674,9 +674,9 @@ a.dashboard-summary-card:focus-visible {
 
 .joined-event-card__link {
   width: 100%;
-  min-height: 205px;
+  min-height: 250px;
   display: grid;
-  grid-template-rows: 128px 1fr;
+  grid-template-rows: 150px 1fr;
   color: #000000;
   text-decoration: none;
   padding: 0;
@@ -684,7 +684,7 @@ a.dashboard-summary-card:focus-visible {
 
 .joined-event-card__media {
   position: relative;
-  min-height: 128px;
+  min-height: 150px;
   display: block;
   background: transparent;
   overflow: hidden;
@@ -697,10 +697,10 @@ a.dashboard-summary-card:focus-visible {
 .joined-event-card__content {
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr);
-  align-items: end;
-  align-self: end;
+  align-items: start;
+  align-self: start;
   gap: 22px;
-  padding: 18px 28px 30px;
+  padding: 18px 24px 10px 30px;
 }
 
 .joined-event-card__date {
@@ -770,7 +770,7 @@ a.dashboard-summary-card:focus-visible {
   .joined-event-card__content {
     grid-template-columns: 44px minmax(0, 1fr);
     gap: 14px;
-    padding: 16px 18px 28px;
+    padding: 16px 18px 10px;
   }
 
   .joined-event-card__date span {
@@ -779,6 +779,27 @@ a.dashboard-summary-card:focus-visible {
 
   .joined-event-card__date strong {
     font-size: 19px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .joined-events-grid {
+    grid-template-columns: repeat(2, minmax(250px, 1fr));
+    gap: 28px;
+  }
+}
+
+@media (max-width: 700px) {
+  .joined-events-shell {
+    padding: 22px 18px 38px;
+  }
+
+  .joined-events-shell h2 {
+    font-size: 32px;
+  }
+
+  .joined-events-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1035,11 +1056,6 @@ a.dashboard-summary-card:focus-visible {
 
   .dashboard-joined-grid {
     grid-template-columns: 1fr;
-  }
-
-  .joined-event-card__link {
-    grid-template-columns: 48px minmax(0, 1fr);
-    gap: 16px;
   }
 
   .dashboard-panel__header {

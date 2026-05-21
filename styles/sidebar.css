@@ -119,6 +119,10 @@
   flex: 0 0 auto;
 }
 
+.sidebar__icon--mobile {
+  display: none;
+}
+
 .sidebar__logout {
   min-height: 32px;
   display: flex;
@@ -216,6 +220,14 @@
   color: #000000;
   padding: 0 var(--content-pad-right) 0 var(--content-pad-left);
   transition: left 0.2s ease;
+}
+
+.topbar__mobile-menu {
+  display: none;
+}
+
+.topbar__mobile-profile-toggle {
+  display: none;
 }
 
 .sidebar--collapsed + .topbar {
@@ -476,6 +488,10 @@
   font-weight: 600;
 }
 
+.mobile-profile-menu {
+  display: none;
+}
+
 .main {
   flex: 1;
   min-width: 0;
@@ -491,64 +507,339 @@
 
 @media (max-width: 760px) {
   .sidebar {
-    width: var(--sidebar-closed-width);
-    padding: 24px 9px 18px;
+    top: 88px;
+    right: auto;
+    bottom: 0;
+    left: 0;
+    z-index: 45;
+    width: 100vw;
+    height: calc(100dvh - 88px);
+    padding: 20px 19px 42px;
+    background: #8AB6FF;
+    transform: translateX(-100%);
+    transition: transform 0.34s cubic-bezier(0.2, 0.78, 0.2, 1);
+    will-change: transform;
   }
 
-  .sidebar .sidebar__brand-name,
-  .sidebar .sidebar__toggle,
-  .sidebar .sidebar__link span,
-  .sidebar .sidebar__logout span {
+  .sidebar.sidebar--mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar,
+  .sidebar--collapsed {
+    width: 100vw;
+    padding: 20px 19px 42px;
+  }
+
+  .sidebar__brand,
+  .sidebar__logout {
     display: none;
   }
 
-  .sidebar .sidebar__logo-button,
-  .sidebar .sidebar__logo {
-    width: 36px;
-    height: 36px;
+  .sidebar__nav {
+    gap: 16px;
   }
 
-  .sidebar .sidebar__link {
-    width: 40px;
-    height: 40px;
-    min-height: 40px;
-    justify-content: center;
-    padding: 0;
+  .sidebar .sidebar__link,
+  .sidebar--collapsed .sidebar__link {
+    width: 100%;
+    min-height: 59px;
+    border-radius: 999px;
+    justify-content: flex-start;
+    gap: 28px;
+    color: #ffffff;
+    font-family: var(--font-ui), "Poppins", sans-serif;
+    font-size: clamp(22px, 5.8vw, 28px);
+    font-weight: 700;
+    line-height: 1;
+    padding: 0 28px;
+    transform: translateX(-10px);
+    opacity: 0;
+    transition:
+      background 0.18s ease,
+      opacity 0.18s ease,
+      transform 0.18s ease;
   }
 
-  .sidebar .sidebar__logout {
-    width: 40px;
-    justify-content: center;
-    padding: 0;
+  .sidebar.sidebar--mobile-open .sidebar__link {
+    animation: mobile-nav-item-in 0.38s cubic-bezier(0.2, 0.78, 0.2, 1) both;
+  }
+
+  .sidebar.sidebar--mobile-open .sidebar__link:nth-child(1) {
+    animation-delay: 0.05s;
+  }
+
+  .sidebar.sidebar--mobile-open .sidebar__link:nth-child(2) {
+    animation-delay: 0.09s;
+  }
+
+  .sidebar.sidebar--mobile-open .sidebar__link:nth-child(3) {
+    animation-delay: 0.13s;
+  }
+
+  .sidebar.sidebar--mobile-open .sidebar__link:nth-child(4) {
+    animation-delay: 0.17s;
+  }
+
+  .sidebar.sidebar--mobile-open .sidebar__link:nth-child(5) {
+    animation-delay: 0.21s;
+  }
+
+  .sidebar.sidebar--mobile-open .sidebar__link:nth-child(6) {
+    animation-delay: 0.25s;
+  }
+
+  .sidebar .sidebar__link span,
+  .sidebar--collapsed .sidebar__link span {
+    display: inline;
+    animation: mobile-nav-text-in 0.32s ease both;
+    animation-delay: inherit;
+    white-space: nowrap;
+  }
+
+  .sidebar__link:hover,
+  .sidebar__link.is-active {
+    background: #397DEF;
+  }
+
+  .sidebar__icon--desktop {
+    display: none;
+  }
+
+  .sidebar__icon--mobile {
+    display: block;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
   }
 
   .topbar,
   .sidebar--collapsed + .topbar {
-    left: var(--sidebar-closed-width);
-    min-height: 64px;
-    padding-inline: var(--content-pad-mobile);
+    left: 0;
+    min-height: 88px;
+    z-index: 60;
+    justify-content: flex-start;
+    gap: 20px;
+    padding: 0 20px;
   }
 
   .topbar h1 {
-    font-size: 26px;
+    flex: 1;
+    min-width: 0;
+    font-size: clamp(30px, 7vw, 38px);
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .topbar__mobile-menu {
+    width: 48px;
+    height: 48px;
+    border: 0;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .topbar__mobile-menu img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+  }
+
+  .topbar__mobile-profile-toggle {
+    width: 50px;
+    height: 50px;
+    border: 0;
+    display: inline-grid;
+    place-items: center;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .topbar__mobile-profile-toggle > img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
   }
 
   .topbar__right {
-    gap: 10px;
+    gap: 0;
+    flex: 0 0 auto;
   }
 
-  .topbar__account {
+  .topbar__profile-pill {
     display: none;
+  }
+
+  .topbar__profile-pill > span:first-child,
+  .topbar__icon-button,
+  .topbar__help {
+    display: none;
+  }
+
+  .topbar__avatar-link,
+  .topbar__avatar {
+    width: 50px;
+    height: 50px;
   }
 
   .main,
   .sidebar--collapsed ~ .main {
-    margin-left: var(--sidebar-closed-width);
-    padding-top: 64px;
+    margin-left: 0;
+    padding-top: 88px;
   }
 
   .notifications-drawer {
-    top: 64px;
-    width: calc(100vw - var(--sidebar-closed-width));
+    top: 88px;
+    width: 100vw;
+  }
+
+  .mobile-profile-menu {
+    position: fixed;
+    top: 88px;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 45;
+    display: block;
+    background: #8AB6FF;
+    padding: 25px 17px 42px;
+    pointer-events: none;
+    transform: translateX(100%);
+    transition: transform 0.34s cubic-bezier(0.2, 0.78, 0.2, 1);
+    will-change: transform;
+  }
+
+  .mobile-profile-menu.is-open {
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+
+  .mobile-profile-menu__nav {
+    display: grid;
+    gap: 16px;
+  }
+
+  .mobile-profile-menu__item {
+    width: 100%;
+    min-height: 59px;
+    border: 0;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 28px;
+    background: transparent;
+    color: #ffffff;
+    cursor: pointer;
+    font-family: var(--font-ui), "Poppins", sans-serif;
+    font-size: clamp(22px, 5.8vw, 28px);
+    font-weight: 700;
+    line-height: 1;
+    text-align: right;
+    text-decoration: none;
+    padding: 0 18px 0 28px;
+    opacity: 0;
+    transform: translateX(28px);
+  }
+
+  .mobile-profile-menu__item:hover,
+  .mobile-profile-menu__item:focus-visible,
+  .mobile-profile-menu__item.is-active {
+    background: #397DEF;
+    outline: none;
+  }
+
+  .mobile-profile-menu.is-open .mobile-profile-menu__item {
+    animation: mobile-profile-item-in 0.38s cubic-bezier(0.2, 0.78, 0.2, 1) both;
+  }
+
+  .mobile-profile-menu.is-open .mobile-profile-menu__item:nth-child(1) {
+    animation-delay: 0.05s;
+  }
+
+  .mobile-profile-menu.is-open .mobile-profile-menu__item:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+
+  .mobile-profile-menu.is-open .mobile-profile-menu__item:nth-child(3) {
+    animation-delay: 0.15s;
+  }
+
+  .mobile-profile-menu__item span:first-child {
+    animation: mobile-profile-text-in 0.32s ease both;
+    animation-delay: inherit;
+  }
+
+  .mobile-profile-menu__item img:not(.topbar__avatar) {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+  }
+
+  .mobile-profile-menu__avatar {
+    width: 50px;
+    height: 50px;
+    border: 1px solid #ffffff;
+    border-radius: 50%;
+    display: inline-flex;
+    flex: 0 0 auto;
+    overflow: hidden;
+  }
+}
+
+@keyframes mobile-nav-item-in {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mobile-nav-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobile-profile-item-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mobile-profile-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

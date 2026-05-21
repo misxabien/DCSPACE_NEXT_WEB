@@ -314,6 +314,10 @@
   max-width: 100%;
 }
 
+.browse-event-detail__body > .browse-event-detail__description {
+  grid-column: 1 / -1;
+}
+
 .browse-event-detail__description p {
   max-width: 100%;
   margin: 0;
@@ -965,6 +969,18 @@
     grid-template-columns: 1fr;
   }
 
+  .browse-event-detail__info {
+    order: 1;
+  }
+
+  .browse-event-detail__description {
+    order: 2;
+  }
+
+  .browse-event-detail__cta {
+    order: 3;
+  }
+
   .browse-event-detail__actions {
     justify-content: flex-start;
   }
@@ -972,6 +988,15 @@
   .browse-event-detail__cta {
     width: min(100%, 320px);
     padding-top: 0;
+  }
+
+  .browse-event-detail__cta p {
+    order: 1;
+  }
+
+  .browse-event-detail__cta button,
+  .browse-event-detail__cta .event-pending-admin-message {
+    order: 2;
   }
 
   .details-header,
