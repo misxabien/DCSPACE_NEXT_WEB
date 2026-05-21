@@ -14,7 +14,7 @@
   display: flex;
   flex-direction: column;
   margin-left: var(--sidebar-open-width);
-  padding-top: 72px;
+  padding-top: var(--topbar-height, 72px);
   background: var(--attendance-bg);
   overflow-y: auto;
   transition: margin-left 0.2s ease;
@@ -228,11 +228,11 @@
   opacity: 0;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .main,
   .sidebar--collapsed ~ .main {
-    margin-left: var(--sidebar-closed-width);
-    padding-top: 64px;
+    margin-left: 0;
+    padding-top: var(--mobile-topbar-height, 56px);
   }
 
   .details-top {
