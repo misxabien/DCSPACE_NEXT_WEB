@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { DateRangeCalendarPicker } from '@/components/DateRangeCalendarPicker';
 import {
   ATTENDANCE_UPDATED_EVENT,
   REGISTERED_EVENTS_KEY,
@@ -136,6 +137,13 @@ function getEventBanner(event: RegisteredEvent) {
   return (event as RegisteredEvent & { bannerDataUrl?: string }).bannerDataUrl || '';
 }
 
+function getAttendanceDateKeys(events: AttendanceEvent[]) {
+  return events
+    .map((event) => getAttendanceEventDate(event))
+    .filter((date): date is Date => Boolean(date))
+    .map((date) => getDateInputValue(date));
+}
+
 function isEditableTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
 
@@ -264,6 +272,7 @@ export function AttendancePageContent() {
     dateRange: { start: string; end: string },
     setActiveFilter: (filter: string) => void,
     setDateRange: Dispatch<SetStateAction<{ start: string; end: string }>>,
+    highlightedDates: string[],
   ) => (
     <div className="attendance-filters" aria-label={`${group} attendance filters`}>
       {attendanceFilters.map((filter) => (
@@ -281,29 +290,20 @@ export function AttendancePageContent() {
           </button>
           {filter === 'Pick a date' && openDatePicker === group && (
             <section className="attendance-date-picker" aria-label={`Choose ${group} attendance date`}>
-              <label>
-                <span>From</span>
-                <input
-                  type="date"
-                  value={dateRange.start}
-                  onChange={(event) => {
-                    setDateRange((current) => ({ ...current, start: event.target.value }));
-                    setActiveFilter('Pick a date');
-                  }}
-                />
-              </label>
-              <label>
-                <span>To</span>
-                <input
-                  type="date"
-                  value={dateRange.end}
-                  min={dateRange.start || undefined}
-                  onChange={(event) => {
-                    setDateRange((current) => ({ ...current, end: event.target.value }));
-                    setActiveFilter('Pick a date');
-                  }}
-                />
-              </label>
+              <DateRangeCalendarPicker
+                value={dateRange}
+                highlightedDates={highlightedDates}
+                onChange={(nextDateRange) => {
+                  setDateRange(nextDateRange);
+                  setActiveFilter('Pick a date');
+                }}
+                onClear={() => {
+                  setDateRange({ start: '', end: '' });
+                  setActiveFilter('All');
+                  setOpenDatePicker(null);
+                }}
+                onDone={() => setOpenDatePicker(null)}
+              />
             </section>
           )}
         </span>
@@ -366,6 +366,7 @@ export function AttendancePageContent() {
               completedDateRange,
               setCompletedFilter,
               setCompletedDateRange,
+              getAttendanceDateKeys(completedEvents),
             )}
             <div className="attendance-event-grid">
               {filteredCompletedEvents.length ? filteredCompletedEvents.map(renderAttendanceCard) : (
@@ -382,6 +383,7 @@ export function AttendancePageContent() {
               incompleteDateRange,
               setIncompleteFilter,
               setIncompleteDateRange,
+              getAttendanceDateKeys(incompleteEvents),
             )}
             <div className="attendance-event-grid">
               {filteredIncompleteEvents.length ? filteredIncompleteEvents.map(renderAttendanceCard) : (

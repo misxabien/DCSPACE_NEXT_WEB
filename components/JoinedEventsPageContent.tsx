@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { DateRangeCalendarPicker } from '@/components/DateRangeCalendarPicker';
 import { getRegisteredEventId, readRegisteredEvents, type RegisteredEvent } from '@/lib/attendance';
 import { setSelectedBrowseEventId } from '@/lib/dc-events';
 
@@ -26,6 +27,14 @@ function getDateFromInput(value: string) {
 
   date.setHours(0, 0, 0, 0);
   return date;
+}
+
+function getDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
 }
 
 function isSameDate(firstDate: Date, secondDate: Date) {
@@ -103,6 +112,14 @@ export function JoinedEventsPageContent() {
     () => events.filter((event) => matchesFilter(event, activeFilter, dateRange)),
     [activeFilter, dateRange, events],
   );
+  const eventDateKeys = useMemo(
+    () =>
+      events
+        .map((event) => getEventDate(event))
+        .filter((date): date is Date => Boolean(date))
+        .map((date) => getDateInputValue(date)),
+    [events],
+  );
 
   const handleFilterClick = (filter: string) => {
     if (filter === 'Pick a date') {
@@ -112,6 +129,12 @@ export function JoinedEventsPageContent() {
     }
 
     setActiveFilter(filter);
+    setShowDatePicker(false);
+  };
+
+  const clearPickedDate = () => {
+    setDateRange({ start: '', end: '' });
+    setActiveFilter('All');
     setShowDatePicker(false);
   };
 
@@ -131,29 +154,16 @@ export function JoinedEventsPageContent() {
               </button>
               {filter === 'Pick a date' && showDatePicker && (
                 <section className="joined-date-picker" aria-label="Pick joined event date">
-                  <label>
-                    <span>From</span>
-                    <input
-                      type="date"
-                      value={dateRange.start}
-                      onChange={(event) => {
-                        setDateRange((current) => ({ ...current, start: event.target.value }));
-                        setActiveFilter('Pick a date');
-                      }}
-                    />
-                  </label>
-                  <label>
-                    <span>To</span>
-                    <input
-                      type="date"
-                      value={dateRange.end}
-                      min={dateRange.start || undefined}
-                      onChange={(event) => {
-                        setDateRange((current) => ({ ...current, end: event.target.value }));
-                        setActiveFilter('Pick a date');
-                      }}
-                    />
-                  </label>
+                  <DateRangeCalendarPicker
+                    value={dateRange}
+                    highlightedDates={eventDateKeys}
+                    onChange={(nextDateRange) => {
+                      setDateRange(nextDateRange);
+                      setActiveFilter('Pick a date');
+                    }}
+                    onClear={clearPickedDate}
+                    onDone={() => setShowDatePicker(false)}
+                  />
                 </section>
               )}
             </span>

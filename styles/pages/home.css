@@ -73,14 +73,13 @@
   top: calc(100% + 8px);
   right: 0;
   z-index: 8;
-  width: 216px;
+  width: 260px;
   border: 1px solid #c7cbd4;
   border-radius: 8px;
-  display: grid;
-  gap: 10px;
   background: #ffffff;
   box-shadow: 0 12px 24px rgba(31, 35, 60, 0.12);
-  padding: 12px;
+  overflow: hidden;
+  padding: 0;
 }
 
 .home-date-picker label {
@@ -420,6 +419,7 @@
   }
 
   .home-page__filters {
+    position: relative;
     gap: 8px;
     padding-left: 0;
   }
@@ -427,6 +427,18 @@
   .home-page__filter {
     min-width: 52px;
     padding-inline: 11px;
+  }
+
+  .home-page__filter-wrap:has(.home-date-picker) {
+    position: static;
+  }
+
+  .home-date-picker {
+    left: 50%;
+    right: 0;
+    top: calc(100% + 8px);
+    transform: translateX(-50%);
+    width: min(260px, calc(100vw - 32px));
   }
 
   .home-page__search {

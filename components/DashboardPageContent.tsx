@@ -251,7 +251,7 @@ export function DashboardPageContent() {
 
         if (
           searchValue &&
-          ![event.name, event.venue, event.dateTime, event.organizer, event.department].some((field) =>
+          ![event.name, event.venue, event.dateTime, event.organizer].some((field) =>
             field?.toLowerCase().includes(searchValue),
           )
         ) {
@@ -270,8 +270,7 @@ export function DashboardPageContent() {
       }),
     [joinedFilter, joinedSearchTerm, registeredEvents, selectedJoinedEndDate, selectedJoinedStartDate],
   );
-  const calendarBaseDate =
-    selectedJoinedStartDate || joinedEventDates.find((date) => date.getTime() >= new Date().setHours(0, 0, 0, 0)) || joinedEventDates[0] || new Date();
+  const calendarBaseDate = new Date();
   const calendarAnchor = new Date(calendarBaseDate.getFullYear(), calendarBaseDate.getMonth() + calendarMonthOffset, 1);
   const calendarDays = getCalendarDays(calendarAnchor);
   const joinedDateKeys = new Set(joinedEventDates.map((date) => formatDateInputValue(date)));
