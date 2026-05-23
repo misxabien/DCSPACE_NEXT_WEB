@@ -194,7 +194,7 @@ export function EventsOrganizedPageContent() {
         <div className="organized-section__header">
           <div>
             <h2>
-              Pending <span>Event Approvals</span>
+              Event <span>Submissions</span>
             </h2>
             <div className="organized-filter-row">
               {approvalFilters.map((filter) => (
