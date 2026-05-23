@@ -311,8 +311,7 @@ export function RegisterAccountContent() {
                     Choose your role
                   </option>
                   <option value="Organization Member">Organization Member</option>
-                  <option value="Officer">Organization Officer</option>
-                  <option value="Volunteer">Volunteer</option>
+                  <option value="Organization Officer">Organization Officer</option>
                 </select>
               </label>
 
