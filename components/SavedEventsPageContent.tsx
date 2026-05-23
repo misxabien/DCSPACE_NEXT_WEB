@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { DateRangeCalendarPicker } from '@/components/DateRangeCalendarPicker';
 import { type FrontendEvent, readBrowseEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
 
 const HOME_SAVED_EVENTS_KEY = 'dcspaceHomeSavedEvents';
@@ -30,6 +31,14 @@ function getDateFromInput(value: string) {
   const date = new Date(`${value}T00:00:00`);
 
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
 }
 
 function getEventTimeDisplay(dateTime: string) {
@@ -137,6 +146,15 @@ export function SavedEventsPageContent() {
         );
       });
   }, [activeFilter, dateRange, events, savedEventIds, searchTerm]);
+  const savedEventDateKeys = useMemo(() => {
+    const savedIds = new Set(savedEventIds);
+
+    return events
+      .filter((event) => savedIds.has(event.id))
+      .map((event) => getEventDate(event))
+      .filter((date): date is Date => Boolean(date))
+      .map((date) => getDateInputValue(date));
+  }, [events, savedEventIds]);
 
   const removeSavedEvent = (eventId: string) => {
     setSavedEventIds((current) => {
@@ -186,32 +204,16 @@ export function SavedEventsPageContent() {
                 </button>
                 {filter === 'Pick a date' && showDatePicker && (
                   <section className="saved-events-date-picker" aria-label="Choose saved event date">
-                    <label>
-                      <span>From</span>
-                      <input
-                        type="date"
-                        value={dateRange.start}
-                        onChange={(event) => {
-                          setDateRange((current) => ({ ...current, start: event.target.value }));
-                          setActiveFilter('Pick a date');
-                        }}
-                      />
-                    </label>
-                    <label>
-                      <span>To</span>
-                      <input
-                        type="date"
-                        value={dateRange.end}
-                        min={dateRange.start || undefined}
-                        onChange={(event) => {
-                          setDateRange((current) => ({ ...current, end: event.target.value }));
-                          setActiveFilter('Pick a date');
-                        }}
-                      />
-                    </label>
-                    <button className="saved-events-date-picker__clear" type="button" onClick={clearPickedDate}>
-                      Clear
-                    </button>
+                    <DateRangeCalendarPicker
+                      value={dateRange}
+                      highlightedDates={savedEventDateKeys}
+                      onChange={(nextDateRange) => {
+                        setDateRange(nextDateRange);
+                        setActiveFilter('Pick a date');
+                      }}
+                      onClear={clearPickedDate}
+                      onDone={() => setShowDatePicker(false)}
+                    />
                   </section>
                 )}
               </span>

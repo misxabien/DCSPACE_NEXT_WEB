@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { DateRangeCalendarPicker } from "@/components/DateRangeCalendarPicker";
 import {
   ATTENDANCE_UPDATED_EVENT,
   REGISTERED_EVENTS_KEY,
@@ -177,14 +178,20 @@ export function CertificatesPageContent() {
       }
 
       if (activeFilter === "Pick a date") {
-        const startsAfterStartDate = dateRange.start ? certificate.issuedDateValue >= dateRange.start : true;
-        const endsBeforeEndDate = dateRange.end ? certificate.issuedDateValue <= dateRange.end : true;
+        const startDate = dateRange.start <= (dateRange.end || dateRange.start) ? dateRange.start : dateRange.end;
+        const endDate = dateRange.start <= (dateRange.end || dateRange.start) ? (dateRange.end || dateRange.start) : dateRange.start;
+        const startsAfterStartDate = startDate ? certificate.issuedDateValue >= startDate : true;
+        const endsBeforeEndDate = endDate ? certificate.issuedDateValue <= endDate : true;
         return startsAfterStartDate && endsBeforeEndDate;
       }
 
       return true;
     });
   }, [activeFilter, certificates.length, dateRange, visibleCertificates]);
+  const certificateDateKeys = useMemo(
+    () => visibleCertificates.map((certificate) => certificate.issuedDateValue),
+    [visibleCertificates],
+  );
 
   const handleFilterClick = (filter: string) => {
     if (filter === "Pick a date") {
@@ -222,32 +229,16 @@ export function CertificatesPageContent() {
               </button>
               {filter === "Pick a date" && showDatePicker && (
                 <section className="certificates-date-picker" aria-label="Choose certificate date">
-                  <label>
-                    <span>From</span>
-                    <input
-                      type="date"
-                      value={dateRange.start}
-                      onChange={(event) => {
-                        setDateRange((current) => ({ ...current, start: event.target.value }));
-                        setActiveFilter(filter);
-                      }}
-                    />
-                  </label>
-                  <label>
-                    <span>To</span>
-                    <input
-                      type="date"
-                      value={dateRange.end}
-                      min={dateRange.start || undefined}
-                      onChange={(event) => {
-                        setDateRange((current) => ({ ...current, end: event.target.value }));
-                        setActiveFilter(filter);
-                      }}
-                    />
-                  </label>
-                  <button className="certificates-date-picker__clear" type="button" onClick={clearPickedDate}>
-                    Clear
-                  </button>
+                  <DateRangeCalendarPicker
+                    value={dateRange}
+                    highlightedDates={certificateDateKeys}
+                    onChange={(nextDateRange) => {
+                      setDateRange(nextDateRange);
+                      setActiveFilter(filter);
+                    }}
+                    onClear={clearPickedDate}
+                    onDone={() => setShowDatePicker(false)}
+                  />
                 </section>
               )}
             </span>

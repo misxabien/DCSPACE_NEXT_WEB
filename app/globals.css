@@ -60,6 +60,128 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.date-range-calendar {
+  width: min(260px, calc(100vw - 32px));
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+}
+
+.date-range-calendar header {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  background: #f7f8fc;
+  color: #1f2230;
+  padding: 0 8px;
+}
+
+.date-range-calendar header strong {
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.date-range-calendar header button {
+  border: 0;
+  background: transparent;
+  color: #9da7c0;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.date-range-calendar__weekdays,
+.date-range-calendar__days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.date-range-calendar__weekdays {
+  padding: 12px 14px 4px;
+}
+
+.date-range-calendar__weekdays span {
+  color: #98a2c0;
+  font-size: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.date-range-calendar__days {
+  gap: 2px;
+  padding: 0 14px 14px;
+}
+
+.date-range-calendar__days button {
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #1f2230;
+  cursor: pointer;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.date-range-calendar__days button.is-muted {
+  color: #c7ccda;
+}
+
+.date-range-calendar__days button.is-highlighted {
+  background: rgba(68, 138, 255, 0.18);
+  color: #448aff;
+}
+
+.date-range-calendar__days button.is-in-range {
+  background: rgba(68, 138, 255, 0.12);
+  color: #448aff;
+}
+
+.date-range-calendar__days button.is-selected {
+  background: #448aff;
+  color: #ffffff;
+}
+
+.date-range-calendar__days button:hover,
+.date-range-calendar__days button:focus-visible {
+  background: #448aff;
+  color: #ffffff;
+  outline: none;
+}
+
+.date-range-calendar__clear {
+  width: calc(100% - 28px);
+  height: 26px;
+  border: 1px solid #d7dae2;
+  border-radius: 999px;
+  display: block;
+  background: #ffffff;
+  color: #5b6378;
+  cursor: pointer;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 10px;
+  margin: 0 14px 14px;
+}
+
+@media (max-width: 700px) {
+  .date-range-calendar header {
+    min-height: 40px;
+    grid-template-columns: 34px 1fr 34px;
+  }
+
+  .date-range-calendar__weekdays {
+    padding: 10px 12px 4px;
+  }
+
+  .date-range-calendar__days {
+    padding: 0 12px 12px;
+  }
+}
+
 .loading-screen {
   min-height: 100vh;
   min-height: 100dvh;

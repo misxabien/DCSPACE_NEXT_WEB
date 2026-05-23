@@ -667,13 +667,12 @@ a.dashboard-summary-card:focus-visible {
   z-index: 5;
   top: calc(100% + 8px);
   left: 0;
-  width: 220px;
+  width: 260px;
   border: 1px solid #d6d6d6;
   border-radius: 8px;
-  display: grid;
-  gap: 8px;
   background: #ffffff;
-  padding: 12px;
+  overflow: hidden;
+  padding: 0;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
 }
 
@@ -863,6 +862,22 @@ a.dashboard-summary-card:focus-visible {
   .joined-events-grid {
     grid-template-columns: 1fr;
     gap: 18px;
+  }
+
+  .joined-events-filters {
+    position: relative;
+  }
+
+  .joined-events-filter-wrap:has(.joined-date-picker) {
+    position: static;
+  }
+
+  .joined-date-picker {
+    left: 50%;
+    right: 0;
+    top: calc(100% + 8px);
+    transform: translateX(-50%);
+    width: min(260px, calc(100vw - 32px));
   }
 
   .joined-events-grid.dashboard-joined-grid {

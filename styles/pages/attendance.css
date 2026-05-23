@@ -147,14 +147,13 @@ main.main::-webkit-scrollbar,
   top: calc(100% + 8px);
   right: 0;
   z-index: 8;
-  width: 216px;
+  width: 260px;
   border: 1px solid #c7cbd4;
   border-radius: 8px;
-  display: grid;
-  gap: 10px;
   background: #ffffff;
   box-shadow: 0 12px 24px rgba(31, 35, 60, 0.12);
-  padding: 12px;
+  overflow: hidden;
+  padding: 0;
 }
 
 .attendance-date-picker label {
@@ -339,6 +338,22 @@ main.main::-webkit-scrollbar,
 @media (max-width: 760px) {
   .main__grid-wrap {
     padding: 20px var(--content-pad-mobile, 16px) 36px;
+  }
+
+  .attendance-filters {
+    position: relative;
+  }
+
+  .attendance-filter-wrap:has(.attendance-date-picker) {
+    position: static;
+  }
+
+  .attendance-date-picker {
+    left: 50%;
+    right: 0;
+    top: calc(100% + 8px);
+    transform: translateX(-50%);
+    width: min(260px, calc(100vw - 32px));
   }
 
   .attendance-event-grid {
