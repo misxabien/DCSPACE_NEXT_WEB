@@ -179,9 +179,13 @@ main.main::-webkit-scrollbar,
 
 .attendance-event-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-  gap: clamp(18px, 2.2vw, 26px);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: clamp(14px, 1.4vw, 20px);
   align-items: stretch;
+}
+
+.attendance-event-grid:has(> :only-child) {
+  grid-template-columns: minmax(min(100%, 320px), min(100%, 400px));
 }
 
 .completed-empty-message {
@@ -335,5 +339,10 @@ main.main::-webkit-scrollbar,
 @media (max-width: 760px) {
   .main__grid-wrap {
     padding: 20px var(--content-pad-mobile, 16px) 36px;
+  }
+
+  .attendance-event-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
   }
 }

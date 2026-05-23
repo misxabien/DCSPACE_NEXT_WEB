@@ -156,6 +156,7 @@ export function DashboardPageContent() {
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
   const [isOfficer, setIsOfficer] = useState(false);
   const [joinedFilter, setJoinedFilter] = useState<JoinedFilter>('all');
+  const [joinedSearchTerm, setJoinedSearchTerm] = useState('');
   const [selectedJoinedDateRange, setSelectedJoinedDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
@@ -195,15 +196,6 @@ export function DashboardPageContent() {
         return getCertificateStatus(attendanceRecords[eventId], event) === 'Download';
       }).length,
     [attendanceRecords, registeredEvents],
-  );
-
-  const upcomingSoonCount = useMemo(
-    () =>
-      registeredEvents.filter((event) => {
-        const daysUntil = getDaysUntil(event);
-        return daysUntil !== null && daysUntil >= 0 && daysUntil <= 3;
-      }).length,
-    [registeredEvents],
   );
 
   const ongoingOrganizedEvent = useMemo(
@@ -251,8 +243,18 @@ export function DashboardPageContent() {
     () =>
       registeredEvents.filter((event) => {
         const eventDate = getEventDate(event);
+        const searchValue = joinedSearchTerm.trim().toLowerCase();
 
         if (joinedFilter !== 'all' && getJoinedFilterStatus(event) !== joinedFilter) {
+          return false;
+        }
+
+        if (
+          searchValue &&
+          ![event.name, event.venue, event.dateTime, event.organizer, event.department].some((field) =>
+            field?.toLowerCase().includes(searchValue),
+          )
+        ) {
           return false;
         }
 
@@ -266,7 +268,7 @@ export function DashboardPageContent() {
 
         return true;
       }),
-    [joinedFilter, registeredEvents, selectedJoinedEndDate, selectedJoinedStartDate],
+    [joinedFilter, joinedSearchTerm, registeredEvents, selectedJoinedEndDate, selectedJoinedStartDate],
   );
   const calendarBaseDate =
     selectedJoinedStartDate || joinedEventDates.find((date) => date.getTime() >= new Date().setHours(0, 0, 0, 0)) || joinedEventDates[0] || new Date();
@@ -422,28 +424,19 @@ export function DashboardPageContent() {
   return (
     <section className="dashboard-page">
       <div className="dashboard-shell">
-        <h2>
-          Hello, <ColorfulGreetingName name={firstName} />
-        </h2>
-
-        <section className="dashboard-summary" aria-label="Dashboard summary">
-          <Link className="dashboard-summary-card dashboard-summary-card--joined" href="/dashboard/events-joined">
-            <h3>Events Joined</h3>
-            <p>{registeredEvents.length}</p>
-          </Link>
-          <Link className="dashboard-summary-card dashboard-summary-card--saved" href="/events">
-            <h3>Saved Events</h3>
-            <p>{savedEventIds.length}</p>
-          </Link>
-          <Link className="dashboard-summary-card dashboard-summary-card--certificates" href="/certificates">
-            <h3>Certificates Earned</h3>
-            <p>{certificatesEarned}</p>
-          </Link>
-          <article className="dashboard-summary-card dashboard-summary-card--upcoming">
-            <h3>Upcoming Events</h3>
-            <p>{upcomingSoonCount}</p>
-          </article>
-        </section>
+        <div className="dashboard-header">
+          <h2>Hello, {firstName}!</h2>
+          <label className="dashboard-search">
+            <Image src="/assets/searchbar-icon.svg" width={12} height={12} alt="" />
+            <input
+              type="search"
+              aria-label="Search joined events"
+              placeholder="Search"
+              value={joinedSearchTerm}
+              onChange={(event) => setJoinedSearchTerm(event.target.value)}
+            />
+          </label>
+        </div>
 
         <section className="dashboard-joined-section" aria-label="Events joined">
           <div className="dashboard-joined-main">
