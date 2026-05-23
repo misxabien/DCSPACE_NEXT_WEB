@@ -243,14 +243,14 @@
 .organized-event-card__venue {
   color: #8ab6ff;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 500;
   margin-bottom: 7px;
 }
 
 .organized-event-card__time {
   color: #000000;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
   margin-bottom: 12px;
 }
 
@@ -282,7 +282,7 @@
 .organized-event-card:hover .organized-event-card__venue,
 .organized-event-card:focus-within .organized-event-card__date strong,
 .organized-event-card:focus-within .organized-event-card__venue {
-  color: #6b7df2;
+  color: #448aff;
 }
 
 .organized-summary {

@@ -288,13 +288,13 @@ main.main::-webkit-scrollbar,
 .attendance-event-card__details span {
   color: #8ab6ff;
   font-size: clamp(9px, 3.6cqi, 11px);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .attendance-event-card__details small {
   color: #000000;
   font-size: clamp(8px, 3.2cqi, 10px);
-  font-weight: 700;
+  font-weight: 500;
   overflow-wrap: anywhere;
 }
 
@@ -313,7 +313,7 @@ main.main::-webkit-scrollbar,
 .attendance-event-card:hover .attendance-event-card__details span,
 .attendance-event-card:focus-within .attendance-event-card__date strong,
 .attendance-event-card:focus-within .attendance-event-card__details span {
-  color: #6b7df2;
+  color: #448aff;
 }
 
 @container (max-width: 320px) {
