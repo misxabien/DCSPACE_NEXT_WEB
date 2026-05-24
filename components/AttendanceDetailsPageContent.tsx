@@ -7,8 +7,11 @@ import {
   type AttendanceRecord,
   type AttendanceUser,
   type RegisteredEvent,
+  downloadAttendanceCertificate,
   formatEventDate,
+  getCertificateStatus,
   getCurrentAttendanceUser,
+  getEventStatus,
   getRegisteredEventId,
   getSelectedAttendanceEventId,
   readRegisteredEvents,
@@ -135,7 +138,10 @@ export function AttendanceDetailsPageContent() {
 
   const event = detail?.event || placeholderEvent;
   const record = detail?.record;
+  const user = detail?.user;
   const progressPercent = getProgressPercent(record, event);
+  const isPassedEvent = getEventStatus(event) === 'Passed';
+  const certificateStatus = getCertificateStatus(record, event);
 
   const savedTapRows = getTapPairs(record);
   const tapRows = [
@@ -165,6 +171,12 @@ export function AttendanceDetailsPageContent() {
     focusScanner();
   };
 
+  const handleCertificateDownload = () => {
+    if (!user || certificateStatus !== 'Download') return;
+
+    downloadAttendanceCertificate(event, user, record);
+  };
+
   return (
     <div className="details-wrap">
       <form className="rfid-hidden-form" onSubmit={handleRfidSubmit}>
@@ -184,38 +196,54 @@ export function AttendanceDetailsPageContent() {
           <h2 className="details-heading">Real-Time <span>Attendance Logs</span></h2>
           <h3>Event Details</h3>
         </div>
+        {isPassedEvent && (
+          <aside className="attendance-certificate-actions" aria-label="Certificate status">
+            {certificateStatus === 'Download' ? (
+              <button className="attendance-certificate-button is-received" type="button" onClick={handleCertificateDownload}>
+                Download Certificate
+              </button>
+            ) : (
+              <button className="attendance-certificate-button is-missing" type="button">
+                You didn&apos;t receive a certificate for this event
+              </button>
+            )}
+          </aside>
+        )}
       </div>
 
-      <section className="attendance-detail-card" aria-label="Event details">
-        <h2>{event.name || 'Event Name'}</h2>
-        <dl>
-          <div>
-            <DetailIcon type="date" />
-            <dt>Event Date</dt>
-            <dd>{formatEventDate(event)}</dd>
-          </div>
-          <div>
-            <DetailIcon type="time" />
-            <dt>Event Time</dt>
-            <dd>{getEventTimeDisplay(event.dateTime)}</dd>
-          </div>
-          <div>
-            <DetailIcon type="venue" />
-            <dt>Event Venue</dt>
-            <dd>{event.venue || 'Event Venue'}</dd>
-          </div>
-          <div>
-            <DetailIcon type="requirement" />
-            <dt>Attendance Time Requirement</dt>
-            <dd>{event.minAttendance || 'TBA'}</dd>
-          </div>
-          <div>
-            <DetailIcon type="grace" />
-            <dt>Allowed Grace Period</dt>
-            <dd>{event.duration || 'TBA'}</dd>
-          </div>
-        </dl>
-        {scanMessage && <p className="rfid-scan-message">{scanMessage}</p>}
+      <section className={`attendance-detail-card${isPassedEvent ? ' attendance-detail-card--passed' : ''}`} aria-label="Event details">
+        <div className="attendance-detail-card__main">
+          <h2>{event.name || 'Event Name'}</h2>
+          {isPassedEvent && <p className="attendance-passed-note">This event has passed.</p>}
+          <dl>
+            <div>
+              <DetailIcon type="date" />
+              <dt>Event Date</dt>
+              <dd>{formatEventDate(event)}</dd>
+            </div>
+            <div>
+              <DetailIcon type="time" />
+              <dt>Event Time</dt>
+              <dd>{getEventTimeDisplay(event.dateTime)}</dd>
+            </div>
+            <div>
+              <DetailIcon type="venue" />
+              <dt>Event Venue</dt>
+              <dd>{event.venue || 'Event Venue'}</dd>
+            </div>
+            <div>
+              <DetailIcon type="requirement" />
+              <dt>Attendance Time Requirement</dt>
+              <dd>{event.minAttendance || 'TBA'}</dd>
+            </div>
+            <div>
+              <DetailIcon type="grace" />
+              <dt>Allowed Grace Period</dt>
+              <dd>{event.duration || 'TBA'}</dd>
+            </div>
+          </dl>
+          {scanMessage && <p className="rfid-scan-message">{scanMessage}</p>}
+        </div>
       </section>
 
       <section className="rfid-activity" aria-label="RFID activity logs">

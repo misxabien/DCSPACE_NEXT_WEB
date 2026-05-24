@@ -32,13 +32,13 @@ main.main::-webkit-scrollbar,
 .main__grid-wrap {
   flex: 1;
   min-width: 0;
-  padding: 22px var(--content-pad-right, 36px) 42px var(--content-pad-left, 28px);
+  padding: 42px var(--content-pad-right, 36px) 42px var(--content-pad-left, 28px);
 }
 
 .attendance-shell {
   width: 100%;
   display: grid;
-  gap: 34px;
+  gap: 30px;
   margin: 0;
 }
 
@@ -69,7 +69,7 @@ main.main::-webkit-scrollbar,
 
 .attendance-section {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .attendance-section h2 {
@@ -189,7 +189,7 @@ main.main::-webkit-scrollbar,
 
 .completed-empty-message {
   grid-column: 1 / -1;
-  min-height: 120px;
+  min-height: 58px;
   display: grid;
   place-items: center;
   margin: 0;
@@ -337,7 +337,7 @@ main.main::-webkit-scrollbar,
 
 @media (max-width: 760px) {
   .main__grid-wrap {
-    padding: 20px var(--content-pad-mobile, 16px) 36px;
+    padding: 32px var(--content-pad-mobile, 16px) 36px;
   }
 
   .attendance-filters {

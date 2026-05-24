@@ -38,6 +38,8 @@ export type RegisteredEvent = {
   certificate?: string;
   minAttendance?: string;
   duration?: string;
+  surveyFormLink?: string;
+  announcements?: string;
   requirements?: string[];
   requirementFile?: UploadedRequirementFile;
   requirementFiles?: UploadedRequirementFile[];
