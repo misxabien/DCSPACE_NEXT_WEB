@@ -9,7 +9,7 @@ import { type FrontendEvent, readOrganizedEvents, setSelectedBrowseEventId } fro
 type StatusKey = 'upcoming' | 'ongoing' | 'completed' | 'pending';
 
 const statusFilters = ['All', 'Upcoming', 'Ongoing', 'Completed'];
-const approvalFilters = ['All', 'Pending', 'Accepted', 'Rejected', 'Drafts'];
+const approvalFilters = ['All', 'Pending', 'Accepted', 'Changes Requested', 'Rejected', 'Drafts'];
 const statusMeta: Record<StatusKey, { label: string; color: string }> = {
   upcoming: { label: 'Upcoming', color: '#6b7df2' },
   ongoing: { label: 'Ongoing', color: '#8ab6ff' },
@@ -53,6 +53,7 @@ function getEventStatus(event: FrontendEvent): StatusKey {
 function getApprovalStatus(event: FrontendEvent) {
   const rawStatus = event.status?.toLowerCase() || '';
 
+  if (rawStatus.includes('change')) return 'Changes Requested';
   if (rawStatus.includes('reject')) return 'Rejected';
   if (rawStatus.includes('accept') || rawStatus.includes('approve') || rawStatus.includes('created')) return 'Accepted';
   if (rawStatus.includes('draft')) return 'Drafts';
@@ -105,6 +106,8 @@ export function EventsOrganizedPageContent() {
     const status = approval ? getApprovalStatus(event) : statusMeta[getEventStatus(event)].label;
     const handleOpenEventDetails = () => {
       window.sessionStorage.setItem('dcspaceDashboardView', 'organized');
+      window.sessionStorage.setItem('dcspaceOrganizedEventSection', approval ? 'submissions' : 'all');
+      window.sessionStorage.setItem('dcspaceOrganizedEventFilter', approval ? approvalFilter : eventFilter);
       setSelectedBrowseEventId(event.id);
     };
 

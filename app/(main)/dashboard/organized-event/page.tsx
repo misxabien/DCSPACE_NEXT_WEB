@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function OrganizedEventDetailsPage() {
-  return <EventDetailsPageContent />;
+  return <EventDetailsPageContent source="organized" />;
 }

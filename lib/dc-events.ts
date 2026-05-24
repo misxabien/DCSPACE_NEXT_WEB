@@ -25,6 +25,8 @@ export type FrontendEvent = RegisteredEvent & {
   registrationDeadline?: string;
   surveyFormLink?: string;
   announcements?: string;
+  adminComments?: Array<{ message?: string; createdAt?: string }>;
+  adminChangeRequest?: string;
   createdBy?: string;
   bannerDataUrl?: string;
 };

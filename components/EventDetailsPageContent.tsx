@@ -52,6 +52,7 @@ const fallbackEventDetails: FrontendEvent = {
 };
 
 type EventDetailsSource = 'events' | 'dashboard' | 'organized';
+type RegistrationDecision = 'accepted' | 'rejected';
 
 type EventDetailsPageContentProps = {
   source?: EventDetailsSource;
@@ -140,6 +141,31 @@ function formatDeadline(deadline?: string) {
   });
 }
 
+function getSurveyFormLink(event: FrontendEvent | RegisteredEvent) {
+  return (event as FrontendEvent & RegisteredEvent).surveyFormLink?.trim() || '';
+}
+
+function getAdminChangeRequest(event: FrontendEvent) {
+  const eventWithRequest = event as FrontendEvent & {
+    adminComments?: Array<{ message?: string }>;
+    adminChangeRequest?: string;
+    changesRequested?: string;
+    requestedChanges?: string;
+  };
+  const latestComment = [...(eventWithRequest.adminComments || [])]
+    .reverse()
+    .find((comment) => comment.message?.trim())
+    ?.message?.trim();
+
+  return (
+    latestComment ||
+    eventWithRequest.adminChangeRequest?.trim() ||
+    eventWithRequest.changesRequested?.trim() ||
+    eventWithRequest.requestedChanges?.trim() ||
+    'List of the changes requested by the admin will be shown here.'
+  );
+}
+
 function getCurrentEventRegistered(eventId: string) {
   return readRegisteredEvents().some((event) => getRegisteredEventId(event) === eventId || event.id === eventId);
 }
@@ -187,6 +213,29 @@ function toEventDetails(event: RegisteredEvent, fallback: FrontendEvent): Fronte
   };
 }
 
+function getSubmittedRegistrationRows(eventDetails: FrontendEvent, registrations: RegisteredEvent[]) {
+  return registrations
+    .filter((registration) => registration.id === eventDetails.id || getRegisteredEventId(registration) === eventDetails.id)
+    .map((registration, index) => {
+      const registrationWithProfile = registration as RegisteredEvent & {
+        participantName?: string;
+        studentName?: string;
+        course?: string;
+        organization?: string;
+      };
+      const submittedFile = registration.requirementFiles?.[0] || registration.requirementFile;
+
+      return {
+        id: `${getRegisteredEventId(registration)}-${index}`,
+        participantName: registrationWithProfile.participantName || registrationWithProfile.studentName || 'Participant Name',
+        course: registrationWithProfile.course || 'Course',
+        organization: registrationWithProfile.organization || registration.organizer || 'Organization',
+        fileName: submittedFile?.requirementName || submittedFile?.name || registration.requirements?.[0] || 'File Name Submitted',
+        file: submittedFile,
+      };
+    });
+}
+
 export function EventDetailsPageContent({ source = 'events', eventDate }: EventDetailsPageContentProps) {
   const router = useRouter();
   const isDashboardSource = source === 'dashboard';
@@ -198,6 +247,8 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
   const [selectedRequirementFiles, setSelectedRequirementFiles] = useState<Record<string, File>>({});
   const [showRequirementWarning, setShowRequirementWarning] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [organizedEventSection, setOrganizedEventSection] = useState('all');
+  const [organizedEventFilter, setOrganizedEventFilter] = useState('All');
   const [selectedEvent, setSelectedEvent] = useState<FrontendEvent>(fallbackEventDetails);
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
   const [isJoined, setIsJoined] = useState(false);
@@ -205,6 +256,7 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
   const [canCurrentUserOrganize, setCanCurrentUserOrganize] = useState(false);
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, ReturnType<typeof readUserAttendanceRecords>[string]>>({});
+  const [registrationDecisions, setRegistrationDecisions] = useState<Record<string, RegistrationDecision>>({});
   const eventRequirements = selectedEvent.requirements || [];
 
   useEffect(() => {
@@ -217,6 +269,8 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
     setCanCurrentUserOrganize(canOrganizeEvents());
     setRegisteredEvents(currentRegisteredEvents);
     setAttendanceRecords(readUserAttendanceRecords(currentUser));
+    setOrganizedEventSection(window.sessionStorage.getItem('dcspaceOrganizedEventSection') || 'all');
+    setOrganizedEventFilter(window.sessionStorage.getItem('dcspaceOrganizedEventFilter') || 'All');
     if (!isDashboardSource) {
       setSelectedEvent(browseEvent);
       setSavedEventIds(readSavedHomeEvents());
@@ -350,8 +404,9 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
   const eventDetails = selectedEvent;
   const isBrowseSource = !isDashboardSource && !isOrganizedSource;
   const isSaved = savedEventIds.includes(eventDetails.id);
+  const eventCreatedBy = eventDetails.createdBy || '';
   const isCreatedByCurrentUser =
-    canCurrentUserOrganize && Boolean(eventDetails.createdBy) && eventDetails.createdBy.trim().toLowerCase() === currentUserEmail;
+    canCurrentUserOrganize && Boolean(eventCreatedBy) && eventCreatedBy.trim().toLowerCase() === currentUserEmail;
   const currentAttendanceUser = getCurrentAttendanceUser();
   const organizerCourse = eventDetails.organizerCourse || (isCreatedByCurrentUser ? currentAttendanceUser.course : '') || 'Course';
   const matchingRegisteredEvent = registeredEvents.find(
@@ -361,9 +416,276 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
   const isPassedBrowseEvent = getEventStatus(eventDetails) === 'Passed';
   const isPassedJoinedBrowseEvent = isPassedBrowseEvent && Boolean(matchingRegisteredEvent);
   const receivedCertificate = getCertificateStatus(matchingAttendanceRecord, matchingRegisteredEvent || eventDetails) === 'Download';
+  const surveyFormLink = getSurveyFormLink(matchingRegisteredEvent || eventDetails);
+  const hasRequestedChanges = eventDetails.status?.toLowerCase().replace(/[\s-]+/g, '_') === 'changes_requested';
+  const isRejectedOrganizedEvent =
+    isOrganizedSource &&
+    eventDetails.status?.toLowerCase().includes('reject') &&
+    organizedEventSection === 'submissions' &&
+    organizedEventFilter === 'Rejected';
+  const isPendingOrganizedEvent =
+    isOrganizedSource &&
+    (!eventDetails.status ||
+      ['pending', 'created', 'submitted'].some((status) => eventDetails.status?.toLowerCase().includes(status))) &&
+    organizedEventSection === 'submissions' &&
+    organizedEventFilter === 'Pending';
+  const isAcceptedOrganizedSubmission =
+    isOrganizedSource &&
+    organizedEventSection === 'submissions' &&
+    organizedEventFilter === 'Accepted';
+  const isDraftOrganizedEvent =
+    eventDetails.status?.toLowerCase() === 'draft' &&
+    organizedEventSection === 'submissions' &&
+    organizedEventFilter === 'Drafts';
+  const adminChangeRequest = getAdminChangeRequest(eventDetails);
+  const eventAnnouncements = eventDetails.announcements?.trim() || 'No Announcements yet';
+  const showLongChangeRequest = adminChangeRequest.length > 90;
   // Temporarily disabled with the pending admin approval message in the CTA.
   // const isPendingAdminApproval = eventDetails.status?.toLowerCase() === 'pending';
   const isPendingFileApproval = isJoined && eventRequirements.length > 0;
+  const submittedRegistrationRows = getSubmittedRegistrationRows(eventDetails, registeredEvents);
+
+  const handleRegistrationDecision = (registrationId: string, decision: RegistrationDecision) => {
+    setRegistrationDecisions((current) => ({
+      ...current,
+      [registrationId]: decision,
+    }));
+  };
+
+  if (isOrganizedSource && hasRequestedChanges) {
+    return (
+      <section className="event-details-page event-details-page--change-request">
+        <div className="change-request-layout">
+          <div className="change-request-main">
+            <div className="change-request-banner">
+              {eventDetails.bannerDataUrl ? <img src={eventDetails.bannerDataUrl} alt="" /> : <img src="/assets/Calendar.svg" alt="" />}
+            </div>
+            <h2>{eventDetails.name}</h2>
+
+            <section>
+              <h3>Date &amp; Time</h3>
+              <DetailRow icon="date" label={formatDatePart(eventDetails.dateTime)} value="" />
+              <DetailRow icon="time" label={formatTimePart(eventDetails.dateTime)} value="" />
+            </section>
+
+            <section>
+              <h3>Location</h3>
+              <DetailRow icon="venue" label={eventDetails.venue || 'Event Venue'} value="" />
+            </section>
+
+            <section>
+              <h3>Hosted By</h3>
+              <DetailRow icon="organizer" label={eventDetails.organizer || 'Organization Name'} value="" />
+            </section>
+          </div>
+
+          <aside className="change-request-panel">
+            <p className="change-request-note">The admin requested changes before approving your event.</p>
+            <label className="change-request-field">
+              <span>
+                <Image src="/assets/info-circle.svg" width={22} height={22} alt="" />
+                Changes Requested
+              </span>
+              {showLongChangeRequest ? (
+                <textarea value={adminChangeRequest} readOnly />
+              ) : (
+                <input type="text" value={adminChangeRequest} readOnly />
+              )}
+            </label>
+            <Link className="change-request-button" href="/events-organized/create">
+              Make Changes
+            </Link>
+          </aside>
+        </div>
+      </section>
+    );
+  }
+
+  if (isOrganizedSource && isDraftOrganizedEvent) {
+    return (
+      <section className="event-details-page event-details-page--draft">
+        <div className="draft-event-layout">
+          <div className="draft-event-main">
+            <div className="draft-event-banner">
+              {eventDetails.bannerDataUrl ? <img src={eventDetails.bannerDataUrl} alt="" /> : <img src="/assets/Calendar.svg" alt="" />}
+            </div>
+            <h2>{eventDetails.name}</h2>
+
+            <section>
+              <h3>Date &amp; Time</h3>
+              <DetailRow icon="date" label={formatDatePart(eventDetails.dateTime)} value="" />
+              <DetailRow icon="time" label={formatTimePart(eventDetails.dateTime)} value="" />
+            </section>
+
+            <section>
+              <h3>Location</h3>
+              <DetailRow icon="venue" label={eventDetails.venue || 'Event Venue'} value="" />
+            </section>
+
+            <section>
+              <h3>Hosted By</h3>
+              <DetailRow icon="organizer" label={eventDetails.organizer || 'Organization Name'} value="" />
+            </section>
+          </div>
+
+          <aside className="draft-event-panel">
+            <p>This event is in the drafts folder.</p>
+            <Link className="draft-event-button" href="/events-organized/create">
+              Continue Editing
+            </Link>
+          </aside>
+        </div>
+      </section>
+    );
+  }
+
+  if (isAcceptedOrganizedSubmission) {
+    return (
+      <section className="event-details-page event-details-page--browse event-details-page--accepted-submission">
+        <div className="browse-event-detail">
+          <div className="browse-event-detail__banner">
+            {eventDetails.bannerDataUrl ? <img src={eventDetails.bannerDataUrl} alt="" /> : <img src="/assets/Calendar.svg" alt="" />}
+          </div>
+
+          <header className="browse-event-detail__header">
+            <div>
+              <h2>{eventDetails.name}</h2>
+            </div>
+            <div className="browse-event-detail__actions" aria-label="Event actions">
+              <button
+                className={`browse-event-detail__icon-btn${isSaved ? ' is-saved' : ''}`}
+                type="button"
+                aria-label={isSaved ? 'Remove from saved events' : 'Save event'}
+                onClick={toggleSavedEvent}
+              >
+                <span className="browse-event-detail__bookmark-outline" aria-hidden="true" />
+                <span className="browse-event-detail__bookmark-fill" aria-hidden="true" />
+              </button>
+              <button className="browse-event-detail__icon-btn" type="button" aria-label="Share event" onClick={() => void handleShareEvent()}>
+                <Image src="/assets/share-icon.svg" width={30} height={30} alt="" />
+              </button>
+            </div>
+          </header>
+
+          <div className="browse-event-detail__body">
+            <div className="browse-event-detail__info">
+              <section>
+                <h3>Date &amp; Time</h3>
+                <DetailRow icon="date" label={formatDatePart(eventDetails.dateTime)} value="" />
+                <DetailRow icon="time" label={formatTimePart(eventDetails.dateTime)} value="" />
+              </section>
+
+              <section>
+                <h3>Location</h3>
+                <DetailRow icon="venue" label={eventDetails.venue || 'Event Venue'} value="" />
+              </section>
+
+              <section>
+                <h3>Hosted By</h3>
+                <DetailRow icon="organizer" label={eventDetails.organizer || 'Organization Name'} value="" />
+                <DetailRow icon="course" label={organizerCourse} value="" />
+                <DetailRow icon="department" label={eventDetails.department || eventDetails.school || 'School/Department'} value="" />
+              </section>
+
+              <section>
+                <h3>Event Requirements</h3>
+                <DetailRow icon="attendance" label="Attendance Time Requirement:" value={eventDetails.minAttendance || 'TBA'} />
+                <DetailRow icon="grace" label="Grace Period:" value={eventDetails.duration || 'TBA'} />
+                <DetailRow
+                  icon="files"
+                  label="Required File(s):"
+                  value={eventRequirements.length ? eventRequirements.join(', ') : 'None'}
+                />
+              </section>
+            </div>
+
+            <aside className="browse-event-detail__cta">
+              <button className="attend-event-button" type="button">
+                Attend Event
+              </button>
+              <p>Registration Deadline: {formatDeadline(eventDetails.registrationDeadline)}</p>
+              <section className="event-cta-announcements">
+                <h3>Announcements:</h3>
+                <p>{eventAnnouncements}</p>
+              </section>
+            </aside>
+
+            <section className="browse-event-detail__description">
+              <h3>Event Description</h3>
+              <p>{eventDetails.overview || 'Event description will appear here.'}</p>
+            </section>
+          </div>
+
+          <Link className="accepted-submission-make-changes" href="/events-organized/create">
+            Make Changes
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  if (isPendingOrganizedEvent || (isOrganizedSource && organizedEventSection === 'submissions' && !isRejectedOrganizedEvent)) {
+    return (
+      <section className="event-details-page event-details-page--browse event-details-page--pending-detail">
+        <div className="browse-event-detail">
+          <div className="browse-event-detail__banner">
+            {eventDetails.bannerDataUrl ? <img src={eventDetails.bannerDataUrl} alt="" /> : <img src="/assets/Calendar.svg" alt="" />}
+          </div>
+
+          <header className="browse-event-detail__header">
+            <div>
+              <h2>{eventDetails.name}</h2>
+            </div>
+          </header>
+
+          <div className="browse-event-detail__body">
+            <div className="browse-event-detail__info">
+              <section>
+                <h3>Date &amp; Time</h3>
+                <DetailRow icon="date" label={formatDatePart(eventDetails.dateTime)} value="" />
+                <DetailRow icon="time" label={formatTimePart(eventDetails.dateTime)} value="" />
+              </section>
+
+              <section>
+                <h3>Location</h3>
+                <DetailRow icon="venue" label={eventDetails.venue || 'Event Venue'} value="" />
+              </section>
+
+              <section>
+                <h3>Hosted By</h3>
+                <DetailRow icon="organizer" label={eventDetails.organizer || 'Organization Name'} value="" />
+                <DetailRow icon="course" label={organizerCourse} value="" />
+                <DetailRow icon="department" label={eventDetails.department || eventDetails.school || 'School/Department'} value="" />
+              </section>
+
+              <section>
+                <h3>Event Requirements</h3>
+                <DetailRow icon="attendance" label="Attendance Time Requirement:" value={eventDetails.minAttendance || 'TBA'} />
+                <DetailRow icon="grace" label="Grace Period:" value={eventDetails.duration || 'TBA'} />
+                <DetailRow
+                  icon="files"
+                  label="Required File(s):"
+                  value={eventRequirements.length ? eventRequirements.join(', ') : 'None'}
+                />
+              </section>
+            </div>
+
+            <aside className="browse-event-detail__cta pending-event-approval-message">
+            <p>
+              This event is still pending from being approved by the admin.{' '}
+              <Link href="/submit-feedback">Submit Feedback.</Link>
+            </p>
+            </aside>
+
+            <section className="browse-event-detail__description">
+              <h3>Event Description</h3>
+              <p>{eventDetails.overview || 'Event description will appear here.'}</p>
+            </section>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (isBrowseSource) {
     return (
@@ -445,14 +767,23 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
                 </p>
               ) : */}
               {isPassedJoinedBrowseEvent ? (
-                <button
-                  className={`event-certificate-status${receivedCertificate ? ' is-received' : ' is-missing'}`}
-                  type="button"
-                >
-                  {receivedCertificate
-                    ? 'You received a certificate for this event'
-                    : "You didn't receive a certificate for this event"}
-                </button>
+                <>
+                  <button
+                    className={`event-certificate-status${receivedCertificate ? ' is-received' : ' is-missing'}`}
+                    type="button"
+                  >
+                    {receivedCertificate
+                      ? 'You received a certificate for this event'
+                      : "You didn't receive a certificate for this event"}
+                  </button>
+                  <label className="event-survey-link">
+                    <span>
+                      <Image src="/assets/info-circle.svg" width={22} height={22} alt="" />
+                      Survey Form Link
+                    </span>
+                    <input type="text" value={surveyFormLink || 'Survey Form Link'} readOnly />
+                  </label>
+                </>
               ) : isPendingFileApproval ? (
                 <button className="attend-event-button attend-event-button--pending" type="button">
                   Pending File Submission Approval
@@ -467,6 +798,10 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
                 </button>
               )}
               <p>Registration Deadline: {formatDeadline(eventDetails.registrationDeadline)}</p>
+              <section className="event-cta-announcements">
+                <h3>Announcements:</h3>
+                <p>{eventAnnouncements}</p>
+              </section>
             </aside>
 
             <section className="browse-event-detail__description">
@@ -485,6 +820,179 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
             onConfirm={() => void handleConfirm()}
             onFileChange={handleRequirementFileChange}
           />
+        )}
+      </section>
+    );
+  }
+
+  if (isOrganizedSource && organizedEventSection === 'all') {
+    return (
+      <section className={`event-details-page event-details-page--organized${isRedirecting ? ' is-exiting' : ''}${showDeleteConfirm ? ' is-delete-confirming' : ''}`}>
+        <section className="organized-event-details-section">
+          <h2>Event Details</h2>
+          <article className="organized-event-details-card">
+            <h3>{eventDetails.name}</h3>
+            <div className="organized-event-details-grid">
+              <DetailRow icon="date" label={formatDatePart(eventDetails.dateTime)} value="" />
+              <DetailRow icon="time" label={formatTimePart(eventDetails.dateTime)} value="" />
+              <DetailRow icon="venue" label={eventDetails.venue || 'Event Venue'} value="" />
+              <DetailRow icon="attendance" label="Attendance Time Requirement" value={eventDetails.minAttendance || 'TBA'} />
+              <DetailRow icon="grace" label="Allowed Grace Period" value={eventDetails.duration || 'TBA'} />
+            </div>
+          </article>
+        </section>
+
+        <section className="submitted-registrations-section">
+          <h2>Submitted Registrations</h2>
+          <div className="submitted-registrations-table-wrap">
+            <table className="submitted-registrations-table">
+              <thead>
+                <tr>
+                  <th>Participant Name</th>
+                  <th>Course</th>
+                  <th>Organization</th>
+                  <th>File Name Submitted</th>
+                  <th>File</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {submittedRegistrationRows.length ? (
+                  submittedRegistrationRows.map((registration) => {
+                    const decision = registrationDecisions[registration.id];
+
+                    return (
+                      <tr key={registration.id}>
+                        <td>{registration.participantName}</td>
+                        <td>{registration.course}</td>
+                        <td>{registration.organization}</td>
+                        <td>{registration.fileName}</td>
+                        <td>
+                          {registration.file ? (
+                            <a
+                              className="registration-view-button"
+                              href={registration.file.dataUrl}
+                              target={registration.file.type === 'application/pdf' ? '_blank' : undefined}
+                              rel={registration.file.type === 'application/pdf' ? 'noreferrer' : undefined}
+                              download={registration.file.type === 'application/pdf' ? undefined : registration.file.name}
+                            >
+                              View
+                            </a>
+                          ) : (
+                            <button className="registration-view-button" type="button">
+                              View
+                            </button>
+                          )}
+                        </td>
+                        <td>
+                          <select
+                            className={`registration-action-select${decision ? ` is-${decision}` : ''}`}
+                            value={decision || ''}
+                            aria-label={`Choose registration action for ${registration.participantName}`}
+                            onChange={(event) => {
+                              if (event.target.value === 'accepted' || event.target.value === 'rejected') {
+                                handleRegistrationDecision(registration.id, event.target.value);
+                              }
+                            }}
+                          >
+                            <option value="">Accept</option>
+                            <option value="accepted">{decision === 'accepted' ? 'Accepted' : 'Accept'}</option>
+                            <option value="rejected">{decision === 'rejected' ? 'Rejected' : 'Reject'}</option>
+                          </select>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="submitted-registrations-empty">
+                      No submitted registrations yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {showDeleteConfirm && (
+          <div className="delete-confirm-overlay">
+            <section className="delete-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+              <h2 id="delete-confirm-title">
+                Are you sure you want to delete &quot;{eventDetails.name}&quot;?
+              </h2>
+              <div className="delete-confirm-actions">
+                <button className="delete-confirm-no" type="button" onClick={() => setShowDeleteConfirm(false)}>
+                  No
+                </button>
+                <button className="delete-confirm-yes" type="button" onClick={handleDeleteEvent}>
+                  Yes
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  if (isRejectedOrganizedEvent) {
+    return (
+      <section className={`event-details-page event-details-page--rejected${isRedirecting ? ' is-exiting' : ''}${showDeleteConfirm ? ' is-delete-confirming' : ''}`}>
+        <div className="rejected-event-layout">
+          <div className="rejected-event-main">
+            <h2>{eventDetails.name}</h2>
+            <p className="rejected-event-note">This event was rejected by the admin.</p>
+
+            <section>
+              <h3>Date &amp; Time</h3>
+              <DetailRow icon="date" label={formatDatePart(eventDetails.dateTime)} value="" />
+              <DetailRow icon="time" label={formatTimePart(eventDetails.dateTime)} value="" />
+            </section>
+
+            <section className="rejected-event-location">
+              <div>
+                <h3>Location</h3>
+                <DetailRow icon="venue" label={eventDetails.venue || 'Event Venue'} value="" />
+              </div>
+              <div className="rejected-event-announcements">
+                <h3>Announcements:</h3>
+                <p>{eventAnnouncements}</p>
+              </div>
+            </section>
+
+            <section>
+              <h3>Hosted By</h3>
+              <DetailRow icon="organizer" label={eventDetails.organizer || 'Organization Name'} value="" />
+              <DetailRow icon="course" label={organizerCourse} value="" />
+              <DetailRow icon="department" label={eventDetails.department || eventDetails.school || 'School/Department'} value="" />
+            </section>
+          </div>
+
+          <aside className="rejected-event-side">
+            <button className="rejected-delete-button" type="button" onClick={() => setShowDeleteConfirm(true)}>
+              Delete Event
+            </button>
+            <p>Registration Deadline: {formatDeadline(eventDetails.registrationDeadline)}</p>
+          </aside>
+        </div>
+
+        {showDeleteConfirm && (
+          <div className="delete-confirm-overlay">
+            <section className="delete-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+              <h2 id="delete-confirm-title">
+                Are you sure you want to delete &quot;{eventDetails.name}&quot;?
+              </h2>
+              <div className="delete-confirm-actions">
+                <button className="delete-confirm-no" type="button" onClick={() => setShowDeleteConfirm(false)}>
+                  No
+                </button>
+                <button className="delete-confirm-yes" type="button" onClick={handleDeleteEvent}>
+                  Yes
+                </button>
+              </div>
+            </section>
+          </div>
         )}
       </section>
     );
