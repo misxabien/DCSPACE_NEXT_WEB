@@ -1087,6 +1087,33 @@ a.dashboard-summary-card:focus-visible {
   background: rgba(217, 217, 217, 0.5);
 }
 
+.dashboard-quick-actions {
+  width: min(100%, 260px);
+  min-height: 0;
+  border-radius: 16px;
+  gap: 10px;
+  padding: 18px 16px;
+}
+
+.dashboard-quick-actions h3 {
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.dashboard-quick-actions a,
+.dashboard-quick-actions button {
+  min-height: 30px;
+  gap: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 0 10px;
+}
+
+.dashboard-quick-actions img {
+  width: 16px;
+  height: 16px;
+}
+
 @media (max-width: 1120px) {
   .officer-top-grid {
     grid-template-columns: 1fr;
