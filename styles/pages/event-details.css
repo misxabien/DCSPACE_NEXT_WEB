@@ -374,6 +374,20 @@
   text-align: justify;
 }
 
+.browse-event-detail__description .event-detail-type {
+  margin-top: 12px;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  text-align: left;
+}
+
+.event-detail-type strong {
+  font-weight: 600;
+}
+
+.event-detail-type span {
+  font-weight: 500;
+}
+
 .event-details-page.is-exiting {
   opacity: 0.82;
   transform: translateY(6px);

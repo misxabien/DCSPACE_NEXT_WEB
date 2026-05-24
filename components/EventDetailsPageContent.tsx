@@ -612,6 +612,9 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
 
             <section className="browse-event-detail__description">
               <h3>Event Description</h3>
+              <p className="event-detail-type">
+                <strong>Event Type:</strong> <span>{eventDetails.eventType || 'Event Type'}</span>
+              </p>
               <p>{eventDetails.overview || 'Event description will appear here.'}</p>
             </section>
           </div>
@@ -679,6 +682,9 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
 
             <section className="browse-event-detail__description">
               <h3>Event Description</h3>
+              <p className="event-detail-type">
+                <strong>Event Type:</strong> <span>{eventDetails.eventType || 'Event Type'}</span>
+              </p>
               <p>{eventDetails.overview || 'Event description will appear here.'}</p>
             </section>
           </div>
@@ -806,6 +812,9 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
 
             <section className="browse-event-detail__description">
               <h3>Event Description</h3>
+              <p className="event-detail-type">
+                <strong>Event Type:</strong> <span>{eventDetails.eventType || 'Event Type'}</span>
+              </p>
               <p>{eventDetails.overview || 'Event description will appear here.'}</p>
             </section>
           </div>
