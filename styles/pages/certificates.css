@@ -38,7 +38,7 @@
 }
 
 .certificates-page__heading h2 span {
-  color: var(--cert-earned);
+  color: #000000;
 }
 
 .certificates-page__filters {
