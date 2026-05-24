@@ -19,9 +19,7 @@
   width: var(--sidebar-open-width);
   display: flex;
   flex-direction: column;
-  background:
-    linear-gradient(180deg, rgba(118, 164, 232, 0.94) 0%, rgba(141, 181, 238, 0.9) 48%, rgba(210, 223, 232, 0.86) 100%),
-    linear-gradient(145deg, rgba(250, 239, 217, 0.36), rgba(68, 138, 255, 0.22));
+  background: #86aee8;
   -webkit-backdrop-filter: saturate(170%) blur(22px);
   backdrop-filter: saturate(170%) blur(22px);
   border-right: 1px solid rgba(255, 255, 255, 0.46);
@@ -279,14 +277,14 @@
   backdrop-filter: saturate(180%) blur(22px);
   border-bottom: 1px solid rgba(160, 192, 248, 0.35);
   box-shadow: 0 10px 30px rgba(45, 54, 115, 0.1);
-  color: #000000;
+  color: #1f2230;
   padding: 0 var(--content-pad-right) 0 var(--content-pad-left);
   transition: left 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .sidebar {
-    background: #8db5ee;
+    background: #86aee8;
   }
 
   .topbar {
@@ -295,7 +293,7 @@
 
   .notifications-drawer,
   .mobile-profile-menu {
-    background: #8db5ee;
+    background: #86aee8;
   }
 }
 
@@ -313,7 +311,7 @@
 
 .topbar h1 {
   margin: 0;
-  color: #000000;
+  color: #1f2230;
   font-family: var(--font-display), "Montserrat", sans-serif;
   font-size: 34px;
   font-weight: 800;
@@ -342,7 +340,7 @@
 
 .topbar__account,
 .topbar__profile-pill {
-  color: #A0C0F8;
+  color: #2f63ba;
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 14px;
   font-weight: 500;
@@ -357,20 +355,25 @@
   gap: 14px;
   border-radius: 999px;
   padding: 5px 10px 5px 24px;
+  border: 1px solid transparent;
 }
 
 .topbar__profile-pill:hover,
 .topbar__profile-pill.is-active {
-  background: rgba(160, 192, 248, 0.4);
+  border-color: rgba(68, 138, 255, 0.22);
+  background: rgba(255, 252, 245, 0.76);
+  box-shadow: 0 8px 18px rgba(47, 99, 186, 0.12);
+  color: #2f63ba;
 }
 
 .topbar__avatar-link {
   width: 44px;
   height: 44px;
-  border: 1px solid #A0C0F8;
+  border: 2px solid #76a4e8;
   border-radius: 50%;
   display: inline-flex;
   overflow: hidden;
+  box-shadow: 0 4px 10px rgba(47, 99, 186, 0.12);
 }
 
 .topbar__avatar {
@@ -390,7 +393,7 @@
   display: inline-grid;
   place-items: center;
   background: transparent;
-  color: #A0C0F8;
+  color: #76a4e8;
   cursor: pointer;
   padding: 0;
   text-decoration: none;
@@ -404,17 +407,19 @@
 .topbar__icon-button:hover,
 .topbar__icon-button.is-active,
 .topbar__help:hover {
-  background: rgba(160, 192, 248, 0.4);
+  background: rgba(68, 138, 255, 0.1);
+  color: #2f63ba;
 }
 
 .topbar__notification-button:hover,
 .topbar__notification-button.is-active {
-  background: rgba(68, 138, 255, 0.08);
-  box-shadow: 0 3px 8px rgba(68, 138, 255, 0.08);
+  background: rgba(68, 138, 255, 0.1);
+  color: #2f63ba;
+  box-shadow: 0 3px 8px rgba(47, 99, 186, 0.08);
 }
 
 .topbar__help {
-  border: 3px solid #A0C0F8;
+  border: 3px solid #76a4e8;
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 16px;
   font-weight: 600;
@@ -615,9 +620,7 @@
     min-width: 260px;
     height: calc(100dvh - var(--mobile-topbar-height));
     padding: 18px clamp(12px, 3.8vw, 18px) 36px;
-    background:
-      linear-gradient(180deg, rgba(118, 164, 232, 0.96) 0%, rgba(141, 181, 238, 0.92) 52%, rgba(210, 223, 232, 0.88) 100%),
-      linear-gradient(145deg, rgba(250, 239, 217, 0.38), rgba(68, 138, 255, 0.24));
+    background: #86aee8;
     transform: translateX(-100%);
     transition: transform 0.34s cubic-bezier(0.2, 0.78, 0.2, 1);
     will-change: transform;
@@ -766,6 +769,7 @@
     place-items: center;
     flex: 0 0 auto;
     background: transparent;
+    border-radius: 50%;
     cursor: pointer;
     padding: 0;
   }
@@ -774,6 +778,13 @@
     width: clamp(28px, 9vw, 36px);
     height: clamp(28px, 9vw, 36px);
     object-fit: contain;
+    filter: brightness(0) saturate(100%) invert(50%) sepia(71%) saturate(1088%) hue-rotate(193deg) brightness(97%) contrast(88%);
+  }
+
+  .topbar__mobile-menu:hover,
+  .topbar__mobile-menu:focus-visible {
+    background: rgba(68, 138, 255, 0.1);
+    outline: none;
   }
 
   .topbar__mobile-profile-toggle {
@@ -783,6 +794,7 @@
     display: inline-grid;
     place-items: center;
     background: transparent;
+    border-radius: 50%;
     cursor: pointer;
     padding: 0;
   }
