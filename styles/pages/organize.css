@@ -261,6 +261,10 @@
         resize: vertical;
       }
 
+      .input-textarea--announcements {
+        min-height: 190px;
+      }
+
       .form-flow {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -330,6 +334,43 @@
       .form-row.attendance-access > .form-row__label {
         min-height: 34px;
         align-items: center;
+      }
+
+      .deadline-choice {
+        border: 0;
+        margin: 0;
+        padding: 0;
+      }
+
+      .deadline-choice .form-row__label {
+        min-height: 34px;
+        align-items: center;
+      }
+
+      .deadline-choice__body {
+        min-height: 34px;
+        display: grid;
+        grid-template-columns: minmax(88px, 120px) minmax(88px, 120px);
+        align-items: center;
+        gap: clamp(18px, 5vw, 54px);
+      }
+
+      .deadline-choice__body label {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        color: #49454f;
+        cursor: pointer;
+        font-family: var(--font-ui), "Poppins", sans-serif;
+        font-size: 0.82rem;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      .deadline-choice__body input {
+        width: 16px;
+        height: 16px;
+        accent-color: #6b7df2;
       }
 
       .form-row--textarea {
@@ -561,6 +602,11 @@
 
       @media (max-width: 760px) {
         .attendance-access__choices {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        .deadline-choice__body {
           grid-template-columns: 1fr;
           gap: 10px;
         }

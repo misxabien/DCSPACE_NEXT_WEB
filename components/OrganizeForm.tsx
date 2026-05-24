@@ -16,8 +16,10 @@ type ReviewDetails = {
   startTime: string;
   endTime: string;
   venue: string;
+  hasRegistrationDeadline: 'yes' | 'no' | '';
   registrationDeadline: string;
   surveyFormLink: string;
+  announcements: string;
   minAttendance: string;
   gracePeriod: string;
   attendanceAccess: 'all' | 'specific';
@@ -34,8 +36,10 @@ const emptyReviewDetails: ReviewDetails = {
   startTime: '',
   endTime: '',
   venue: '',
+  hasRegistrationDeadline: '',
   registrationDeadline: '',
   surveyFormLink: '',
+  announcements: '',
   minAttendance: '',
   gracePeriod: '',
   attendanceAccess: 'all',
@@ -142,6 +146,8 @@ export function OrganizeForm() {
   const [reviewDetails, setReviewDetails] = useState<ReviewDetails>(emptyReviewDetails);
   const [requiredFileDrafts, setRequiredFileDrafts] = useState<string[]>(['']);
   const [requiredFilesChoice, setRequiredFilesChoice] = useState<'yes' | 'no'>('yes');
+  const [registrationDeadlineChoice, setRegistrationDeadlineChoice] = useState<'yes' | 'no' | ''>('');
+  const [registrationDeadline, setRegistrationDeadline] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [startTime, setStartTime] = useState('');
@@ -182,6 +188,11 @@ export function OrganizeForm() {
     return typeof value === 'string' && value.trim() ? value.trim() : 'Not provided';
   };
 
+  const getOptionalFormValue = (formData: FormData, key: string) => {
+    const value = formData.get(key);
+    return typeof value === 'string' ? value.trim() : '';
+  };
+
   const getReviewDetails = () => {
     if (!formRef.current) return emptyReviewDetails;
 
@@ -196,8 +207,10 @@ export function OrganizeForm() {
       startTime: getFormValue(formData, 'start_time'),
       endTime: getFormValue(formData, 'end_time'),
       venue: getFormValue(formData, 'venue'),
-      registrationDeadline: getFormValue(formData, 'registration_deadline'),
-      surveyFormLink: getFormValue(formData, 'survey_form_link'),
+      hasRegistrationDeadline: registrationDeadlineChoice,
+      registrationDeadline: registrationDeadlineChoice === 'yes' ? getFormValue(formData, 'registration_deadline') : '',
+      surveyFormLink: getOptionalFormValue(formData, 'survey_form_link'),
+      announcements: getOptionalFormValue(formData, 'announcements'),
       minAttendance: getFormValue(formData, 'min_attendance'),
       gracePeriod: getFormValue(formData, 'grace_period'),
       attendanceAccess,
@@ -292,6 +305,14 @@ export function OrganizeForm() {
     setRequiredFileDrafts(['']);
   };
 
+  const handleRegistrationDeadlineChoice = (choice: 'yes' | 'no') => {
+    setRegistrationDeadlineChoice(choice);
+
+    if (choice === 'no') {
+      setRegistrationDeadline('');
+    }
+  };
+
   const handleAttendanceAccessChange = (access: 'all' | 'specific') => {
     setAttendanceAccess(access);
 
@@ -329,6 +350,8 @@ export function OrganizeForm() {
       attendanceAccess: details.attendanceAccess,
       allowedCourses: details.allowedCourses,
       registrationDeadline: details.registrationDeadline,
+      surveyFormLink: details.surveyFormLink,
+      announcements: details.announcements,
       bannerDataUrl,
       status,
     };
@@ -472,15 +495,63 @@ export function OrganizeForm() {
               <input className="input-inline" type="text" name="venue" placeholder="Enter the location of the venue" required />
             </label>
 
-            <label className="form-row form-row--span2">
-              <span className="form-row__label">Registration deadline*</span>
-              <input className="input-inline" type="date" name="registration_deadline" min={todayDate} required />
-            </label>
+            <div className="form-row form-row--span2 deadline-choice">
+              <span className="form-row__label" id="registration-deadline-choice-label">
+                Is there a deadline for the registration?{registrationDeadlineChoice ? '' : '*'}
+              </span>
+              <span className="deadline-choice__body" role="radiogroup" aria-labelledby="registration-deadline-choice-label">
+                <label>
+                  <input
+                    type="radio"
+                    name="has_registration_deadline"
+                    value="yes"
+                    checked={registrationDeadlineChoice === 'yes'}
+                    required
+                    onChange={() => handleRegistrationDeadlineChoice('yes')}
+                  />
+                  <span>Yes</span>
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="has_registration_deadline"
+                    value="no"
+                    checked={registrationDeadlineChoice === 'no'}
+                    required
+                    onChange={() => handleRegistrationDeadlineChoice('no')}
+                  />
+                  <span>No</span>
+                </label>
+              </span>
+            </div>
+
+            {registrationDeadlineChoice === 'yes' && (
+              <label className="form-row form-row--span2">
+                <span className="form-row__label">Registration deadline{registrationDeadline ? '' : '*'}</span>
+                <input
+                  className="input-inline"
+                  type="date"
+                  name="registration_deadline"
+                  min={todayDate}
+                  value={registrationDeadline}
+                  required
+                  onChange={(event) => setRegistrationDeadline(event.target.value)}
+                />
+              </label>
+            )}
 
             <h2 className="form-group-title form-group-title--span">Additional Information</h2>
             <label className="form-row form-row--span2">
-              <span className="form-row__label">Survey Form Link*</span>
-              <input className="input-inline" type="url" name="survey_form_link" placeholder="Enter the survey form link" required />
+              <span className="form-row__label">Survey Form Link</span>
+              <input className="input-inline" type="url" name="survey_form_link" placeholder="Enter the survey form link" />
+            </label>
+            <label className="form-row form-row--span2 form-row--textarea">
+              <span className="form-row__label">Announcements</span>
+              <textarea
+                className="input-text input-textarea input-textarea--announcements"
+                name="announcements"
+                placeholder="Enter any important updates or announcements."
+              />
             </label>
           </div>
         </section>
@@ -711,6 +782,13 @@ export function OrganizeForm() {
                   </p>
                   <p>Required File(s): {reviewDetails.requiredFiles.length ? reviewDetails.requiredFiles.join(', ') : 'None'}</p>
                 </section>
+                {(reviewDetails.surveyFormLink || reviewDetails.announcements) && (
+                  <section>
+                    <h3>Additional Information</h3>
+                    {reviewDetails.surveyFormLink && <p>Survey Form Link: {reviewDetails.surveyFormLink}</p>}
+                    {reviewDetails.announcements && <p>Announcements: {reviewDetails.announcements}</p>}
+                  </section>
+                )}
                 <section>
                   <h3>Event Description</h3>
                   <p>{reviewDetails.eventDescription === 'Not provided' ? 'Event description will appear here.' : reviewDetails.eventDescription}</p>
@@ -721,7 +799,11 @@ export function OrganizeForm() {
                   Attend Event
                 </button>
                 <small>Registration Deadline:</small>
-                <strong>{formatDateLabel(reviewDetails.registrationDeadline)}</strong>
+                <strong>
+                  {reviewDetails.hasRegistrationDeadline === 'yes'
+                    ? formatDateLabel(reviewDetails.registrationDeadline)
+                    : 'No deadline'}
+                </strong>
               </aside>
             </div>
           </article>
