@@ -57,7 +57,7 @@ main.main::-webkit-scrollbar,
 }
 
 .attendance-subtitle span {
-  color: var(--attendance-heading);
+  color: #000000;
 }
 
 .attendance-top p {
@@ -74,7 +74,7 @@ main.main::-webkit-scrollbar,
 
 .attendance-section h2 {
   margin: 0;
-  color: #000000;
+  color: #49454f;
   font-family: var(--font-display), "Montserrat", sans-serif;
   font-size: clamp(23px, 2.1vw, 28px);
   font-weight: 800;
