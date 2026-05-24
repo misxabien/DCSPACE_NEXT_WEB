@@ -17,6 +17,7 @@ export function LoginForm() {
     const formData = new FormData(event.currentTarget);
     const email = formData.get('email');
 
+    window.localStorage.setItem('dcspaceAccountType', role);
     signInAttendanceUser(typeof email === 'string' ? email : '');
     router.push('/home');
   };

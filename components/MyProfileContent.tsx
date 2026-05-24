@@ -8,6 +8,7 @@ import {
   getCertificateStatus,
   getCurrentAttendanceUser,
   getRegisteredEventId,
+  getRequirementStatus,
   readRegisteredEvents,
   readUserAttendanceRecords,
 } from '@/lib/attendance';
@@ -58,6 +59,17 @@ function dispatchProfileUpdate() {
   window.dispatchEvent(new CustomEvent('dcspace-profile-updated'));
 }
 
+function getEventName(event: ReturnType<typeof readRegisteredEvents>[number]) {
+  return event.name || 'Event Name';
+}
+
+function isFacultyUser(user: ReturnType<typeof getCurrentAttendanceUser> | null) {
+  const savedAccountType = typeof window === 'undefined' ? '' : window.localStorage.getItem('dcspaceAccountType');
+  const values = [savedAccountType, user?.organizationRole, user?.organizationPart, user?.school, user?.studentEmail];
+
+  return values.some((value) => value?.toLowerCase().includes('faculty'));
+}
+
 export function MyProfileContent() {
   const [user, setUser] = useState<ReturnType<typeof getCurrentAttendanceUser> | null>(null);
   const [registeredEvents, setRegisteredEvents] = useState<ReturnType<typeof readRegisteredEvents>>([]);
@@ -77,12 +89,13 @@ export function MyProfileContent() {
     const refreshProfile = () => {
       const currentUser = getCurrentAttendanceUser();
       const canOrganize = canOrganizeEvents();
+      const canViewOrganizedStatistics = canOrganize || isFacultyUser(currentUser);
 
       setUser(currentUser);
       setRegisteredEvents(readRegisteredEvents());
       setAttendanceRecords(readUserAttendanceRecords(currentUser));
-      setCanViewOrganizedEvents(canOrganize);
-      setOrganizedEvents(canOrganize ? readOrganizedEvents() : []);
+      setCanViewOrganizedEvents(canViewOrganizedStatistics);
+      setOrganizedEvents(canViewOrganizedStatistics ? readOrganizedEvents() : []);
       setProfilePhotoImage(window.localStorage.getItem('dcspaceProfilePhotoImage') || '');
       setProfilePhotoFit(readImageFit('dcspaceProfilePhotoFit'));
       setProfileCoverImage(window.localStorage.getItem('dcspaceProfileCoverImage') || '');
@@ -116,14 +129,23 @@ export function MyProfileContent() {
     return attendedEvents.filter((event) => {
       const eventId = getRegisteredEventId(event);
       const record = attendanceRecords[eventId];
-      return getCertificateStatus(record) === 'Download';
+      return getCertificateStatus(record, event) === 'Download';
     });
   }, [attendanceRecords, attendedEvents]);
 
+  const completedEvents = useMemo(() => {
+    return registeredEvents.filter((event) => {
+      const eventId = getRegisteredEventId(event);
+      const status = getRequirementStatus(attendanceRecords[eventId], event);
+
+      return status === 'Complete' || status === 'Overtime';
+    });
+  }, [attendanceRecords, registeredEvents]);
+
   const recentActivities = useMemo(() => {
     const activities = [
-      ...attendedEvents.slice(-2).map((event) => `Joined ${event.eventName}`),
-      ...certificateEvents.slice(-1).map((event) => `Received certificate for ${event.eventName}`),
+      ...attendedEvents.slice(-2).map((event) => `Joined ${getEventName(event)}`),
+      ...certificateEvents.slice(-1).map((event) => `Received certificate for ${getEventName(event)}`),
     ];
 
     return activities.length ? activities.slice(-4).reverse() : ['No recent activity yet'];
@@ -131,7 +153,7 @@ export function MyProfileContent() {
 
   const fullName = `${getDisplayValue(user?.firstName)} ${getDisplayValue(user?.lastName)}`.replace(/Not available/g, '').trim() || 'User Name';
   const initials = getInitials(user?.firstName, user?.lastName, user?.studentEmail);
-  const hasOrganizationAccess = Boolean(user?.organizationPart?.trim() && canViewOrganizedEvents);
+  const hasOrganizedStatisticsAccess = canViewOrganizedEvents || isFacultyUser(user);
 
   const saveProfilePhoto = () => {
     if (!draftPhotoImage) return;
@@ -255,7 +277,11 @@ export function MyProfileContent() {
             <h2>Account Statistics</h2>
             <ProfileStat label="Events Attended" value={attendedEvents.length} />
             <ProfileStat label="Certificates Earned" value={certificateEvents.length} />
-            {hasOrganizationAccess && <ProfileStat label="Events Organized" value={organizedEvents.length} />}
+            {hasOrganizedStatisticsAccess ? (
+              <ProfileStat label="Events Organized" value={organizedEvents.length} />
+            ) : (
+              <ProfileStat label="Events Completed" value={completedEvents.length} />
+            )}
           </div>
 
           <div className="profile-info-box profile-activity">
