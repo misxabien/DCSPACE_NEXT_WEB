@@ -7,8 +7,8 @@
 .main--profile {
   min-height: 100%;
   overflow-y: auto;
-  background: #efefef;
-  color: #6b6b6b;
+  background: linear-gradient(180deg, #f7f9ff 0%, #efefef 42%, #f4f5f8 100%);
+  color: #49454f;
   font-family: var(--font-ui), "Poppins", sans-serif;
   padding: 38px clamp(28px, 5vw, 58px) 64px;
 }
@@ -16,9 +16,10 @@
 .profile-cover {
   position: relative;
   min-height: 214px;
-  border-radius: 12px;
-  background: #dbe8ff;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(68, 138, 255, 0.22), rgba(255, 255, 255, 0.82));
+  box-shadow: 0 22px 46px rgba(47, 99, 186, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 
@@ -30,20 +31,22 @@
 .profile-upload {
   position: relative;
   min-width: 100px;
-  min-height: 24px;
-  border: 0;
+  min-height: 30px;
+  border: 1px solid rgba(68, 138, 255, 0.18);
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(107, 125, 242, 0.3);
-  color: #515151;
+  background: rgba(255, 255, 255, 0.82);
+  color: #448aff;
   cursor: pointer;
   font-family: var(--font-ui), "Poppins", sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1;
   padding: 0 16px;
+  box-shadow: 0 8px 18px rgba(47, 99, 186, 0.12);
+  backdrop-filter: blur(14px);
 }
 
 button.profile-upload {
@@ -52,7 +55,8 @@ button.profile-upload {
 
 .profile-upload:hover,
 .profile-upload:focus-within {
-  background: rgba(107, 125, 242, 0.42);
+  background: rgba(68, 138, 255, 0.12);
+  outline: none;
 }
 
 .profile-upload input {
@@ -73,32 +77,33 @@ button.profile-upload {
 .profile-layout {
   position: relative;
   z-index: 2;
-  width: min(100%, 860px);
+  width: min(100%, 920px);
   display: grid;
-  grid-template-columns: minmax(280px, 430px) minmax(270px, 414px);
+  grid-template-columns: minmax(300px, 450px) minmax(280px, 430px);
   align-items: start;
-  gap: 64px;
+  gap: clamp(28px, 5vw, 56px);
   margin: -88px auto 0;
 }
 
 .profile-card,
 .profile-info-box {
-  border: 1px solid #ececec;
-  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(18px);
 }
 
 .profile-card {
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  border-radius: 28px;
+  box-shadow: 0 22px 46px rgba(47, 99, 186, 0.14), 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .profile-card--identity {
   min-height: 420px;
-  padding: 46px 28px 34px;
+  padding: 34px 28px 30px;
 }
 
 .profile-card--summary {
-  padding: 18px 24px 28px;
+  padding: 22px;
 }
 
 .profile-card__top {
@@ -110,16 +115,18 @@ button.profile-upload {
 }
 
 .profile-avatar {
-  width: 92px;
-  height: 92px;
+  width: 96px;
+  height: 96px;
+  border: 4px solid #ffffff;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #dbe8ff;
-  color: #6b7df2;
+  background: linear-gradient(135deg, #dbe8ff, #ffffff);
+  color: #448aff;
   font-family: var(--font-display), "Montserrat", sans-serif;
   font-size: 26px;
   font-weight: 800;
+  box-shadow: 0 12px 28px rgba(47, 99, 186, 0.2);
   overflow: hidden;
 }
 
@@ -155,15 +162,16 @@ button.profile-upload {
 }
 
 .profile-info-box {
-  border-radius: 12px;
+  border-radius: 22px;
   display: grid;
-  gap: 14px;
-  color: #6b6b6b;
-  padding: 20px 24px;
+  gap: 0;
+  color: #49454f;
+  padding: 8px 18px;
+  box-shadow: inset 0 0 0 1px rgba(235, 241, 255, 0.62);
 }
 
 .profile-card--identity .profile-info-box + .profile-info-box {
-  margin-top: 26px;
+  margin-top: 18px;
 }
 
 .profile-field,
@@ -173,6 +181,12 @@ button.profile-upload {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+  min-height: 48px;
+}
+
+.profile-field + .profile-field,
+.profile-stat + .profile-stat {
+  border-top: 1px solid rgba(60, 60, 67, 0.11);
 }
 
 .profile-field div {
@@ -184,14 +198,14 @@ button.profile-upload {
 
 .profile-field strong,
 .profile-info-box h2 {
-  color: #6b6b6b;
+  color: #1f2230;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.2;
 }
 
 .profile-stat span {
-  color: #6b6b6b;
+  color: #49454f;
   font-size: 12px;
   font-weight: 500;
   line-height: 1.2;
@@ -200,27 +214,39 @@ button.profile-upload {
 .profile-field span,
 .profile-stat strong,
 .profile-feedback span {
-  color: #6b6b6b;
-  font-size: 10px;
+  color: #7e7d77;
+  font-size: 11px;
   font-weight: 500;
   line-height: 1.25;
 }
 
+.profile-stat strong {
+  min-width: 34px;
+  min-height: 28px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(68, 138, 255, 0.12);
+  color: #448aff;
+  font-weight: 700;
+}
+
 .profile-feedback a {
-  min-width: 66px;
-  min-height: 20px;
+  min-width: 94px;
+  min-height: 32px;
   border: 0;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(107, 125, 242, 0.3);
-  color: #515151;
+  background: #448aff;
+  color: #ffffff;
   font-family: var(--font-ui), "Poppins", sans-serif;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 600;
   padding: 0 12px;
   text-decoration: none;
+  box-shadow: 0 9px 18px rgba(68, 138, 255, 0.24);
 }
 
 .profile-feedback a {
@@ -229,7 +255,7 @@ button.profile-upload {
 
 .profile-side {
   display: grid;
-  gap: 28px;
+  gap: 18px;
 }
 
 .profile-side .profile-info-box {
@@ -237,18 +263,18 @@ button.profile-upload {
 }
 
 .profile-info-box h2 {
-  margin: 0 0 2px;
+  margin: 8px 0 12px;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .profile-activity {
-  min-height: 252px;
+  min-height: 244px;
 }
 
 .profile-activity ul {
   display: grid;
-  gap: 14px;
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -256,21 +282,26 @@ button.profile-upload {
 
 .profile-activity li {
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr);
+  grid-template-columns: 30px minmax(0, 1fr);
   align-items: start;
-  gap: 14px;
-  color: #6b6b6b;
+  gap: 10px;
+  color: #49454f;
   font-size: 11px;
   font-weight: 500;
   line-height: 1.35;
+  padding: 12px 0;
+}
+
+.profile-activity li + li {
+  border-top: 1px solid rgba(60, 60, 67, 0.11);
 }
 
 .profile-activity li span {
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: #d3d8fc;
-  margin-top: 1px;
+  background: rgba(68, 138, 255, 0.14);
+  margin-top: -2px;
 }
 
 .profile-feedback {
@@ -285,7 +316,7 @@ button.profile-upload {
 
 .profile-feedback a:hover,
 .profile-feedback a:focus-visible {
-  background: rgba(107, 125, 242, 0.42);
+  background: #2f63ba;
   outline: none;
 }
 

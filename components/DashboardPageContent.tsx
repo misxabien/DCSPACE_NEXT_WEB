@@ -105,6 +105,30 @@ function isFacultyDashboardUser(user: ReturnType<typeof getCurrentAttendanceUser
   return values.some((value) => value?.toLowerCase().includes('faculty'));
 }
 
+function DashboardQuickActions({ className = '' }: { className?: string }) {
+  return (
+    <article className={`dashboard-panel officer-actions dashboard-quick-actions${className ? ` ${className}` : ''}`}>
+      <h3>Quick Actions</h3>
+      <a href="/events-organized/create">
+        <Image src="/svg icons for user-dashboard/plus-square-fill.svg" width={18} height={18} alt="" />
+        Create Event
+      </a>
+      <a href="/attendance">
+        <Image src="/svg icons for user-dashboard/view-attendance-icon.svg" width={18} height={18} alt="" />
+        View Attendance
+      </a>
+      <button type="button">
+        <Image src="/svg icons for user-dashboard/close-registration.svg" width={18} height={18} alt="" />
+        Close Registration
+      </button>
+      <a href="/submit-feedback">
+        <Image src="/svg icons for user-dashboard/submit-feedback-icon.svg" width={18} height={18} alt="" />
+        Submit Feedback
+      </a>
+    </article>
+  );
+}
+
 export function DashboardPageContent() {
   const [firstName, setFirstName] = useState('User');
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
@@ -239,6 +263,7 @@ export function DashboardPageContent() {
             />
           </label>
         </div>
+        {hasQuickActionsAccess && <DashboardQuickActions className="dashboard-quick-actions--mobile" />}
 
         <section className="dashboard-joined-section" aria-label="Events joined">
           <div className="dashboard-joined-main">
@@ -356,25 +381,7 @@ export function DashboardPageContent() {
 
           <aside className="dashboard-calendar" aria-label="Joined events calendar">
             {hasQuickActionsAccess && (
-              <article className="dashboard-panel officer-actions dashboard-quick-actions">
-                <h3>Quick Actions</h3>
-                <a href="/events-organized/create">
-                  <Image src="/svg icons for user-dashboard/plus-square-fill.svg" width={18} height={18} alt="" />
-                  Create Event
-                </a>
-                <a href="/attendance">
-                  <Image src="/svg icons for user-dashboard/view-attendance-icon.svg" width={18} height={18} alt="" />
-                  View Attendance
-                </a>
-                <button type="button">
-                  <Image src="/svg icons for user-dashboard/close-registration.svg" width={18} height={18} alt="" />
-                  Close Registration
-                </button>
-                <a href="/submit-feedback">
-                  <Image src="/svg icons for user-dashboard/submit-feedback-icon.svg" width={18} height={18} alt="" />
-                  Submit Feedback
-                </a>
-              </article>
+              <DashboardQuickActions className="dashboard-quick-actions--desktop" />
             )}
             <h3>Calendar</h3>
             <div className="dashboard-calendar-card">
