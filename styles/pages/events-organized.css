@@ -6,20 +6,20 @@
   min-height: calc(100vh - var(--topbar-height, 72px));
   background: #efefef;
   color: #000000;
-  padding: 0 26px 42px;
+  padding: 24px 26px 42px;
 }
 
 .organized-create-banner {
-  min-height: 96px;
+  min-height: 124px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 22px;
   margin: 0 -26px 28px;
-  background: #448aff;
+  background: linear-gradient(90deg, #448aff 0%, #295399 100%);
   color: #ffffff;
   font-family: var(--font-ui), "Poppins", sans-serif;
-  padding: 24px 34px;
+  padding: 30px 34px;
 }
 
 .organized-create-banner h2 {
@@ -52,7 +52,7 @@
   justify-content: center;
   gap: 7px;
   background: #f5d29d;
-  color: #000000;
+  color: #2f63ba;
   font-family: var(--font-ui), "Poppins", sans-serif;
   font-size: 11px;
   font-weight: 700;
@@ -62,6 +62,7 @@
 .organized-create-banner__button img {
   width: 15px;
   height: 15px;
+  filter: brightness(0) saturate(100%) invert(34%) sepia(80%) saturate(1006%) hue-rotate(193deg) brightness(88%) contrast(93%);
 }
 
 .organized-section {
@@ -81,13 +82,13 @@
   margin: 0 0 8px;
   color: #49454f;
   font-family: var(--font-display), "Montserrat", sans-serif;
-  font-size: clamp(28px, 3.4vw, 42px);
+  font-size: clamp(24px, 2.8vw, 34px);
   font-weight: 800;
   line-height: 1;
 }
 
 .organized-section h2 span {
-  color: #156884;
+  color: inherit;
 }
 
 .organized-filter-row {
@@ -447,14 +448,15 @@
 @media (max-width: 700px) {
   .organized-page {
     min-height: calc(100vh - var(--mobile-topbar-height, 56px));
-    padding: 0 clamp(16px, 5vw, 18px) 38px;
+    padding: 18px clamp(16px, 5vw, 18px) 38px;
   }
 
   .organized-create-banner {
     align-items: flex-start;
     flex-direction: column;
     margin-inline: -18px;
-    padding: 22px 18px;
+    min-height: 148px;
+    padding: 28px 18px;
   }
 
   .organized-section h2 {

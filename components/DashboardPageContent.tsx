@@ -4,48 +4,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  type AttendanceRecord,
   type RegisteredEvent,
-  getCertificateStatus,
   getCurrentAttendanceUser,
   getRegisteredEventId,
-  isAttendanceComplete,
   readRegisteredEvents,
-  readUserAttendanceRecords,
 } from '@/lib/attendance';
-import { canOrganizeEvents, readOrganizedEvents, setSelectedBrowseEventId, type FrontendEvent } from '@/lib/dc-events';
-
-const HOME_SAVED_EVENTS_KEY = 'dcspaceHomeSavedEvents';
-const greetingNameColors = ['#6B7DF2', '#2CA6DE', '#8AB6FF', '#BA7710'];
+import { canOrganizeEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
 
 type JoinedFilter = 'all' | 'ongoing' | 'upcoming' | 'past';
-
-function readSavedEventIds() {
-  try {
-    return JSON.parse(window.localStorage.getItem(HOME_SAVED_EVENTS_KEY) || '[]') as string[];
-  } catch {
-    return [];
-  }
-}
-
-function getJumbledNameColors(name: string) {
-  return Array.from(name).map(() => greetingNameColors[Math.floor(Math.random() * greetingNameColors.length)]);
-}
-
-function ColorfulGreetingName({ name }: { name: string }) {
-  const colors = useMemo(() => getJumbledNameColors(name), [name]);
-
-  return (
-    <span className="dashboard-greeting-name">
-      {Array.from(name).map((letter, index) => (
-        <span style={{ color: colors[index] }} key={`${letter}-${index}`}>
-          {letter}
-        </span>
-      ))}
-      <span style={{ color: colors[colors.length - 1] || greetingNameColors[0] }}>!</span>
-    </span>
-  );
-}
 
 function getEventDate(event: RegisteredEvent) {
   if (!event.month || !event.day || !event.year) {
@@ -78,22 +44,6 @@ function getEventTime(event: RegisteredEvent) {
   const parts = event.dateTime?.split(',') || [];
 
   return parts.at(-1)?.trim() || 'Event Time';
-}
-
-function getDateDisplay(event?: RegisteredEvent) {
-  if (!event) {
-    return 'Event Date';
-  }
-
-  return [event.month, event.day, event.year].filter(Boolean).join(' ');
-}
-
-function getTodayDisplay() {
-  return new Date().toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  });
 }
 
 function getJoinedFilterStatus(event: RegisteredEvent): Exclude<JoinedFilter, 'all'> {
@@ -148,13 +98,17 @@ function getCalendarDays(anchorDate: Date) {
   });
 }
 
+function isFacultyDashboardUser(user: ReturnType<typeof getCurrentAttendanceUser>) {
+  const accountType = typeof window === 'undefined' ? '' : window.localStorage.getItem('dcspaceAccountType') || '';
+  const values = [accountType, user.organizationRole, user.organizationPart, user.school, user.studentEmail];
+
+  return values.some((value) => value?.toLowerCase().includes('faculty'));
+}
+
 export function DashboardPageContent() {
   const [firstName, setFirstName] = useState('User');
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
-  const [organizedEvents, setOrganizedEvents] = useState<FrontendEvent[]>([]);
-  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
-  const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
-  const [isOfficer, setIsOfficer] = useState(false);
+  const [hasQuickActionsAccess, setHasQuickActionsAccess] = useState(false);
   const [joinedFilter, setJoinedFilter] = useState<JoinedFilter>('all');
   const [joinedSearchTerm, setJoinedSearchTerm] = useState('');
   const [selectedJoinedDateRange, setSelectedJoinedDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
@@ -167,10 +121,7 @@ export function DashboardPageContent() {
 
       setFirstName(user.firstName || 'User');
       setRegisteredEvents(readRegisteredEvents());
-      setOrganizedEvents(readOrganizedEvents());
-      setAttendanceRecords(readUserAttendanceRecords(user));
-      setIsOfficer(canOrganizeEvents());
-      setSavedEventIds(readSavedEventIds());
+      setHasQuickActionsAccess(canOrganizeEvents() || isFacultyDashboardUser(user));
     };
 
     refreshDashboard();
@@ -189,41 +140,6 @@ export function DashboardPageContent() {
     };
   }, []);
 
-  const certificatesEarned = useMemo(
-    () =>
-      registeredEvents.filter((event) => {
-        const eventId = getRegisteredEventId(event);
-        return getCertificateStatus(attendanceRecords[eventId], event) === 'Download';
-      }).length,
-    [attendanceRecords, registeredEvents],
-  );
-
-  const ongoingOrganizedEvent = useMemo(
-    () => organizedEvents.find((event) => getDaysUntil(event) === 0),
-    [organizedEvents],
-  );
-  const ongoingRegisteredParticipants = ongoingOrganizedEvent
-    ? registeredEvents.filter((event) => event.id === ongoingOrganizedEvent.id)
-    : [];
-  const ongoingRecords = ongoingRegisteredParticipants
-    .map((event) => attendanceRecords[getRegisteredEventId(event)])
-    .filter(Boolean);
-  const currentAttendees = ongoingRecords.filter((record) => record.tapIn || record.taps?.some((tap) => tap.tapIn)).length;
-  const participantsInside = ongoingRecords.filter((record) => {
-    const taps = record.taps?.length ? record.taps : [{ tapIn: record.tapIn, tapOut: record.tapOut }];
-    const lastTap = taps.at(-1);
-
-    return Boolean(lastTap?.tapIn && !lastTap.tapOut);
-  }).length;
-  const attendanceCompleted = ongoingRegisteredParticipants.filter((event) =>
-    isAttendanceComplete(attendanceRecords[getRegisteredEventId(event)]),
-  ).length;
-  const attendanceProgress = ongoingRegisteredParticipants.length
-    ? Math.round((attendanceCompleted / ongoingRegisteredParticipants.length) * 100)
-    : 0;
-  const pendingEvents = organizedEvents.filter((event) => !event.status || ['created', 'pending'].includes(event.status.toLowerCase()));
-  const approvedEvents = organizedEvents.filter((event) => event.status?.toLowerCase() === 'approved');
-  const rejectedEvents = organizedEvents.filter((event) => event.status?.toLowerCase() === 'rejected');
   const joinedEventDates = useMemo(
     () =>
       registeredEvents
@@ -306,119 +222,6 @@ export function DashboardPageContent() {
     setCalendarMonthOffset(0);
     setIsDatePickerOpen(false);
   };
-
-  if (isOfficer) {
-    return (
-      <section className="dashboard-page dashboard-page--officer">
-        <div className="dashboard-shell dashboard-shell--officer">
-          <h2>
-            Hello, <ColorfulGreetingName name={firstName} />
-          </h2>
-
-          <section className="dashboard-summary" aria-label="Officer dashboard summary">
-            <Link className="dashboard-summary-card dashboard-summary-card--joined" href="/dashboard/events-joined">
-              <h3>Events Joined</h3>
-              <p>{registeredEvents.length}</p>
-            </Link>
-            <Link className="dashboard-summary-card dashboard-summary-card--saved" href="/events">
-              <h3>Saved Events</h3>
-              <p>{savedEventIds.length}</p>
-            </Link>
-            <Link className="dashboard-summary-card dashboard-summary-card--certificates" href="/certificates">
-              <h3>Certificates Earned</h3>
-              <p>{certificatesEarned}</p>
-            </Link>
-            <Link className="dashboard-summary-card dashboard-summary-card--upcoming" href="/events-organized">
-              <h3>Events Organized</h3>
-              <p>{organizedEvents.length}</p>
-            </Link>
-          </section>
-
-          <section className="officer-top-grid">
-            <article className="dashboard-panel officer-status">
-              <header>
-                <div>
-                  <h3>Ongoing Event Status</h3>
-                  {ongoingOrganizedEvent && <p className="officer-status__event">{ongoingOrganizedEvent.name}</p>}
-                  {ongoingOrganizedEvent && <p className="officer-status__venue">{ongoingOrganizedEvent.venue}</p>}
-                </div>
-                <p>{`As of ${ongoingOrganizedEvent ? getDateDisplay(ongoingOrganizedEvent) : getTodayDisplay()}`}</p>
-              </header>
-              {ongoingOrganizedEvent ? (
-                <div className="officer-status__list">
-                  <div>
-                    <span />
-                    <strong>Current Attendees</strong>
-                    <p>{currentAttendees} attendees checked in</p>
-                  </div>
-                  <div>
-                    <span />
-                    <strong>Participants Currently Inside</strong>
-                    <p>{participantsInside} students currently inside the venue</p>
-                  </div>
-                  <div>
-                    <span />
-                    <strong>Attendance Progress</strong>
-                    <p>{attendanceCompleted} / {ongoingRegisteredParticipants.length} expected attendees</p>
-                  </div>
-                  <div>
-                    <span />
-                    <strong>Attendance Completion Rate</strong>
-                    <p>{attendanceProgress}% attendance completion</p>
-                  </div>
-                </div>
-              ) : (
-                <p className="officer-empty">No Ongoing Event</p>
-              )}
-            </article>
-
-            <article className="dashboard-panel officer-approvals">
-              <h3>Pending Event Approvals</h3>
-              {[
-                ['Pending', pendingEvents],
-                ['Approved', approvedEvents],
-                ['Rejected', rejectedEvents],
-              ].map(([label, events]) => (
-                <section key={label as string}>
-                  <h4>{label as string}</h4>
-                  {(events as FrontendEvent[]).length ? (
-                    (events as FrontendEvent[]).slice(0, 3).map((event) => (
-                      <p key={event.id}>
-                        <span />
-                        {event.name || 'Event Name'}
-                      </p>
-                    ))
-                  ) : (
-                    <small>{`No events ${(label as string).toLowerCase()} yet.`}</small>
-                  )}
-                </section>
-              ))}
-            </article>
-
-            <article className="dashboard-panel officer-actions">
-              <h3>Quick Actions</h3>
-              <a href="/events-organized/create">
-                <Image src="/svg icons for user-dashboard/plus-square-fill.svg" width={18} height={18} alt="" />
-                Create Event
-              </a>
-              <a href="/attendance">
-                <Image src="/svg icons for user-dashboard/view-attendance-icon.svg" width={18} height={18} alt="" />
-                View Attendance
-              </a>
-              <button type="button">
-                <Image src="/svg icons for user-dashboard/close-registration.svg" width={18} height={18} alt="" />
-                Send Announcements
-              </button>
-              <a href="/submit-feedback">
-                <Image src="/svg icons for user-dashboard/submit-feedback-icon.svg" width={18} height={18} alt="" />
-                Submit Feedback
-              </a>
-            </article>
-          </section>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section className="dashboard-page">
@@ -552,6 +355,27 @@ export function DashboardPageContent() {
           </div>
 
           <aside className="dashboard-calendar" aria-label="Joined events calendar">
+            {hasQuickActionsAccess && (
+              <article className="dashboard-panel officer-actions dashboard-quick-actions">
+                <h3>Quick Actions</h3>
+                <a href="/events-organized/create">
+                  <Image src="/svg icons for user-dashboard/plus-square-fill.svg" width={18} height={18} alt="" />
+                  Create Event
+                </a>
+                <a href="/attendance">
+                  <Image src="/svg icons for user-dashboard/view-attendance-icon.svg" width={18} height={18} alt="" />
+                  View Attendance
+                </a>
+                <button type="button">
+                  <Image src="/svg icons for user-dashboard/close-registration.svg" width={18} height={18} alt="" />
+                  Close Registration
+                </button>
+                <a href="/submit-feedback">
+                  <Image src="/svg icons for user-dashboard/submit-feedback-icon.svg" width={18} height={18} alt="" />
+                  Submit Feedback
+                </a>
+              </article>
+            )}
             <h3>Calendar</h3>
             <div className="dashboard-calendar-card">
               <header>
