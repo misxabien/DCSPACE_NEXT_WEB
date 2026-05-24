@@ -183,11 +183,17 @@ button.profile-upload {
 }
 
 .profile-field strong,
-.profile-stat span,
 .profile-info-box h2 {
   color: #6b6b6b;
   font-size: 12px;
   font-weight: 800;
+  line-height: 1.2;
+}
+
+.profile-stat span {
+  color: #6b6b6b;
+  font-size: 12px;
+  font-weight: 500;
   line-height: 1.2;
 }
 
