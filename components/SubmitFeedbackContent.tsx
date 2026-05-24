@@ -86,11 +86,15 @@ export function SubmitFeedbackContent() {
                   disabled={!joinedEvents.length}
                 >
                   {joinedEvents.length ? (
-                    joinedEvents.map((event) => (
-                      <option value={getRegisteredEventId(event)} key={getRegisteredEventId(event)}>
-                        {event.name || event.eventName || 'Event Name'}
-                      </option>
-                    ))
+                    joinedEvents.map((event) => {
+                      const eventLabel = event.name || (event as RegisteredEvent & { eventName?: string }).eventName || 'Event Name';
+
+                      return (
+                        <option value={getRegisteredEventId(event)} key={getRegisteredEventId(event)}>
+                          {eventLabel}
+                        </option>
+                      );
+                    })
                   ) : (
                     <option value="">No joined events yet</option>
                   )}
