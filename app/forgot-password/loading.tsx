@@ -1,9 +1,5 @@
-import { BrandedLoading } from "@/components/BrandedLoading";
+import { LoadingScreen } from '@/components/LoadingScreen';
 
-export default function Loading() {
-  return (
-    <div className="login-scope">
-      <BrandedLoading label="Loading password reset..." />
-    </div>
-  );
+export default function ForgotPasswordLoading() {
+  return <LoadingScreen context="forgot-password" />;
 }

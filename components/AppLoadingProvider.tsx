@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { BrandedLoading } from "@/components/BrandedLoading";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { BrandedLoading } from '@/components/BrandedLoading';
 
 type PendingNavigation = {
   complete: boolean;
@@ -22,7 +22,7 @@ export function useAppLoading() {
   const context = useContext(AppLoadingContext);
 
   if (!context) {
-    throw new Error("useAppLoading must be used inside AppLoadingProvider");
+    throw new Error('useAppLoading must be used inside AppLoadingProvider');
   }
 
   return context;
@@ -36,11 +36,11 @@ export function AppLoadingProvider({ children }: { children: React.ReactNode }) 
 
   const currentPath = useMemo(() => {
     const queryString = searchParams.toString();
-    return `${pathname}${queryString ? `?${queryString}` : ""}`;
+    return `${pathname}${queryString ? `?${queryString}` : ''}`;
   }, [pathname, searchParams]);
 
   const navigateWithLoading = useCallback((href: string) => {
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       return;
     }
 
@@ -95,15 +95,15 @@ export function AppLoadingProvider({ children }: { children: React.ReactNode }) 
         return;
       }
 
-      const anchor = target.closest<HTMLAnchorElement>("a[href]");
+      const anchor = target.closest<HTMLAnchorElement>('a[href]');
 
-      if (!anchor || anchor.dataset.noLoading === "true" || anchor.hasAttribute("download")) {
+      if (!anchor || anchor.dataset.noLoading === 'true' || anchor.hasAttribute('download')) {
         return;
       }
 
-      const anchorTarget = anchor.getAttribute("target");
+      const anchorTarget = anchor.getAttribute('target');
 
-      if (anchorTarget && anchorTarget !== "_self") {
+      if (anchorTarget && anchorTarget !== '_self') {
         return;
       }
 
@@ -124,10 +124,10 @@ export function AppLoadingProvider({ children }: { children: React.ReactNode }) 
       navigateWithLoading(targetPath);
     };
 
-    document.addEventListener("click", handleDocumentClick, true);
+    document.addEventListener('click', handleDocumentClick, true);
 
     return () => {
-      document.removeEventListener("click", handleDocumentClick, true);
+      document.removeEventListener('click', handleDocumentClick, true);
     };
   }, [navigateWithLoading]);
 

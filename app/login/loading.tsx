@@ -1,5 +1,5 @@
-import { BrandedLoading } from "@/components/BrandedLoading";
+import { LoadingScreen } from '@/components/LoadingScreen';
 
-export default function Loading() {
-  return <BrandedLoading label="Loading login..." />;
+export default function LoginLoading() {
+  return <LoadingScreen context="login" />;
 }

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import Image from 'next/image';
+import { useEffect, useRef, useState } from 'react';
 
 type BrandedLoadingProps = {
   complete?: boolean;
@@ -9,7 +9,7 @@ type BrandedLoadingProps = {
   onComplete?: () => void;
 };
 
-export function BrandedLoading({ complete = false, label = "Loading...", onComplete }: BrandedLoadingProps) {
+export function BrandedLoading({ complete = false, label = 'Loading...', onComplete }: BrandedLoadingProps) {
   const [progress, setProgress] = useState(0);
   const hasCompleted = useRef(false);
   const radius = 58;
@@ -52,7 +52,7 @@ export function BrandedLoading({ complete = false, label = "Loading...", onCompl
   }, [complete, isComplete, onComplete]);
 
   return (
-    <div className={`brand-loader${shouldPop ? " is-complete" : ""}`} role="status" aria-live="polite">
+    <div className={`brand-loader${shouldPop ? ' is-complete' : ''}`} role="status" aria-live="polite">
       <div className="brand-loader__mark">
         <svg className="brand-loader__progress" viewBox="0 0 132 132" aria-hidden="true">
           <circle className="brand-loader__track" cx="66" cy="66" r={radius} />

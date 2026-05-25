@@ -1,94 +1,433 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { canOrganizeEvents } from "@/lib/dc-events";
-import { NAV_ITEMS } from "@/lib/nav";
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { type CSSProperties, useEffect, useState } from 'react';
+import { LoadingScreen } from '@/components/LoadingScreen';
+import { canOrganizeEvents } from '@/lib/dc-events';
+import {
+  type DcNotification,
+  NOTIFICATIONS_UPDATED_EVENT,
+  formatNotificationTimeAgo,
+  markNotificationsAsRead,
+  readNotifications,
+} from '@/lib/notifications';
 
 const AVATAR =
-  "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=128&h=128&fit=crop&crop=faces";
+  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=128&h=128&fit=crop&crop=faces';
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [canCreateEvents, setCanCreateEvents] = useState(false);
+  const [notifications, setNotifications] = useState<DcNotification[]>([]);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [, setTimeTick] = useState(0);
+  const [userName, setUserName] = useState('User Name');
+  const [profilePhotoImage, setProfilePhotoImage] = useState('');
+  const [profilePhotoFit, setProfilePhotoFit] = useState({ zoom: 1, x: 0, y: 0 });
 
   useEffect(() => {
     const refreshAccess = () => setCanCreateEvents(canOrganizeEvents());
+    const refreshNotifications = () => setNotifications(readNotifications());
+    const refreshUserName = () => {
+      const firstName = window.localStorage.getItem('dcspaceFirstName')?.trim();
+      const lastName = window.localStorage.getItem('dcspaceLastName')?.trim();
+      const fullName = [firstName, lastName].filter(Boolean).join(' ');
+      const savedFit = window.localStorage.getItem('dcspaceProfilePhotoFit');
+
+      setUserName(fullName || 'User Name');
+      setProfilePhotoImage(window.localStorage.getItem('dcspaceProfilePhotoImage') || '');
+
+      if (savedFit) {
+        try {
+          const parsed = JSON.parse(savedFit) as Partial<{ zoom: number; x: number; y: number }>;
+
+          setProfilePhotoFit({
+            zoom: typeof parsed.zoom === 'number' ? parsed.zoom : 1,
+            x: typeof parsed.x === 'number' ? parsed.x : 0,
+            y: typeof parsed.y === 'number' ? parsed.y : 0,
+          });
+        } catch {
+          setProfilePhotoFit({ zoom: 1, x: 0, y: 0 });
+        }
+      } else {
+        setProfilePhotoFit({ zoom: 1, x: 0, y: 0 });
+      }
+    };
 
     refreshAccess();
-    window.addEventListener("pageshow", refreshAccess);
-    window.addEventListener("storage", refreshAccess);
+    refreshNotifications();
+    refreshUserName();
+    window.addEventListener('pageshow', refreshAccess);
+    window.addEventListener('pageshow', refreshNotifications);
+    window.addEventListener('pageshow', refreshUserName);
+    window.addEventListener('storage', refreshAccess);
+    window.addEventListener('storage', refreshNotifications);
+    window.addEventListener('storage', refreshUserName);
+    window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, refreshNotifications);
+    window.addEventListener('dcspace-profile-updated', refreshUserName);
 
     return () => {
-      window.removeEventListener("pageshow", refreshAccess);
-      window.removeEventListener("storage", refreshAccess);
+      window.removeEventListener('pageshow', refreshAccess);
+      window.removeEventListener('pageshow', refreshNotifications);
+      window.removeEventListener('pageshow', refreshUserName);
+      window.removeEventListener('storage', refreshAccess);
+      window.removeEventListener('storage', refreshNotifications);
+      window.removeEventListener('storage', refreshUserName);
+      window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, refreshNotifications);
+      window.removeEventListener('dcspace-profile-updated', refreshUserName);
     };
   }, []);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => setTimeTick((tick) => tick + 1), 60_000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    setIsMobileNavOpen(false);
+    setIsMobileProfileOpen(false);
+    setIsNotificationsOpen(false);
+  }, [pathname]);
+
+  const handleMarkAllNotificationsRead = () => {
+    markNotificationsAsRead(notifications.map((notification) => notification.id));
+    setNotifications(readNotifications());
+  };
+
+  const handleNotificationClick = (notificationId: string) => {
+    markNotificationsAsRead([notificationId]);
+    setNotifications(readNotifications());
+    setIsNotificationsOpen(false);
+    router.push('/notifications');
+  };
+
+  const hasUnreadNotifications = notifications.some((notification) => !notification.isRead);
+  const isSubmitFeedbackPage = pathname.includes('/submit-feedback');
+  const isOrganizedEventPath =
+    pathname.includes('/events-organized') || pathname.includes('/organize') || pathname.includes('/organized-event');
+  const profilePhotoStyle = {
+    transform: `translate(${profilePhotoFit.x}%, ${profilePhotoFit.y}%) scale(${profilePhotoFit.zoom})`,
+  } as CSSProperties;
+  const pageTitle =
+    pathname === '/home'
+      ? 'Home'
+      : isOrganizedEventPath
+          ? 'My Organized Events'
+          : pathname === '/dashboard' || pathname.startsWith('/dashboard/')
+            ? 'Dashboard'
+            : pathname.includes('/attendance')
+              ? 'Attendance'
+              : pathname.includes('/certificates')
+                ? 'Certificates'
+                : pathname.includes('/events')
+                  ? 'My Saved Events'
+                  : pathname.includes('/submit-feedback')
+                    ? 'My Profile'
+                    : pathname.includes('/notifications')
+                      ? 'Notifications'
+                      : pathname.includes('/my-profile')
+                        ? 'My Profile'
+                        : 'Home';
+  const navItems = [
+    { href: '/home', label: 'Home', icon: '/svg icons navbar/Home.svg', mobileIcon: '/svg icons navbar/svg icon navbar mobile/home-icon.svg' },
+    {
+      href: '/dashboard',
+      label: 'Dashboard',
+      icon: '/svg icons navbar/Layout.svg',
+      mobileIcon: '/svg icons navbar/svg icon navbar mobile/dashboard-icon.svg',
+    },
+    ...(canCreateEvents
+      ? [
+          {
+            href: '/events-organized',
+            label: 'Events Organized',
+            icon: '/svg icons navbar/list-stars.svg',
+            mobileIcon: '/svg icons navbar/list-stars.svg',
+          },
+        ]
+      : []),
+    {
+      href: '/events',
+      label: 'Saved Events',
+      icon: '/svg icons navbar/svg icon navbar mobile/saved-events-icon.svg',
+      mobileIcon: '/svg icons navbar/svg icon navbar mobile/saved-events-icon.svg',
+    },
+    {
+      href: '/attendance',
+      label: 'Attendance',
+      icon: '/svg icons navbar/Users.svg',
+      mobileIcon: '/svg icons navbar/svg icon navbar mobile/attendance-icon.svg',
+    },
+    {
+      href: '/certificates',
+      label: 'Certificates',
+      icon: '/svg icons navbar/certficate-icon.svg',
+      mobileIcon: '/svg icons navbar/svg icon navbar mobile/certificates-icon.svg',
+    },
+  ];
+
   return (
-    <header className="topbar" aria-label="Primary navigation">
-      <Link className="topbar__brand" href="/dashboard" aria-label="DC Space dashboard">
-        <span className="topbar__logo" aria-hidden="true">
-          Logo
-        </span>
-        <span className="topbar__brand-name">DC Space</span>
-      </Link>
+    <>
+      <aside
+        className={`sidebar${isCollapsed ? ' sidebar--collapsed' : ''}${isMobileNavOpen ? ' sidebar--mobile-open' : ''}`}
+        aria-label="Primary navigation"
+      >
+        <div className="sidebar__brand">
+          <button
+            className="sidebar__logo-button"
+            type="button"
+            aria-label={isCollapsed ? 'Open sidebar' : 'DC Space'}
+            onClick={() => {
+              setIsNotificationsOpen(false);
+              if (isCollapsed) {
+                setIsCollapsed(false);
+              }
+            }}
+          >
+            <Image className="sidebar__logo" src="/dcspace-logos/dcspace-logo-circle.png" width={58} height={58} alt="" priority />
+            <Image className="sidebar__open-icon" src="/svg icons navbar/open-sidebar-icon.svg" width={18} height={18} alt="" />
+          </button>
+          <strong className="sidebar__brand-name">DC SPACE</strong>
+          <button
+            className="sidebar__toggle"
+            type="button"
+            aria-label="Close sidebar"
+            onClick={() => {
+              setIsNotificationsOpen(false);
+              setIsCollapsed(true);
+            }}
+          >
+            <Image src="/svg icons navbar/close-sidebar-icon.svg" width={16} height={16} alt="" />
+          </button>
+        </div>
 
-      <nav className="topbar__nav" aria-label="Main navigation">
-        <ul className="topbar__links">
-          {NAV_ITEMS.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            const isCreate = "kind" in item && item.kind === "create";
-
-            if (isCreate && !canCreateEvents) {
-              return null;
-            }
+        <nav className="sidebar__nav">
+          {navItems.map((item) => {
+            const active =
+              item.href === '/events-organized'
+                ? isOrganizedEventPath
+                : item.href === '/dashboard'
+                  ? (pathname === item.href || pathname.startsWith(`${item.href}/`)) && !isOrganizedEventPath
+                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={`${isCreate ? "topbar__add" : "topbar__link"}${active ? " is-active" : ""}`}
-                  aria-current={active ? "page" : undefined}
-                  aria-label={isCreate ? "Organize an event" : undefined}
-                >
-                  {isCreate ? "+" : item.label}
-                </Link>
-              </li>
+              <Link
+                className={`sidebar__link${active ? ' is-active' : ''}`}
+                href={item.href}
+                aria-current={active ? 'page' : undefined}
+                key={item.label}
+                onClick={() => {
+                  setIsNotificationsOpen(false);
+                  setIsMobileNavOpen(false);
+                }}
+              >
+                <Image className="sidebar__icon sidebar__icon--desktop" src={item.icon} width={22} height={22} alt="" />
+                <Image className="sidebar__icon sidebar__icon--mobile" src={item.mobileIcon} width={28} height={28} alt="" />
+                <span>{item.label}</span>
+              </Link>
             );
           })}
-        </ul>
-      </nav>
+        </nav>
 
-      <div className="topbar__right">
-        <button className="topbar__icon-button" type="button" aria-label="Notifications">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M18 9.75C18 6.436 15.314 3.75 12 3.75S6 6.436 6 9.75v3.12l-1.35 2.7A.75.75 0 0 0 5.32 16.65h13.36a.75.75 0 0 0 .67-1.08L18 12.87V9.75Z"
-              stroke="currentColor"
-              strokeWidth="1.7"
-              strokeLinejoin="round"
+        <Link
+          className="sidebar__logout"
+          href="/login"
+          onClick={() => {
+            setIsNotificationsOpen(false);
+            setIsLoggingOut(true);
+          }}
+        >
+          <Image src="/svg icons navbar/logout-icon.svg" width={18} height={18} alt="" />
+          <span>Log out</span>
+        </Link>
+      </aside>
+
+      {isLoggingOut && <LoadingScreen context="logout" />}
+
+      <header className={`topbar${isMobileNavOpen ? ' topbar--mobile-menu-open' : ''}`} aria-label="Page header">
+        <button
+          className="topbar__mobile-menu"
+          type="button"
+          aria-label={isMobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={isMobileNavOpen}
+          onClick={() => {
+            setIsNotificationsOpen(false);
+            setIsMobileProfileOpen(false);
+            setIsMobileNavOpen((isOpen) => !isOpen);
+          }}
+        >
+          <Image
+            src={
+              isMobileNavOpen
+                ? '/svg icons navbar/svg icon navbar mobile/close-hamburger.svg'
+                : '/svg icons navbar/svg icon navbar mobile/hamburger-icon.svg'
+            }
+            width={42}
+            height={42}
+            alt=""
+          />
+        </button>
+        <h1>
+          {isSubmitFeedbackPage ? (
+            <Link className="topbar__title-link" href="/my-profile" onClick={() => setIsNotificationsOpen(false)}>
+              {pageTitle}
+            </Link>
+          ) : (
+            pageTitle
+          )}
+        </h1>
+        <div className="topbar__right">
+          <Link
+            className={`topbar__profile-pill${pathname.includes('/my-profile') || pathname.includes('/submit-feedback') ? ' is-active' : ''}`}
+            href="/my-profile"
+            aria-label="Open profile"
+            onClick={() => setIsNotificationsOpen(false)}
+          >
+            <span>{userName}</span>
+            <span className="topbar__avatar-link">
+              <Image
+                className="topbar__avatar"
+                src={profilePhotoImage || AVATAR}
+                width={44}
+                height={44}
+                alt="Profile"
+                style={profilePhotoImage ? profilePhotoStyle : undefined}
+                unoptimized={Boolean(profilePhotoImage)}
+              />
+            </span>
+          </Link>
+          <button
+            className="topbar__mobile-profile-toggle"
+            type="button"
+            aria-label={isMobileProfileOpen ? 'Close profile menu' : 'Open profile menu'}
+            aria-expanded={isMobileProfileOpen}
+            onClick={() => {
+              setIsNotificationsOpen(false);
+              setIsMobileNavOpen(false);
+              setIsMobileProfileOpen((isOpen) => !isOpen);
+            }}
+          >
+            {isMobileProfileOpen ? (
+              <Image src="/svg icons navbar/svg icon navbar mobile/close-hamburger.svg" width={42} height={42} alt="" />
+            ) : (
+              <span className="topbar__avatar-link">
+                <Image
+                  className="topbar__avatar"
+                  src={profilePhotoImage || AVATAR}
+                  width={44}
+                  height={44}
+                  alt="Profile"
+                  style={profilePhotoImage ? profilePhotoStyle : undefined}
+                  unoptimized={Boolean(profilePhotoImage)}
+                />
+              </span>
+            )}
+          </button>
+          <button
+            className={`topbar__icon-button topbar__notification-button${pathname === '/notifications' || isNotificationsOpen ? ' is-active' : ''}`}
+            type="button"
+            aria-label="Notifications"
+            aria-expanded={isNotificationsOpen}
+            onClick={() => setIsNotificationsOpen((isOpen) => !isOpen)}
+          >
+            <Image
+              src={
+                hasUnreadNotifications
+                  ? '/svg icons navbar/one-notif-icon.svg?v=a0c0f8'
+                  : '/svg icons navbar/normal-notif-icon.svg?v=a0c0f8'
+              }
+              width={24}
+              height={24}
+              alt=""
             />
-            <path d="M9.75 18.25a2.25 2.25 0 0 0 4.5 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-            <path d="M18.9 4.35h.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-          </svg>
-        </button>
-        <button className="topbar__icon-button" type="button" aria-label="Help">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.7" />
-            <path d="M9.9 9.55a2.15 2.15 0 1 1 3.53 1.65c-.88.7-1.43 1.17-1.43 2.05" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-            <path d="M12 16.55h.01" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-          </svg>
-        </button>
-        <Link className="topbar__account" href="/my-profile">
-          Account
-        </Link>
-        <Link className="topbar__avatar-link" href="/my-profile" aria-label="Open profile">
-          <Image className="topbar__avatar" src={AVATAR} width={44} height={44} alt="Profile" />
-        </Link>
-      </div>
-    </header>
+          </button>
+          <button className="topbar__help" type="button" aria-label="Help" onClick={() => setIsNotificationsOpen(false)}>
+            ?
+          </button>
+        </div>
+      </header>
+
+      <aside className={`mobile-profile-menu${isMobileProfileOpen ? ' is-open' : ''}`} aria-hidden={!isMobileProfileOpen}>
+        <nav className="mobile-profile-menu__nav" aria-label="Profile navigation">
+          <Link
+            className={`mobile-profile-menu__item mobile-profile-menu__item--profile${
+              pathname.includes('/my-profile') || pathname.includes('/submit-feedback') ? ' is-active' : ''
+            }`}
+            href="/my-profile"
+            onClick={() => setIsNotificationsOpen(false)}
+          >
+            <span>My Profile</span>
+            <span className="mobile-profile-menu__avatar">
+              <Image
+                className="topbar__avatar"
+                src={profilePhotoImage || AVATAR}
+                width={44}
+                height={44}
+                alt=""
+                style={profilePhotoImage ? profilePhotoStyle : undefined}
+                unoptimized={Boolean(profilePhotoImage)}
+              />
+            </span>
+          </Link>
+          <Link
+            className={`mobile-profile-menu__item${pathname === '/notifications' ? ' is-active' : ''}`}
+            href="/notifications"
+            onClick={() => setIsNotificationsOpen(false)}
+          >
+            <span>My Notifications</span>
+            <Image src="/svg icons navbar/svg icon navbar mobile/notification-icon.svg" width={30} height={30} alt="" />
+          </Link>
+          <button
+            className="mobile-profile-menu__item"
+            type="button"
+            onClick={() => {
+              setIsNotificationsOpen(false);
+              setIsMobileProfileOpen(false);
+            }}
+          >
+            <span>Tutorial</span>
+            <Image src="/svg icons navbar/svg icon navbar mobile/question-circle-icon.svg" width={30} height={30} alt="" />
+          </button>
+        </nav>
+      </aside>
+
+      <aside className={`notifications-drawer${isNotificationsOpen ? ' is-open' : ''}`} aria-hidden={!isNotificationsOpen}>
+        <header className="notifications-drawer__header">
+          <h2>Notifications</h2>
+          <button type="button" onClick={handleMarkAllNotificationsRead}>
+            Mark as Read
+          </button>
+        </header>
+        <div className="notifications-drawer__list">
+          {notifications.length ? (
+            notifications.map((notification) => (
+              <button
+                className={`notifications-drawer__item${notification.isRead ? '' : ' is-unread'}`}
+                type="button"
+                key={notification.id}
+                onClick={() => handleNotificationClick(notification.id)}
+              >
+                <span className="notifications-drawer__circle" aria-hidden="true" />
+                <span className="notifications-drawer__copy">
+                  <strong>{notification.title}</strong>
+                  <small>{notification.eventName}</small>
+                </span>
+                <time>{formatNotificationTimeAgo(notification.notifiedAt)}</time>
+              </button>
+            ))
+          ) : (
+            <p className="notifications-drawer__empty">No notifications yet.</p>
+          )}
+        </div>
+      </aside>
+    </>
   );
 }

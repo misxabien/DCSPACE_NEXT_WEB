@@ -1,9 +1,5 @@
-import { BrandedLoading } from "@/components/BrandedLoading";
+import { LoadingScreen } from '@/components/LoadingScreen';
 
-export default function Loading() {
-  return (
-    <div className="login-scope">
-      <BrandedLoading label="Loading registration..." />
-    </div>
-  );
+export default function RegisterLoading() {
+  return <LoadingScreen context="register" />;
 }
