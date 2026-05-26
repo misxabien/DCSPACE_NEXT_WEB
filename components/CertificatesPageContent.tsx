@@ -1,16 +1,63 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
-import { EmptyState } from "@/components/EmptyState";
-import { SearchWithClear } from "@/components/SearchWithClear";
+import { useEffect, useMemo, useState } from "react";
+import { DateRangeCalendarPicker } from "@/components/DateRangeCalendarPicker";
+import {
+  ATTENDANCE_UPDATED_EVENT,
+  REGISTERED_EVENTS_KEY,
+  type AttendanceRecord,
+  type RegisteredEvent,
+  formatEventDate,
+  getCertificateStatus,
+  getCurrentAttendanceUser,
+  getRegisteredEventId,
+  readRegisteredEvents,
+  readUserAttendanceRecords,
+} from "@/lib/attendance";
 
-type CertificateGroup = {
-  month: string;
-  certificates: string[];
+const filters = ["All", "Yesterday", "This Week", "Pick a date"];
+
+type CertificateCard = {
+  id: string;
+  certificateName: string;
+  eventName: string;
+  issuedDate: string;
+  issuedDateValue: string;
+  imageSrc: string;
+  isPlaceholder?: boolean;
 };
 
-const CERTIFICATE_GROUPS: CertificateGroup[] = [];
+const certificateTemplateSrc = "/certificates/default-template.png";
+const placeholderCertificates: CertificateCard[] = [
+  {
+    id: "template-certificate-1",
+    certificateName: "Certificate Name",
+    eventName: "Event Name",
+    issuedDate: "Date Issued",
+    issuedDateValue: getDateInputValue(new Date()),
+    imageSrc: certificateTemplateSrc,
+    isPlaceholder: true,
+  },
+  {
+    id: "template-certificate-2",
+    certificateName: "Certificate Name",
+    eventName: "Event Name",
+    issuedDate: "Date Issued",
+    issuedDateValue: getDateInputValue(new Date()),
+    imageSrc: certificateTemplateSrc,
+    isPlaceholder: true,
+  },
+  {
+    id: "template-certificate-3",
+    certificateName: "Certificate Name",
+    eventName: "Event Name",
+    issuedDate: "Date Issued",
+    issuedDateValue: getDateInputValue(new Date()),
+    imageSrc: certificateTemplateSrc,
+    isPlaceholder: true,
+  },
+];
 
 function CertificateIcon() {
   return (
@@ -25,85 +72,210 @@ function CertificateIcon() {
   );
 }
 
-function getCertificateDateTime(date: string) {
-  const parsedDate = new Date(date);
-  return Number.isNaN(parsedDate.getTime()) ? 0 : parsedDate.getTime();
+function getDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function getCertificateDate(record: AttendanceRecord | undefined, event: RegisteredEvent) {
+  const parsedDate = record?.updatedAt ? new Date(record.updatedAt) : new Date(formatEventDate(event));
+  return Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+}
+
+function isSameDate(firstDate: Date, secondDate: Date) {
+  return getDateInputValue(firstDate) === getDateInputValue(secondDate);
+}
+
+function isThisWeek(date: Date) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  return date >= startOfWeek && date <= endOfWeek;
+}
+
+function buildCertificateCards(events: RegisteredEvent[], records: Record<string, AttendanceRecord>) {
+  return events.reduce<CertificateCard[]>((cards, event) => {
+    const eventId = getRegisteredEventId(event);
+    const record = records[eventId];
+
+    if (getCertificateStatus(record, event) !== "Download") {
+      return cards;
+    }
+
+    const issuedDate = getCertificateDate(record, event);
+
+    cards.push({
+      id: eventId,
+      certificateName: `${event.name || "Event Name"} Certificate`,
+      eventName: event.name || "Event Name",
+      issuedDate: issuedDate.toLocaleDateString("en-US", {
+        month: "long",
+        day: "2-digit",
+        year: "numeric",
+      }),
+      issuedDateValue: getDateInputValue(issuedDate),
+      imageSrc: certificateTemplateSrc,
+    });
+
+    return cards;
+  }, []);
 }
 
 export function CertificatesPageContent() {
-  const [sortAsc, setSortAsc] = useState(true);
-  const hasCertificates = CERTIFICATE_GROUPS.some((group) => group.certificates.length > 0);
+  const [certificates, setCertificates] = useState<CertificateCard[]>([]);
+  const [activeFilter, setActiveFilter] = useState("All");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [selectedCertificate, setSelectedCertificate] = useState<CertificateCard | null>(null);
 
-  const sortedCertificateGroups = useMemo(() => {
-    return CERTIFICATE_GROUPS
-      .map((group) => ({
-        ...group,
-        certificates: [...group.certificates].sort((firstDate, secondDate) => {
-          const firstTime = getCertificateDateTime(firstDate);
-          const secondTime = getCertificateDateTime(secondDate);
+  useEffect(() => {
+    const refreshCertificates = () => {
+      const user = getCurrentAttendanceUser();
+      setCertificates(buildCertificateCards(readRegisteredEvents(), readUserAttendanceRecords(user)));
+    };
 
-          return sortAsc ? firstTime - secondTime : secondTime - firstTime;
-        }),
-      }))
-      .sort((firstGroup, secondGroup) => {
-        const firstTime = getCertificateDateTime(firstGroup.certificates[0] || "");
-        const secondTime = getCertificateDateTime(secondGroup.certificates[0] || "");
+    refreshCertificates();
+    window.addEventListener("pageshow", refreshCertificates);
+    window.addEventListener("storage", refreshCertificates);
+    window.addEventListener(ATTENDANCE_UPDATED_EVENT, refreshCertificates);
+    window.addEventListener("dcspace-registered-events-updated", refreshCertificates);
 
-        return sortAsc ? firstTime - secondTime : secondTime - firstTime;
-      });
-  }, [sortAsc]);
+    return () => {
+      window.removeEventListener("pageshow", refreshCertificates);
+      window.removeEventListener("storage", refreshCertificates);
+      window.removeEventListener(ATTENDANCE_UPDATED_EVENT, refreshCertificates);
+      window.removeEventListener("dcspace-registered-events-updated", refreshCertificates);
+    };
+  }, []);
+
+  const visibleCertificates = certificates.length ? certificates : placeholderCertificates;
+  const filteredCertificates = useMemo(() => {
+    if (!certificates.length) {
+      return visibleCertificates;
+    }
+
+    return visibleCertificates.filter((certificate) => {
+      const issuedDate = new Date(`${certificate.issuedDateValue}T00:00:00`);
+
+      if (activeFilter === "Yesterday") {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        return isSameDate(issuedDate, yesterday);
+      }
+
+      if (activeFilter === "This Week") {
+        return isThisWeek(issuedDate);
+      }
+
+      if (activeFilter === "Pick a date") {
+        const startDate = dateRange.start <= (dateRange.end || dateRange.start) ? dateRange.start : dateRange.end;
+        const endDate = dateRange.start <= (dateRange.end || dateRange.start) ? (dateRange.end || dateRange.start) : dateRange.start;
+        const startsAfterStartDate = startDate ? certificate.issuedDateValue >= startDate : true;
+        const endsBeforeEndDate = endDate ? certificate.issuedDateValue <= endDate : true;
+        return startsAfterStartDate && endsBeforeEndDate;
+      }
+
+      return true;
+    });
+  }, [activeFilter, certificates.length, dateRange, visibleCertificates]);
+  const certificateDateKeys = useMemo(
+    () => visibleCertificates.map((certificate) => certificate.issuedDateValue),
+    [visibleCertificates],
+  );
+
+  const handleFilterClick = (filter: string) => {
+    if (filter === "Pick a date") {
+      setActiveFilter(filter);
+      setShowDatePicker((current) => !current);
+      return;
+    }
+
+    setActiveFilter(filter);
+    setShowDatePicker(false);
+  };
+
+  const clearPickedDate = () => {
+    setDateRange({ start: "", end: "" });
+    setActiveFilter("All");
+    setShowDatePicker(false);
+  };
 
   return (
-    <>
-      <header className="certificates-header">
-        <h1 className="certificates-title">Certificates</h1>
-        <div className="certificates-controls">
-          <SearchWithClear className="certificates-search" role="search" />
-          <div className="certificate-sort" role="group" aria-label="Sort certificates">
-            <button type="button" aria-pressed={sortAsc} onClick={() => setSortAsc(true)}>
-              <Image src="/assets/ascending-arrow.svg" alt="" width={16} height={16} aria-hidden="true" />
-              Ascending
-            </button>
-            <button type="button" aria-pressed={!sortAsc} onClick={() => setSortAsc(false)}>
-              <Image src="/assets/descending-arrow.svg" alt="" width={16} height={16} aria-hidden="true" />
-              Descending
-            </button>
-          </div>
+    <main className="certificates-content" aria-label="Earned certificates">
+      <section className="certificates-page__heading">
+        <h2><span>Earned</span> Certificates</h2>
+        <div className="certificates-page__filters" aria-label="Certificate filters">
+          {filters.map((filter) => (
+            <span className="certificates-page__filter-wrap" key={filter}>
+              <button
+                className={`certificates-page__filter${activeFilter === filter ? " is-active" : ""}${
+                  filter === "Pick a date" && showDatePicker ? " is-open" : ""
+                }`}
+                type="button"
+                onClick={() => handleFilterClick(filter)}
+              >
+                <span>{filter}</span>
+                {filter === "Pick a date" && <Image src="/assets/dropdown-fill.svg" width={8} height={8} alt="" />}
+              </button>
+              {filter === "Pick a date" && showDatePicker && (
+                <section className="certificates-date-picker" aria-label="Choose certificate date">
+                  <DateRangeCalendarPicker
+                    value={dateRange}
+                    highlightedDates={certificateDateKeys}
+                    onChange={(nextDateRange) => {
+                      setDateRange(nextDateRange);
+                      setActiveFilter(filter);
+                    }}
+                    onClear={clearPickedDate}
+                    onDone={() => setShowDatePicker(false)}
+                  />
+                </section>
+              )}
+            </span>
+          ))}
         </div>
-      </header>
+      </section>
 
-      <main className="certificates-content" aria-label="Certificates by event date">
-        {hasCertificates ? (
-          sortedCertificateGroups.map((group) => (
-            <section className="certificate-month" key={group.month} aria-labelledby={`${group.month.toLowerCase()}-certificates`}>
-              <h2 id={`${group.month.toLowerCase()}-certificates`}>{group.month}</h2>
-              <div className="cert-grid">
-                {group.certificates.map((date) => (
-                  <article className="cert-card" key={date}>
-                    <div className="cert-card__preview">
-                      <CertificateIcon />
-                    </div>
-                    <div className="cert-card__footer">
-                      <div>
-                        <p className="cert-card__title">Event Name Certificate</p>
-                        <p className="cert-card__date">Issued Date: {date}</p>
-                      </div>
-                      <button type="button" className="cert-card__view">
-                        View
-                      </button>
-                    </div>
-                  </article>
-                ))}
+      <section className="cert-grid" aria-label="Certificate cards">
+        {filteredCertificates.map((certificate) => (
+          <button
+            className="cert-card"
+            type="button"
+            key={certificate.id}
+            onClick={() => setSelectedCertificate(certificate)}
+          >
+              <div className="cert-card__preview">
+                <img src={certificate.imageSrc} alt="" />
               </div>
-            </section>
-          ))
-        ) : (
-          <EmptyState
-            icon="certificate"
-            message="No certificates received yet. Once you join an event and complete the required attendance, your certificates will appear here."
-          />
-        )}
-      </main>
-    </>
+              <div className="cert-card__footer">
+                <CertificateIcon />
+                <div>
+                  <p className="cert-card__title">{certificate.certificateName}</p>
+                  <p className="cert-card__event">{certificate.eventName}</p>
+                  <p className="cert-card__date">Date Issued: {certificate.issuedDate}</p>
+                </div>
+              </div>
+          </button>
+        ))}
+      </section>
+
+      {selectedCertificate && (
+        <div className="certificate-preview-overlay" role="dialog" aria-modal="true" aria-label="Certificate preview" onClick={() => setSelectedCertificate(null)}>
+          <button className="certificate-preview-modal" type="button" onClick={(event) => event.stopPropagation()}>
+            <img src={selectedCertificate.imageSrc} alt={selectedCertificate.certificateName} />
+          </button>
+        </div>
+      )}
+    </main>
   );
 }

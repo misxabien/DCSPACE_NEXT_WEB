@@ -1,23 +1,6 @@
 import type { Metadata } from 'next';
-import { DM_Sans, Lato, Montserrat, Poppins } from 'next/font/google';
+import { Montserrat, Poppins } from 'next/font/google';
 import './globals.css';
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-dm-sans',
-  display: 'swap',
-  adjustFontFallback: true,
-});
-
-const lato = Lato({
-  subsets: ['latin'],
-  weight: ['100', '300', '400', '700', '900'],
-  style: ['normal', 'italic'],
-  variable: '--font-lato',
-  display: 'swap',
-  adjustFontFallback: true,
-});
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -42,15 +25,15 @@ export const metadata: Metadata = {
   description: 'TAP. ATTEND. GET CERTIFIED.',
   icons: {
     icon: {
-      url: "/dcspace-logo-circle.png",
-      type: "image/png",
-      sizes: "32x32",
+      url: '/dcspace-logos/dcspace-logo-circle.png',
+      type: 'image/png',
+      sizes: '32x32',
     },
-    shortcut: "/dcspace-logo-circle.png",
+    shortcut: '/dcspace-logos/dcspace-logo-circle.png',
     apple: {
-      url: "/dcspace-logo-circle.png",
-      type: "image/png",
-      sizes: "180x180",
+      url: '/dcspace-logos/dcspace-logo-circle.png',
+      type: 'image/png',
+      sizes: '180x180',
     },
   },
 };
@@ -62,7 +45,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${dmSans.variable} ${lato.variable} ${montserrat.variable} ${poppins.variable} ${lato.className}`}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cal+Sans&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className={`${montserrat.variable} ${poppins.variable} ${poppins.className}`}>
         {children}
       </body>
     </html>

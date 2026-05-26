@@ -1,114 +1,122 @@
 'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { type CSSProperties, useEffect, useMemo, useState } from "react";
-import { canOrganizeEvents, readOrganizedEvents } from "@/lib/dc-events";
-import type { RegisteredEvent } from "@/lib/attendance";
+import Image from 'next/image';
+import Link from 'next/link';
+import { type CSSProperties, useEffect, useMemo, useState } from 'react';
+import { canOrganizeEvents, readOrganizedEvents } from '@/lib/dc-events';
 import {
   getCertificateStatus,
   getCurrentAttendanceUser,
-  getEventStatus,
   getRegisteredEventId,
+  getRequirementStatus,
   readRegisteredEvents,
   readUserAttendanceRecords,
-  signOutAttendanceUser,
-  formatEventDate,
-} from "@/lib/attendance";
+} from '@/lib/attendance';
 
-type ProfileTab = "attended" | "organized" | "certs";
-type EditProfileResult = "saved" | "approval";
+const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
 
-const profileColorPairs = [
-  { cover: "#8DB6F5", photo: "#F5E8C8" },
-  { cover: "#B6D9C6", photo: "#F2D2B6" },
-  { cover: "#F0DDAC", photo: "#A9C7FF" },
-  { cover: "#D9C3F4", photo: "#F7E7A8" },
-  { cover: "#F4B8A8", photo: "#B8D9F4" },
-];
+type ProfileImageFit = {
+  zoom: number;
+  x: number;
+  y: number;
+};
 
-function getEventDateTime(event: RegisteredEvent) {
-  const parsedDate = new Date(`${event.month || ""} ${event.day || ""}, ${event.year || ""}`);
-  return Number.isNaN(parsedDate.getTime()) ? 0 : parsedDate.getTime();
+function getDisplayValue(value?: string) {
+  return value && value !== 'Not provided' ? value : 'Not available';
 }
 
 function getInitials(firstName?: string, lastName?: string, fallback?: string) {
-  const firstInitial = firstName?.trim().charAt(0) || "";
-  const lastInitial = lastName?.trim().charAt(0) || "";
+  const firstInitial = firstName?.trim().charAt(0) || '';
+  const lastInitial = lastName?.trim().charAt(0) || '';
   const initials = `${firstInitial}${lastInitial}`.toUpperCase();
 
-  return initials || fallback?.trim().slice(0, 2).toUpperCase() || "DC";
+  return initials || fallback?.trim().slice(0, 2).toUpperCase() || 'DC';
 }
 
-function getProfileColors(seed: string) {
-  const hash = seed.split("").reduce((total, character) => total + character.charCodeAt(0), 0);
-  return profileColorPairs[hash % profileColorPairs.length];
+function readImageFit(storageKey: string): ProfileImageFit {
+  if (typeof window === 'undefined') return { zoom: 1, x: 0, y: 0 };
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(storageKey) || '{}') as Partial<ProfileImageFit>;
+
+    return {
+      zoom: typeof parsed.zoom === 'number' ? parsed.zoom : 1,
+      x: typeof parsed.x === 'number' ? parsed.x : 0,
+      y: typeof parsed.y === 'number' ? parsed.y : 0,
+    };
+  } catch {
+    return { zoom: 1, x: 0, y: 0 };
+  }
 }
 
-function getDisplayValue(value?: string) {
-  return value && value !== "Not provided" ? value : "Not available";
+function profileImageStyle(fit: ProfileImageFit): CSSProperties {
+  return {
+    transform: `translate(${fit.x}%, ${fit.y}%) scale(${fit.zoom})`,
+  };
+}
+
+function dispatchProfileUpdate() {
+  window.dispatchEvent(new CustomEvent('dcspace-profile-updated'));
+}
+
+function getEventName(event: ReturnType<typeof readRegisteredEvents>[number]) {
+  return event.name || 'Event Name';
+}
+
+function isFacultyUser(user: ReturnType<typeof getCurrentAttendanceUser> | null) {
+  const savedAccountType = typeof window === 'undefined' ? '' : window.localStorage.getItem('dcspaceAccountType');
+  const values = [savedAccountType, user?.organizationRole, user?.organizationPart, user?.school, user?.studentEmail];
+
+  return values.some((value) => value?.toLowerCase().includes('faculty'));
 }
 
 export function MyProfileContent() {
-  const [tab, setTab] = useState<ProfileTab>("attended");
-  const [sortAsc, setSortAsc] = useState(true);
-  const [showEditProfile, setShowEditProfile] = useState(false);
-  const [editProfileClosing, setEditProfileClosing] = useState(false);
-  const [editProfileResult, setEditProfileResult] = useState<EditProfileResult | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [feedbackClosing, setFeedbackClosing] = useState(false);
-  const [feedbackRating, setFeedbackRating] = useState(0);
-  const [canViewOrganizedEvents, setCanViewOrganizedEvents] = useState(false);
   const [user, setUser] = useState<ReturnType<typeof getCurrentAttendanceUser> | null>(null);
   const [registeredEvents, setRegisteredEvents] = useState<ReturnType<typeof readRegisteredEvents>>([]);
-  const [organizedEvents, setOrganizedEvents] = useState<RegisteredEvent[]>([]);
+  const [organizedEvents, setOrganizedEvents] = useState<ReturnType<typeof readOrganizedEvents>>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, ReturnType<typeof readUserAttendanceRecords>[string]>>({});
-  const [profilePhotoColor, setProfilePhotoColor] = useState("");
-  const [profilePhotoImage, setProfilePhotoImage] = useState("");
-  const [profileCoverColor, setProfileCoverColor] = useState("");
-  const [profileCoverImage, setProfileCoverImage] = useState("");
-  const [draftPhotoColor, setDraftPhotoColor] = useState("");
-  const [draftPhotoImage, setDraftPhotoImage] = useState("");
-  const [draftCoverColor, setDraftCoverColor] = useState("");
-  const [draftCoverImage, setDraftCoverImage] = useState("");
-  const [draftOrganization, setDraftOrganization] = useState("");
-  const [draftRole, setDraftRole] = useState("");
+  const [canViewOrganizedEvents, setCanViewOrganizedEvents] = useState(false);
+  const [profilePhotoImage, setProfilePhotoImage] = useState('');
+  const [profilePhotoFit, setProfilePhotoFit] = useState<ProfileImageFit>({ zoom: 1, x: 0, y: 0 });
+  const [profileCoverImage, setProfileCoverImage] = useState('');
+  const [profileCoverFit, setProfileCoverFit] = useState<ProfileImageFit>({ zoom: 1, x: 0, y: 0 });
+  const [draftPhotoImage, setDraftPhotoImage] = useState('');
+  const [draftPhotoFit, setDraftPhotoFit] = useState<ProfileImageFit>({ zoom: 1, x: 0, y: 0 });
+  const [draftCoverImage, setDraftCoverImage] = useState('');
+  const [draftCoverFit, setDraftCoverFit] = useState<ProfileImageFit>({ zoom: 1, x: 0, y: 0 });
 
   useEffect(() => {
     const refreshProfile = () => {
       const currentUser = getCurrentAttendanceUser();
       const canOrganize = canOrganizeEvents();
+      const canViewOrganizedStatistics = canOrganize || isFacultyUser(currentUser);
 
       setUser(currentUser);
       setRegisteredEvents(readRegisteredEvents());
       setAttendanceRecords(readUserAttendanceRecords(currentUser));
-      setCanViewOrganizedEvents(canOrganize);
-      setOrganizedEvents(canOrganize ? readOrganizedEvents() : []);
-      setProfilePhotoColor(window.localStorage.getItem("dcspaceProfilePhotoColor") || "");
-      setProfilePhotoImage(window.localStorage.getItem("dcspaceProfilePhotoImage") || "");
-      setProfileCoverColor(window.localStorage.getItem("dcspaceProfileCoverColor") || "");
-      setProfileCoverImage(window.localStorage.getItem("dcspaceProfileCoverImage") || "");
+      setCanViewOrganizedEvents(canViewOrganizedStatistics);
+      setOrganizedEvents(canViewOrganizedStatistics ? readOrganizedEvents() : []);
+      setProfilePhotoImage(window.localStorage.getItem('dcspaceProfilePhotoImage') || '');
+      setProfilePhotoFit(readImageFit('dcspaceProfilePhotoFit'));
+      setProfileCoverImage(window.localStorage.getItem('dcspaceProfileCoverImage') || '');
+      setProfileCoverFit(readImageFit('dcspaceProfileCoverFit'));
     };
 
     refreshProfile();
-    window.addEventListener("pageshow", refreshProfile);
-    window.addEventListener("storage", refreshProfile);
-    window.addEventListener("dcspace-events-updated", refreshProfile);
-    window.addEventListener("dcspace-registered-events-updated", refreshProfile);
+    window.addEventListener('pageshow', refreshProfile);
+    window.addEventListener('storage', refreshProfile);
+    window.addEventListener('dcspace-events-updated', refreshProfile);
+    window.addEventListener('dcspace-registered-events-updated', refreshProfile);
+    window.addEventListener('dcspace-profile-updated', refreshProfile);
 
     return () => {
-      window.removeEventListener("pageshow", refreshProfile);
-      window.removeEventListener("storage", refreshProfile);
-      window.removeEventListener("dcspace-events-updated", refreshProfile);
-      window.removeEventListener("dcspace-registered-events-updated", refreshProfile);
+      window.removeEventListener('pageshow', refreshProfile);
+      window.removeEventListener('storage', refreshProfile);
+      window.removeEventListener('dcspace-events-updated', refreshProfile);
+      window.removeEventListener('dcspace-registered-events-updated', refreshProfile);
+      window.removeEventListener('dcspace-profile-updated', refreshProfile);
     };
   }, []);
-
-  useEffect(() => {
-    if (!canViewOrganizedEvents && tab === "organized") {
-      setTab("attended");
-    }
-  }, [canViewOrganizedEvents, tab]);
 
   const attendedEvents = useMemo(() => {
     return registeredEvents.filter((event) => {
@@ -121,391 +129,246 @@ export function MyProfileContent() {
     return attendedEvents.filter((event) => {
       const eventId = getRegisteredEventId(event);
       const record = attendanceRecords[eventId];
-      return getCertificateStatus(record) === "Download";
+      return getCertificateStatus(record, event) === 'Download';
     });
   }, [attendanceRecords, attendedEvents]);
 
-  const visibleEvents = useMemo(() => {
-    const events =
-      tab === "attended"
-        ? attendedEvents
-        : tab === 'certs'
-        ? certificateEvents
-        : organizedEvents;
+  const completedEvents = useMemo(() => {
+    return registeredEvents.filter((event) => {
+      const eventId = getRegisteredEventId(event);
+      const status = getRequirementStatus(attendanceRecords[eventId], event);
 
-    return [...events].sort((firstEvent, secondEvent) => {
-      const firstTime = getEventDateTime(firstEvent);
-      const secondTime = getEventDateTime(secondEvent);
-
-      return sortAsc ? firstTime - secondTime : secondTime - firstTime;
+      return status === 'Complete' || status === 'Overtime';
     });
-  }, [attendedEvents, certificateEvents, organizedEvents, sortAsc, tab]);
+  }, [attendanceRecords, registeredEvents]);
 
-  const fullName = `${getDisplayValue(user?.firstName)} ${getDisplayValue(user?.lastName)}`.replace(/Not available/g, "").trim() || "Student Account";
+  const recentActivities = useMemo(() => {
+    const activities = [
+      ...attendedEvents.slice(-2).map((event) => `Joined ${getEventName(event)}`),
+      ...certificateEvents.slice(-1).map((event) => `Received certificate for ${getEventName(event)}`),
+    ];
+
+    return activities.length ? activities.slice(-4).reverse() : ['No recent activity yet'];
+  }, [attendedEvents, certificateEvents]);
+
+  const fullName = `${getDisplayValue(user?.firstName)} ${getDisplayValue(user?.lastName)}`.replace(/Not available/g, '').trim() || 'User Name';
   const initials = getInitials(user?.firstName, user?.lastName, user?.studentEmail);
-  const profileColors = getProfileColors(`${fullName}${user?.studentNumber || ""}`);
-  const activeProfileColors = {
-    cover: profileCoverColor || profileColors.cover,
-    photo: profilePhotoColor || profileColors.photo,
-  };
+  const hasOrganizedStatisticsAccess = canViewOrganizedEvents || isFacultyUser(user);
 
-  const handleOpenEditProfile = () => {
-    setDraftPhotoColor(profilePhotoColor || profileColors.photo);
-    setDraftPhotoImage(profilePhotoImage);
-    setDraftCoverColor(profileCoverColor || profileColors.cover);
-    setDraftCoverImage(profileCoverImage);
-    setDraftOrganization(user?.organizationPart || "");
-    setDraftRole(user?.organizationRole || "Organization Member");
-    setEditProfileResult(null);
-    setEditProfileClosing(false);
-    setShowEditProfile(true);
-  };
+  const saveProfilePhoto = () => {
+    if (!draftPhotoImage) return;
 
-  const handleCloseEditProfile = () => {
-    setEditProfileClosing(true);
-    window.setTimeout(() => {
-      setShowEditProfile(false);
-      setEditProfileClosing(false);
-      setEditProfileResult(null);
-    }, 220);
-  };
-
-  const handleChangePhotoImage = (file?: File) => {
-    if (!file || !file.type.startsWith("image/")) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setDraftPhotoImage(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleChangeCoverImage = (file?: File) => {
-    if (!file || !file.type.startsWith("image/")) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setDraftCoverImage(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleSaveEditProfile = () => {
-    const organizationChanged = draftOrganization.trim() !== (user?.organizationPart || "").trim();
-    const roleChanged = draftRole !== (user?.organizationRole || "Organization Member");
-
-    window.localStorage.setItem("dcspaceProfilePhotoColor", draftPhotoColor);
-    window.localStorage.setItem("dcspaceProfileCoverColor", draftCoverColor);
-    if (draftPhotoImage) {
-      window.localStorage.setItem("dcspaceProfilePhotoImage", draftPhotoImage);
-    } else {
-      window.localStorage.removeItem("dcspaceProfilePhotoImage");
-    }
-    if (draftCoverImage) {
-      window.localStorage.setItem("dcspaceProfileCoverImage", draftCoverImage);
-    } else {
-      window.localStorage.removeItem("dcspaceProfileCoverImage");
-    }
-    setProfilePhotoColor(draftPhotoColor);
+    window.localStorage.setItem('dcspaceProfilePhotoImage', draftPhotoImage);
+    window.localStorage.setItem('dcspaceProfilePhotoFit', JSON.stringify(draftPhotoFit));
     setProfilePhotoImage(draftPhotoImage);
-    setProfileCoverColor(draftCoverColor);
+    setProfilePhotoFit(draftPhotoFit);
+    setDraftPhotoImage('');
+    dispatchProfileUpdate();
+  };
+
+  const saveProfileCover = () => {
+    if (!draftCoverImage) return;
+
+    window.localStorage.setItem('dcspaceProfileCoverImage', draftCoverImage);
+    window.localStorage.setItem('dcspaceProfileCoverFit', JSON.stringify(draftCoverFit));
     setProfileCoverImage(draftCoverImage);
-
-    if (organizationChanged || roleChanged) {
-      window.localStorage.setItem(
-        "dcspacePendingProfileOrganizationChange",
-        JSON.stringify({
-          organizationPart: draftOrganization.trim(),
-          organizationRole: draftRole,
-          submittedAt: new Date().toISOString(),
-        }),
-      );
-      setEditProfileResult("approval");
-      return;
-    }
-
-    setEditProfileResult("saved");
+    setProfileCoverFit(draftCoverFit);
+    setDraftCoverImage('');
+    dispatchProfileUpdate();
   };
 
-  const handleOpenFeedback = () => {
-    setFeedbackRating(0);
-    setFeedbackClosing(false);
-    setShowFeedback(true);
+  const handleImageUpload = (file: File | undefined, target: 'photo' | 'cover') => {
+    if (!file || !ACCEPTED_IMAGE_TYPES.includes(file.type)) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') return;
+
+      const defaultFit = { zoom: 1, x: 0, y: 0 };
+
+      if (target === 'photo') {
+        setDraftPhotoImage(reader.result);
+        setDraftPhotoFit(defaultFit);
+      } else {
+        setDraftCoverImage(reader.result);
+        setDraftCoverFit(defaultFit);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleCloseFeedback = () => {
-    setFeedbackClosing(true);
-    window.setTimeout(() => {
-      setShowFeedback(false);
-      setFeedbackClosing(false);
-    }, 220);
-  };
+  const displayedPhotoImage = draftPhotoImage || profilePhotoImage;
+  const displayedPhotoFit = draftPhotoImage ? draftPhotoFit : profilePhotoFit;
+  const displayedCoverImage = draftCoverImage || profileCoverImage;
+  const displayedCoverFit = draftCoverImage ? draftCoverFit : profileCoverFit;
 
   return (
-    <div className="main--profile">
-      <div className={`profile-content${showFeedback || showEditProfile ? " is-feedback-open" : ""}`}>
-        <section className={`profile-cover${profileCoverImage ? " has-cover-image" : ""}`} style={{ "--profile-cover-color": activeProfileColors.cover } as CSSProperties}>
-          {profileCoverImage && <Image className="profile-cover__image" src={profileCoverImage} alt="" fill unoptimized />}
-          <h1 className="visually-hidden">My Profile</h1>
-          {!profileCoverImage && (
-            <span className="profile-cover__initials" aria-hidden="true">
-              {initials}
-            </span>
-          )}
-
-          <Link
-            className="profile-logout"
-            href="/login"
-            onClick={() => {
-              signOutAttendanceUser();
-              window.sessionStorage.removeItem('dcspacePrivacySeen');
-            }}
-          >
-            Log Out
-          </Link>
-
-          <button className="profile-edit" type="button" onClick={handleOpenEditProfile}>
-            Edit Profile
-            <span className="profile-icon profile-icon--pencil-square" aria-hidden="true" />
+    <main className="main--profile">
+      <section className={`profile-cover${displayedCoverImage ? ' has-cover-image' : ''}`}>
+        {displayedCoverImage && (
+          <Image className="profile-cover__image" src={displayedCoverImage} alt="" fill unoptimized style={profileImageStyle(displayedCoverFit)} />
+        )}
+        {draftCoverImage ? (
+          <button className="profile-upload profile-upload--cover" type="button" onClick={saveProfileCover}>
+            Save
           </button>
-        </section>
+        ) : (
+          <label className="profile-upload profile-upload--cover">
+            Upload Photo
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/gif"
+              onChange={(event) => handleImageUpload(event.target.files?.[0], 'cover')}
+            />
+          </label>
+        )}
 
-        <div className="profile-page__inner">
-          <aside className="profile-summary" aria-labelledby="profile-summary-heading">
-            <div className="profile-summary__photo" style={{ "--profile-photo-color": activeProfileColors.photo } as CSSProperties} aria-hidden="true">
-              {profilePhotoImage ? (
-                <Image src={profilePhotoImage} alt="" width={100} height={100} unoptimized />
+        {draftCoverImage && (
+          <ImageAdjustControls className="profile-photo-adjust--cover" fit={draftCoverFit} onChange={setDraftCoverFit} target="cover photo" />
+        )}
+      </section>
+
+      <div className="profile-layout">
+        <section className="profile-card profile-card--identity" aria-label="Profile details">
+          <div className="profile-card__top">
+            <div className="profile-avatar" aria-hidden="true">
+              {displayedPhotoImage ? (
+                <Image src={displayedPhotoImage} alt="" width={92} height={92} unoptimized style={profileImageStyle(displayedPhotoFit)} />
               ) : (
-                <span className="profile-summary__initials">{initials}</span>
+                <span>{initials}</span>
               )}
             </div>
 
-            <div className="profile-summary__fields">
-              <h2 id="profile-summary-heading" className="profile-summary__name">
-                {fullName}
-              </h2>
-              <p className="profile-summary__email">{getDisplayValue(user?.studentEmail)}</p>
-
-              <dl className="profile-details">
-                <div>
-                  <dt>Student Number:</dt>
-                  <dd>{getDisplayValue(user?.studentNumber)}</dd>
-                </div>
-                <div>
-                  <dt>Account Type:</dt>
-                  <dd>Student</dd>
-                </div>
-                <div>
-                  <dt>Course:</dt>
-                  <dd>{getDisplayValue(user?.course)}</dd>
-                </div>
-                <div>
-                  <dt>School:</dt>
-                  <dd>{getDisplayValue(user?.school)}</dd>
-                </div>
-                <div>
-                  <dt>Organization:</dt>
-                  <dd>{getDisplayValue(user?.organizationPart)}</dd>
-                </div>
-                <div>
-                  <dt>Role:</dt>
-                  <dd className="profile-role">{getDisplayValue(user?.organizationRole)}</dd>
-                </div>
-              </dl>
-            </div>
-          </aside>
-
-          <section className="profile-records" aria-label="Profile records">
-            <div className="profile-records__top">
-              <div className="profile-tabs" role="tablist" aria-label="Profile sections">
-                <button
-                  type="button"
-                  className={`profile-tab${tab === "attended" ? " is-active" : ""}`}
-                  role="tab"
-                  aria-selected={tab === "attended"}
-                  onClick={() => setTab("attended")}
-                >
-                  Events Attended ({attendedEvents.length})
-                </button>
-
-                {canViewOrganizedEvents && (
-                  <button
-                    type="button"
-                    className={`profile-tab${tab === "organized" ? " is-active" : ""}`}
-                    role="tab"
-                    aria-selected={tab === "organized"}
-                    onClick={() => setTab("organized")}
-                  >
-                    Events Organized ({organizedEvents.length})
-                  </button>
-                )}
-
-                  <Image src="/assets/ascending-arrow.svg" alt="" width={16} height={16} aria-hidden="true" />
-                  Ascending
-                </button>
-
-                <button
-                  type="button"
-                  className={`profile-sort__btn${!sortAsc ? " is-active" : ""}`}
-                  aria-pressed={!sortAsc}
-                  onClick={() => setSortAsc(false)}
-                >
-                  <Image src="/assets/descending-arrow.svg" alt="" width={16} height={16} aria-hidden="true" />
-                  Descending
-                </button>
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
-
-      {showEditProfile && (
-        <div className={`edit-profile-overlay${editProfileClosing ? " is-closing" : ""}`}>
-          <section className="edit-profile-modal" role="dialog" aria-modal="true" aria-labelledby="edit-profile-title">
-            <h2 id="edit-profile-title">Edit Profile</h2>
-
-            {editProfileResult === null ? (
-              <div className="edit-profile-form">
-                <div className="edit-profile-visuals">
-                  <div className="edit-profile-photo" style={{ "--edit-photo-color": draftPhotoColor } as CSSProperties}>
-                    {draftPhotoImage ? (
-                      <Image src={draftPhotoImage} alt="" width={88} height={88} unoptimized />
-                    ) : (
-                      <span>{initials}</span>
-                    )}
-                  </div>
-
-                  <div className="edit-profile-cover-preview" style={{ "--edit-cover-color": draftCoverColor } as CSSProperties}>
-                    {draftCoverImage ? (
-                      <Image src={draftCoverImage} alt="" fill unoptimized />
-                    ) : (
-                      <span>{initials}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="edit-profile-actions">
-                  <label className="edit-profile-upload">
-                    Change Photo
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(event) => handleChangePhotoImage(event.target.files?.[0])}
-                    />
-                  </label>
-                  <label className="edit-profile-upload">
-                    Change Cover Photo
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(event) => handleChangeCoverImage(event.target.files?.[0])}
-                    />
-                  </label>
-                </div>
-
-                <label className="edit-profile-field">
-                  <span>Organization:</span>
-                  <span className="edit-profile-input-wrap">
-                    <input
-                      type="text"
-                      value={draftOrganization}
-                      onChange={(event) => setDraftOrganization(event.target.value)}
-                    />
-                    <span className="profile-icon profile-icon--pencil" aria-hidden="true" />
-                  </span>
-                </label>
-
-                <label className="edit-profile-field">
-                  <span>Organization Role:</span>
-                  <select value={draftRole} onChange={(event) => setDraftRole(event.target.value)}>
-                    <option value="Organization Member">Organization Member</option>
-                    <option value="Officer">Organization Officer</option>
-                  </select>
-                </label>
-
-                <button className="edit-profile-save" type="button" onClick={handleSaveEditProfile}>
-                  Save Changes
-                </button>
-              </div>
-            ) : (
-              <div className="edit-profile-result">
-                <span
-                  className={`profile-icon ${
-                    editProfileResult === "saved" ? "profile-icon--person-check" : "profile-icon--send-check"
-                  }`}
-                  aria-hidden="true"
-                />
-                <p>
-                  {editProfileResult === "saved"
-                    ? "Profile changes saved successfully."
-                    : "Profile changes submitted for admin approval."}
-                </p>
-                {editProfileResult === "approval" && <small>Check notifications for any updates.</small>}
-                <button type="button" onClick={handleCloseEditProfile}>
-                  Close
-                </button>
-              </div>
-            )}
-          </section>
-        </div>
-      )}
-
-      {showFeedback && (
-        <div className={`feedback-overlay${feedbackClosing ? " is-closing" : ""}`}>
-          <section className="feedback-modal" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
-            <button className="feedback-close" type="button" aria-label="Close feedback form" onClick={handleCloseFeedback}>
-              x
-            </button>
-
-            <h2 id="feedback-title">We&apos;d Love to Hear From You</h2>
-            <p className="feedback-subtitle">How was your experience? Let us know your thoughts.</p>
-
-            <form
-              className="feedback-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                handleCloseFeedback();
-              }}
-            >
-              <label className="feedback-label">
-                Event Name/Topic/Issue:
-                <input type="text" name="feedback_topic" aria-label="Event Name, Topic, or Issue" />
-              </label>
-
-              <div className="feedback-rating">
-                <span>Rating:</span>
-                <div className="feedback-stars" aria-label="Rating stars">
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <button
-                      type="button"
-                      className={index < feedbackRating ? "is-selected" : ""}
-                      aria-label={`Rate ${index + 1} star${index === 0 ? "" : "s"}`}
-                      aria-pressed={index < feedbackRating}
-                      key={index}
-                      onClick={() => setFeedbackRating(index + 1)}
-                    >
-                      <span className={`profile-icon ${index < feedbackRating ? "profile-icon--star-fill" : "profile-icon--star"}`} aria-hidden="true" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <label className="feedback-label">
-                Detailed Comment (optional)
-                <textarea name="feedback_comment" aria-label="Detailed Comment" />
-              </label>
-
-              <button className="feedback-submit" type="submit">
-                Submit
+            {draftPhotoImage ? (
+              <button className="profile-upload" type="button" onClick={saveProfilePhoto}>
+                Save
               </button>
-            </form>
-          </section>
-        </div>
-      )}
+            ) : (
+              <label className="profile-upload">
+                Upload Photo
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/gif"
+                  onChange={(event) => handleImageUpload(event.target.files?.[0], 'photo')}
+                />
+              </label>
+            )}
+          </div>
+
+          {draftPhotoImage && <ImageAdjustControls fit={draftPhotoFit} onChange={setDraftPhotoFit} target="profile photo" />}
+
+          <div className="profile-info-box">
+            <ProfileField label="Your Name" value={fullName} />
+            <ProfileField label="School Email" value={getDisplayValue(user?.studentEmail)} />
+            <ProfileField label="Student Number" value={getDisplayValue(user?.studentNumber)} />
+          </div>
+
+          <div className="profile-info-box">
+            <ProfileField label={`About ${getDisplayValue(user?.firstName)}`} value="" />
+            <ProfileField label="Course" value={getDisplayValue(user?.course)} />
+            <ProfileField label="School/Department" value={getDisplayValue(user?.school)} />
+            <ProfileField label="Organization" value={getDisplayValue(user?.organizationPart)} />
+            <ProfileField label="Organization Role" value={getDisplayValue(user?.organizationRole)} />
+          </div>
+        </section>
+
+        <section className="profile-card profile-card--summary profile-side" aria-label="Account summary">
+          <div className="profile-info-box profile-statistics">
+            <h2>Account Statistics</h2>
+            <ProfileStat label="Events Attended" value={attendedEvents.length} />
+            <ProfileStat label="Certificates Earned" value={certificateEvents.length} />
+            {hasOrganizedStatisticsAccess ? (
+              <ProfileStat label="Events Organized" value={organizedEvents.length} />
+            ) : (
+              <ProfileStat label="Events Completed" value={completedEvents.length} />
+            )}
+          </div>
+
+          <div className="profile-info-box profile-activity">
+            <h2>Recent Activity</h2>
+            <ul>
+              {recentActivities.map((activity) => (
+                <li key={activity}>
+                  <span aria-hidden="true" />
+                  {activity}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="profile-info-box profile-feedback">
+            <h2>We&apos;d love to hear your thoughts and suggestions</h2>
+            <div>
+              <span>Submit a Feedback</span>
+              <Link href="/submit-feedback">Send Feedback</Link>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function ProfileField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="profile-field">
+      <div>
+        <strong>{label}</strong>
+        {value && <span>{value}</span>}
+      </div>
+    </div>
+  );
+}
+
+function ImageAdjustControls({
+  className = '',
+  fit,
+  onChange,
+  target,
+}: {
+  className?: string;
+  fit: ProfileImageFit;
+  onChange: (fit: ProfileImageFit) => void;
+  target: string;
+}) {
+  return (
+    <div className={`profile-photo-adjust${className ? ` ${className}` : ''}`} aria-label={`Adjust ${target}`}>
+      <input
+        type="range"
+        aria-label={`Zoom ${target}`}
+        min="1"
+        max="2"
+        step="0.05"
+        value={fit.zoom}
+        onChange={(event) => onChange({ ...fit, zoom: Number(event.target.value) })}
+      />
+      <input
+        type="range"
+        aria-label={`Move ${target} horizontally`}
+        min="-25"
+        max="25"
+        step="1"
+        value={fit.x}
+        onChange={(event) => onChange({ ...fit, x: Number(event.target.value) })}
+      />
+      <input
+        type="range"
+        aria-label={`Move ${target} vertically`}
+        min="-25"
+        max="25"
+        step="1"
+        value={fit.y}
+        onChange={(event) => onChange({ ...fit, y: Number(event.target.value) })}
+      />
+    </div>
+  );
+}
+
+function ProfileStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="profile-stat">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }

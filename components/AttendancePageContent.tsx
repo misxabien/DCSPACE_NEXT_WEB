@@ -1,20 +1,16 @@
 'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SearchWithClear } from "@/components/SearchWithClear";
+import Link from 'next/link';
+import Image from 'next/image';
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { DateRangeCalendarPicker } from '@/components/DateRangeCalendarPicker';
 import {
   ATTENDANCE_UPDATED_EVENT,
   REGISTERED_EVENTS_KEY,
   type AttendanceRecord,
-  type AttendanceUser,
-  type CertificateStatus,
   type EventStatus,
   type RegisteredEvent,
-  downloadAttendanceCertificate,
-  formatEventDate,
-  getCertificateStatus,
+  getRequirementStatus,
   getCurrentAttendanceUser,
   getEventStatus,
   getRegisteredEventId,
@@ -24,12 +20,12 @@ import {
   setSelectedAttendanceEvent,
 } from '@/lib/attendance';
 
+const attendanceFilters = ['All', 'Yesterday', 'This Week', 'Pick a date'];
+
 type AttendanceEvent = {
   id: string;
   name: string;
-  date: string;
   status: EventStatus;
-  certificate: CertificateStatus;
   registeredEvent: RegisteredEvent;
   record?: AttendanceRecord;
 };
@@ -45,9 +41,7 @@ function buildAttendanceEvents(
     return {
       id,
       name: event.name || 'Event Name',
-      date: formatEventDate(event),
       status: getEventStatus(event),
-      certificate: getCertificateStatus(record),
       registeredEvent: event,
       record,
     };
@@ -57,6 +51,97 @@ function buildAttendanceEvents(
 function getAttendanceEventTime(event: AttendanceEvent) {
   const eventDate = new Date(`${event.registeredEvent.month} ${event.registeredEvent.day}, ${event.registeredEvent.year}`);
   return Number.isNaN(eventDate.getTime()) ? 0 : eventDate.getTime();
+}
+
+function getAttendanceEventDate(event: AttendanceEvent) {
+  const eventDate = new Date(`${event.registeredEvent.month} ${event.registeredEvent.day}, ${event.registeredEvent.year}`);
+  if (Number.isNaN(eventDate.getTime())) return null;
+
+  eventDate.setHours(0, 0, 0, 0);
+  return eventDate;
+}
+
+function getDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function getDateFromInput(value: string) {
+  if (!value) return null;
+
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function isSameDate(firstDate: Date, secondDate: Date) {
+  return getDateInputValue(firstDate) === getDateInputValue(secondDate);
+}
+
+function isThisWeek(date: Date) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+  return date >= startOfWeek && date <= endOfWeek;
+}
+
+function matchesAttendanceFilter(
+  event: AttendanceEvent,
+  activeFilter: string,
+  dateRange: { start: string; end: string },
+) {
+  if (activeFilter === 'All') return true;
+
+  const eventDate = getAttendanceEventDate(event);
+  if (!eventDate) return true;
+
+  if (activeFilter === 'Yesterday') {
+    const yesterday = new Date();
+    yesterday.setHours(0, 0, 0, 0);
+    yesterday.setDate(yesterday.getDate() - 1);
+    return isSameDate(eventDate, yesterday);
+  }
+
+  if (activeFilter === 'This Week') {
+    return isThisWeek(eventDate);
+  }
+
+  if (activeFilter === 'Pick a date') {
+    const startDate = getDateFromInput(dateRange.start);
+    const endDate = getDateFromInput(dateRange.end || dateRange.start);
+
+    if (!startDate || !endDate) return true;
+
+    return eventDate >= (startDate <= endDate ? startDate : endDate) && eventDate <= (startDate <= endDate ? endDate : startDate);
+  }
+
+  return true;
+}
+
+function getEventTimeDisplay(dateTime?: string) {
+  return dateTime?.split(',').at(-1)?.trim() || 'Event Time';
+}
+
+function getEventBanner(event: RegisteredEvent) {
+  return (event as RegisteredEvent & { bannerDataUrl?: string }).bannerDataUrl || '';
+}
+
+function getAttendanceDateKeys(events: AttendanceEvent[]) {
+  return events
+    .map((event) => getAttendanceEventDate(event))
+    .filter((date): date is Date => Boolean(date))
+    .map((date) => getDateInputValue(date));
 }
 
 function isEditableTarget(target: EventTarget | null) {
@@ -70,9 +155,11 @@ function isEditableTarget(target: EventTarget | null) {
 
 export function AttendancePageContent() {
   const [attendanceEvents, setAttendanceEvents] = useState<AttendanceEvent[]>([]);
-  const [sortAsc, setSortAsc] = useState(true);
-  const [currentUser, setCurrentUser] = useState<AttendanceUser | null>(null);
-  const [scanMessage, setScanMessage] = useState('');
+  const [completedFilter, setCompletedFilter] = useState('All');
+  const [incompleteFilter, setIncompleteFilter] = useState('All');
+  const [completedDateRange, setCompletedDateRange] = useState({ start: '', end: '' });
+  const [incompleteDateRange, setIncompleteDateRange] = useState({ start: '', end: '' });
+  const [openDatePicker, setOpenDatePicker] = useState<'completed' | 'incomplete' | null>(null);
   const registeredEventsRef = useRef<RegisteredEvent[]>([]);
   const scanBufferRef = useRef('');
   const scanTimeoutRef = useRef<number | null>(null);
@@ -83,7 +170,6 @@ export function AttendancePageContent() {
     const records = readUserAttendanceRecords(user);
 
     registeredEventsRef.current = registeredEvents;
-    setCurrentUser(user);
     setAttendanceEvents(buildAttendanceEvents(registeredEvents, records));
   }, []);
 
@@ -125,7 +211,6 @@ export function AttendancePageContent() {
         if (!scannedRfid) return;
 
         const result = recordRfidAttendanceTap(scannedRfid, registeredEventsRef.current);
-        setScanMessage(result.message);
 
         if (result.ok) {
           loadAttendanceEvents();
@@ -153,124 +238,161 @@ export function AttendancePageContent() {
     };
   }, [loadAttendanceEvents]);
 
-  const handleDownload = (event: AttendanceEvent) => {
-    if (!currentUser) return;
-    downloadAttendanceCertificate(event.registeredEvent, currentUser, event.record);
-  };
-
   const sortedAttendanceEvents = useMemo(() => {
     return [...attendanceEvents].sort((firstEvent, secondEvent) => {
       const firstTime = getAttendanceEventTime(firstEvent);
       const secondTime = getAttendanceEventTime(secondEvent);
 
-      return sortAsc ? firstTime - secondTime : secondTime - firstTime;
+      return firstTime - secondTime;
     });
-  }, [attendanceEvents, sortAsc]);
+  }, [attendanceEvents]);
+
+  const ongoingEvents = useMemo(
+    () => sortedAttendanceEvents.filter((event) => event.status === 'Ongoing'),
+    [sortedAttendanceEvents],
+  );
+  const completedEvents = sortedAttendanceEvents.filter((event) => {
+    const status = getRequirementStatus(event.record, event.registeredEvent);
+    return status === 'Complete' || status === 'Overtime';
+  });
+  const incompleteEvents = sortedAttendanceEvents.filter((event) => {
+    const status = getRequirementStatus(event.record, event.registeredEvent);
+    return event.status === 'Passed' && status !== 'Complete' && status !== 'Overtime';
+  });
+  const filteredCompletedEvents = completedEvents.filter((event) => (
+    matchesAttendanceFilter(event, completedFilter, completedDateRange)
+  ));
+  const filteredIncompleteEvents = incompleteEvents.filter((event) => (
+    matchesAttendanceFilter(event, incompleteFilter, incompleteDateRange)
+  ));
+
+  const renderAttendanceFilters = (
+    group: 'completed' | 'incomplete',
+    activeFilter: string,
+    dateRange: { start: string; end: string },
+    setActiveFilter: (filter: string) => void,
+    setDateRange: Dispatch<SetStateAction<{ start: string; end: string }>>,
+    highlightedDates: string[],
+  ) => (
+    <div className="attendance-filters" aria-label={`${group} attendance filters`}>
+      {attendanceFilters.map((filter) => (
+        <span className="attendance-filter-wrap" key={filter}>
+          <button
+            className={`attendance-filter${filter === 'Pick a date' ? ' has-date-picker' : ''}${activeFilter === filter ? ' is-active' : ''}${filter === 'Pick a date' && openDatePicker === group ? ' is-open' : ''}`}
+            type="button"
+            aria-pressed={activeFilter === filter}
+            onClick={() => {
+              setActiveFilter(filter);
+              setOpenDatePicker(filter === 'Pick a date' ? (openDatePicker === group ? null : group) : null);
+            }}
+          >
+            {filter}
+          </button>
+          {filter === 'Pick a date' && openDatePicker === group && (
+            <section className="attendance-date-picker" aria-label={`Choose ${group} attendance date`}>
+              <DateRangeCalendarPicker
+                value={dateRange}
+                highlightedDates={highlightedDates}
+                onChange={(nextDateRange) => {
+                  setDateRange(nextDateRange);
+                  setActiveFilter('Pick a date');
+                }}
+                onClear={() => {
+                  setDateRange({ start: '', end: '' });
+                  setActiveFilter('All');
+                  setOpenDatePicker(null);
+                }}
+                onDone={() => setOpenDatePicker(null)}
+              />
+            </section>
+          )}
+        </span>
+      ))}
+    </div>
+  );
+
+  const renderAttendanceCard = (event: AttendanceEvent) => (
+    <article className="attendance-event-card" key={event.id}>
+      <Link
+        className="attendance-event-card__link"
+        href="/attendance/details"
+        onClick={() => setSelectedAttendanceEvent(event.id)}
+      >
+        <span className="attendance-event-card__media" aria-hidden="true">
+          {getEventBanner(event.registeredEvent) && (
+            <Image src={getEventBanner(event.registeredEvent)} alt="" fill unoptimized />
+          )}
+        </span>
+        <span className="attendance-event-card__content">
+          <span className="attendance-event-card__date">
+            <span>{event.registeredEvent.month || 'MAY'}</span>
+            <strong>{event.registeredEvent.day || '17'}</strong>
+          </span>
+          <span className="attendance-event-card__details">
+            <strong>{event.name}</strong>
+            <span>{event.registeredEvent.venue || 'Event Venue'}</span>
+            <small>{getEventTimeDisplay(event.registeredEvent.dateTime)}</small>
+          </span>
+        </span>
+      </Link>
+    </article>
+  );
 
   return (
     <>
-      <header className="main__header">
-        <div className="main__header-row">
-          <h1 className="main__title">Attendance</h1>
-          <SearchWithClear className="attendance-search" role="search" />
-        </div>
-      </header>
-
       <div className="main__grid-wrap">
-        {attendanceEvents.length > 0 ? (
-          <section className="attendance-shell" aria-label="My events attendance">
-            <div className="attendance-top">
-              <h2 className="attendance-subtitle">My Events</h2>
-              {scanMessage && (
-                <p className="attendance-scan-status" aria-live="polite">
-                  {scanMessage}
-                </p>
+        <section className="attendance-shell" aria-label="My events attendance">
+          <div className="attendance-top">
+            <div>
+              <h2 className="attendance-subtitle">Attendance <span>Overview</span></h2>
+              <p>Check your attendance logs and participation progress in real time.</p>
+            </div>
+          </div>
+
+          <section className="attendance-section" aria-label="Ongoing event attendance">
+            <h2>Ongoing Attendance</h2>
+            <div className="attendance-event-grid">
+              {ongoingEvents.length ? ongoingEvents.map(renderAttendanceCard) : (
+                <p className="completed-empty-message">No active events at the moment.</p>
               )}
             </div>
+          </section>
 
-            <div className="table-wrap" aria-label="Attendance list">
-              <table className="attendance-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Event Name</th>
-                    <th scope="col">Date</th>
-                    <th scope="col">Event Status</th>
-                    <th scope="col">E-certificate</th>
-                    <th scope="col" className="col-open" />
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {sortedAttendanceEvents.map((event) => (
-                    <tr key={event.id}>
-                      <td>{event.name}</td>
-                      <td className="cell-muted">{event.date}</td>
-                      <td className="cell-muted">
-                        <span className={`status-pill status-pill--${event.status.toLowerCase()}`}>
-                          {event.status}
-                        </span>
-                      </td>
-                      <td className="cert">
-                        {event.certificate === 'Download' ? (
-                          <button className="cert-download" type="button" onClick={() => handleDownload(event)}>
-                            Download
-                          </button>
-                        ) : (
-                          event.certificate
-                        )}
-                      </td>
-                      <td className="col-open">
-                        <Link
-                          href="/attendance/details"
-                          className="open-btn open-btn--ghost"
-                          onClick={() => setSelectedAttendanceEvent(event.id)}
-                        >
-                          View Details
-                          <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                            <path
-                              d="M9 6l6 6-6 6"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="footer-controls" aria-label="Attendance filters">
-              <div className="segmented" role="group" aria-label="Attendance controls">
-                <button type="button" aria-pressed={sortAsc} onClick={() => setSortAsc(true)}>
-                  <Image src="/assets/ascending-arrow.svg" alt="" width={16} height={16} aria-hidden="true" />
-                  Ascending
-                </button>
-
-                <button type="button" aria-pressed={!sortAsc} onClick={() => setSortAsc(false)}>
-                  <Image src="/assets/descending-arrow.svg" alt="" width={16} height={16} aria-hidden="true" />
-                  Descending
-                </button>
-              </div>
+          <section className="attendance-section" aria-label="Completed attendance">
+            <h2>Completed Attendance</h2>
+            {renderAttendanceFilters(
+              'completed',
+              completedFilter,
+              completedDateRange,
+              setCompletedFilter,
+              setCompletedDateRange,
+              getAttendanceDateKeys(completedEvents),
+            )}
+            <div className="attendance-event-grid">
+              {filteredCompletedEvents.length ? filteredCompletedEvents.map(renderAttendanceCard) : (
+                <p className="completed-empty-message">Completed attendance records will appear here.</p>
+              )}
             </div>
           </section>
-        ) : (
-          <section className="attendance-empty-state" aria-label="No attendance records">
-            <svg width="82" height="76" viewBox="0 0 82 76" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M30.7499 12.667H18.7916C17.8481 12.667 17.0833 13.3759 17.0833 14.2503V68.0837C17.0833 68.958 17.8481 69.667 18.7916 69.667H66.6249C67.5683 69.667 68.3333 68.958 68.3333 68.0837V14.2503C68.3333 13.3759 67.5683 12.667 66.6249 12.667H54.6666" stroke="#604D18" strokeWidth="2" />
-              <path d="M30.75 20.5833V12.6667H37.4989C37.5454 12.6667 37.5833 12.6316 37.5833 12.5883V9.5C37.5833 6.87667 39.8776 4.75 42.7083 4.75C45.539 4.75 47.8333 6.87667 47.8333 9.5V12.5883C47.8333 12.6316 47.8713 12.6667 47.9177 12.6667H54.6667V20.5833C54.6667 21.4578 53.9017 22.1667 52.9583 22.1667H32.4583C31.5148 22.1667 30.75 21.4578 30.75 20.5833Z" stroke="#604D18" strokeWidth="2" />
-            </svg>
 
-            <p>
-              No attendance records found yet. Once you join an
-              <br />
-              event, you can track your attendance here.
-            </p>
+          <section className="attendance-section" aria-label="Incomplete attendance">
+            <h2>Incomplete Attendance</h2>
+            {renderAttendanceFilters(
+              'incomplete',
+              incompleteFilter,
+              incompleteDateRange,
+              setIncompleteFilter,
+              setIncompleteDateRange,
+              getAttendanceDateKeys(incompleteEvents),
+            )}
+            <div className="attendance-event-grid">
+              {filteredIncompleteEvents.length ? filteredIncompleteEvents.map(renderAttendanceCard) : (
+                <p className="completed-empty-message">Incomplete attendance records will appear here.</p>
+              )}
+            </div>
           </section>
-        )}
+
+        </section>
       </div>
     </>
   );

@@ -76,16 +76,23 @@
   border-radius: 4px;
   background: #fdf4e3;
   box-shadow: 0 3px 4px rgba(99, 75, 5, 0.35);
+  font-family: var(--font-ui), "Poppins", sans-serif;
   padding: 10px 24px 10px 16px;
 }
 
 .event-image {
+  position: relative;
   min-height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #ead8a6;
   color: #604d18;
+  overflow: hidden;
+}
+
+.event-image img {
+  object-fit: cover;
 }
 
 .folder-icon {
@@ -106,14 +113,14 @@
   margin: 0 0 10px;
   color: #634b05;
   font-size: 30px;
-  font-weight: 900;
+  font-weight: 800;
 }
 
 .event-card-body p {
   margin: 0 0 4px;
   color: #c49d4d;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.2;
 }
 
@@ -127,7 +134,7 @@
   background: #edcf72;
   color: #634b05;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;

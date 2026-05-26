@@ -1,4 +1,4 @@
-import { REGISTERED_EVENTS_KEY, type RegisteredEvent, type UploadedRequirementFile } from "@/lib/attendance";
+import { REGISTERED_EVENTS_KEY, type RegisteredEvent, type UploadedRequirementFile } from '@/lib/attendance';
 
 export const ORGANIZED_EVENTS_KEY = 'dcspaceOrganizedEvents';
 export const SELECTED_BROWSE_EVENT_KEY = 'dcspaceSelectedBrowseEventId';
@@ -12,6 +12,7 @@ export type FrontendEvent = RegisteredEvent & {
   dateTime: string;
   venue: string;
   organizer: string;
+  organizerCourse?: string;
   overview: string;
   requirements: string[];
   school?: string;
@@ -19,16 +20,26 @@ export type FrontendEvent = RegisteredEvent & {
   eventType?: string;
   duration?: string;
   minAttendance?: string;
+  attendanceAccess?: 'all' | 'specific';
+  allowedCourses?: string[];
+  registrationDeadline?: string;
+  surveyFormLink?: string;
+  announcements?: string;
+  adminComments?: Array<{ message?: string; createdAt?: string }>;
+  adminChangeRequest?: string;
   createdBy?: string;
+  bannerDataUrl?: string;
 };
 
 export type OrganizedEventInput = {
   eventName: string;
+  eventDescription?: string;
   eventDate: string;
   eventEndDate?: string;
   requiredFiles?: string[];
   venue: string;
   courseOrganizer: string;
+  organizerCourse?: string;
   school: string;
   department: string;
   startTime: string;
@@ -36,6 +47,13 @@ export type OrganizedEventInput = {
   eventType: string;
   duration: string;
   minAttendance: string;
+  attendanceAccess?: 'all' | 'specific';
+  allowedCourses?: string[];
+  registrationDeadline?: string;
+  surveyFormLink?: string;
+  announcements?: string;
+  bannerDataUrl?: string;
+  status?: string;
 };
 
 const fallbackEvents: FrontendEvent[] = [
@@ -77,6 +95,32 @@ function readJson<T>(storage: Storage, key: string, fallback: T): T {
   } catch {
     return fallback;
   }
+}
+
+function writeJsonSafely<T>(storage: Storage, key: string, value: T) {
+  try {
+    storage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function compactRegisteredEvents(events: RegisteredEvent[]) {
+  return events.map((event) => {
+    const compactEvent = event as RegisteredEvent & { bannerDataUrl?: string; overview?: string };
+
+    return {
+      ...compactEvent,
+      bannerDataUrl: '',
+      overview: compactEvent.overview ? compactEvent.overview.slice(0, 800) : compactEvent.overview,
+    };
+  });
+}
+
+function replaceWithCompactRegisteredEvents(events: RegisteredEvent[]) {
+  window.localStorage.removeItem(REGISTERED_EVENTS_KEY);
+  writeJsonSafely(window.localStorage, REGISTERED_EVENTS_KEY, compactRegisteredEvents(events));
 }
 
 function present(value: unknown) {
@@ -125,7 +169,7 @@ function datePartsFromInput(dateValue: string) {
 }
 
 function getEventDateDisplay(input: OrganizedEventInput, startDate: ReturnType<typeof datePartsFromInput>) {
-  if (!input.eventEndDate || input.eventEndDate === "Not provided") {
+  if (!input.eventEndDate || input.eventEndDate === 'Not provided') {
     return startDate.longDate;
   }
 
@@ -140,6 +184,16 @@ function getEventDateDisplay(input: OrganizedEventInput, startDate: ReturnType<t
   }
 
   return `${startDate.longDate} - ${endDate.longDate}`;
+}
+
+function isRegistrationOpen(event: FrontendEvent) {
+  if (!event.registrationDeadline) return true;
+
+  const deadline = new Date(`${event.registrationDeadline}T23:59:59`);
+
+  if (Number.isNaN(deadline.getTime())) return true;
+
+  return deadline >= new Date();
 }
 
 export function getCurrentOrganizationRole() {
@@ -167,7 +221,7 @@ export function deleteOrganizedEvent(eventId: string) {
 
   writeOrganizedEvents(organizedEvents);
   window.localStorage.setItem(REGISTERED_EVENTS_KEY, JSON.stringify(registeredEvents));
-  window.dispatchEvent(new CustomEvent("dcspace-registered-events-updated"));
+  window.dispatchEvent(new CustomEvent('dcspace-registered-events-updated'));
 
   if (window.localStorage.getItem(SELECTED_BROWSE_EVENT_KEY) === eventId) {
     window.localStorage.removeItem(SELECTED_BROWSE_EVENT_KEY);
@@ -179,7 +233,9 @@ export function readBrowseEvents() {
   const eventMap = new Map<string, FrontendEvent>();
 
   [...organized, ...fallbackEvents].forEach((event) => {
-    eventMap.set(event.id, event);
+    if (isRegistrationOpen(event)) {
+      eventMap.set(event.id, event);
+    }
   });
 
   return Array.from(eventMap.values());
@@ -188,9 +244,9 @@ export function readBrowseEvents() {
 export function saveOrganizedEvent(input: OrganizedEventInput) {
   const dateParts = datePartsFromInput(input.eventDate);
   const eventDateDisplay = getEventDateDisplay(input, dateParts);
-  const eventName = present(input.eventName) || "Event Name";
-  const venue = present(input.venue) || "Event Venue";
-  const organizer = present(input.courseOrganizer) || "Event Organizer";
+  const eventName = present(input.eventName) || 'Event Name';
+  const venue = present(input.venue) || 'Event Venue';
+  const organizer = present(input.courseOrganizer) || 'Event Organizer';
   const startTime = formatTime(present(input.startTime));
   const endTime = formatTime(present(input.endTime));
   const id = normalizeKey(`${eventName}-${dateParts.year}-${dateParts.month}-${dateParts.day}-${organizer}`);
@@ -203,17 +259,25 @@ export function saveOrganizedEvent(input: OrganizedEventInput) {
     dateTime: `${eventDateDisplay}, ${startTime} - ${endTime}`,
     venue,
     organizer,
+    organizerCourse: present(input.organizerCourse) || 'Course',
     overview:
-      "This event was created from the frontend organize-event flow. The backend can later replace this local record with a saved database event.",
+      present(input.eventDescription) ||
+      'This event was created from the frontend organize-event flow. The backend can later replace this local record with a saved database event.',
     requirements: input.requiredFiles || [],
-    school: present(input.school) || "School",
-    department: present(input.department) || "Department",
-    eventType: present(input.eventType) || "Event",
-    duration: present(input.duration) || "TBA",
-    minAttendance: present(input.minAttendance) || "TBA",
-    createdBy: present(window.localStorage.getItem("dcspaceStudentEmail")) || "local-frontend-user",
-    status: "Created",
-    certificate: "Processing",
+    school: present(input.school) || 'School',
+    department: present(input.department) || 'Department',
+    eventType: present(input.eventType) || 'Event',
+    duration: present(input.duration) || 'TBA',
+    minAttendance: present(input.minAttendance) || 'TBA',
+    attendanceAccess: input.attendanceAccess || 'all',
+    allowedCourses: input.attendanceAccess === 'specific' ? input.allowedCourses || [] : [],
+    registrationDeadline: present(input.registrationDeadline),
+    surveyFormLink: present(input.surveyFormLink),
+    announcements: present(input.announcements),
+    bannerDataUrl: present(input.bannerDataUrl),
+    createdBy: present(window.localStorage.getItem('dcspaceStudentEmail')) || 'local-frontend-user',
+    status: present(input.status) || 'Pending',
+    certificate: 'Processing',
   };
   const existing = readOrganizedEvents().filter((item) => item.id !== id);
 
@@ -250,8 +314,10 @@ export function registerEventForCurrentUser(event: FrontendEvent, requirementFil
         : registeredEvent,
     );
 
-    window.localStorage.setItem(REGISTERED_EVENTS_KEY, JSON.stringify(updatedEvents));
-    window.dispatchEvent(new CustomEvent("dcspace-registered-events-updated"));
+    if (!writeJsonSafely(window.localStorage, REGISTERED_EVENTS_KEY, updatedEvents)) {
+      replaceWithCompactRegisteredEvents(updatedEvents);
+    }
+    window.dispatchEvent(new CustomEvent('dcspace-registered-events-updated'));
 
     return updatedEvents;
   }
@@ -260,14 +326,16 @@ export function registerEventForCurrentUser(event: FrontendEvent, requirementFil
     ...registeredEvents,
     {
       ...event,
-      status: "Registered",
-      certificate: "Pending",
+      status: 'Registered',
+      certificate: 'Pending',
       requirementFile: firstRequirementFile,
       requirementFiles,
     },
   ];
 
-  window.localStorage.setItem(REGISTERED_EVENTS_KEY, JSON.stringify(nextRegisteredEvents));
+  if (!writeJsonSafely(window.localStorage, REGISTERED_EVENTS_KEY, nextRegisteredEvents)) {
+    replaceWithCompactRegisteredEvents(nextRegisteredEvents);
+  }
   window.dispatchEvent(new CustomEvent('dcspace-registered-events-updated'));
 
   return nextRegisteredEvents;
