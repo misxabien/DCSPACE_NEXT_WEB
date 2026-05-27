@@ -48,6 +48,17 @@ function getSession() {
   return readAuthSession();
 }
 
+function getHomeSavedEventsStorageKey() {
+  const session = getSession();
+  const accountSeed = session?.user.id || session?.user.email || session?.user.studentNumber || 'guest';
+  const normalizedAccount = accountSeed
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'guest';
+  return `${HOME_SAVED_EVENTS_KEY}:${normalizedAccount}`;
+}
+
 function cacheRegisteredEvents(events: RegisteredEvent[]) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(REGISTERED_EVENTS_KEY, JSON.stringify(events));
@@ -101,8 +112,9 @@ export async function loadBookmarkedEvents(): Promise<FrontendEvent[]> {
 }
 
 function readCachedBookmarkIds(): string[] {
+  if (typeof window === 'undefined') return [];
   try {
-    return JSON.parse(window.localStorage.getItem(HOME_SAVED_EVENTS_KEY) || '[]') as string[];
+    return JSON.parse(window.localStorage.getItem(getHomeSavedEventsStorageKey()) || '[]') as string[];
   } catch {
     return [];
   }
@@ -117,7 +129,7 @@ export async function loadBookmarkedEventIds(): Promise<string[]> {
   try {
     const events = await loadBookmarkedEvents();
     const ids = events.map((event) => event.id);
-    window.localStorage.setItem(HOME_SAVED_EVENTS_KEY, JSON.stringify(ids));
+    window.localStorage.setItem(getHomeSavedEventsStorageKey(), JSON.stringify(ids));
     return ids;
   } catch {
     return readCachedBookmarkIds();
@@ -247,7 +259,7 @@ export async function deleteOrganizedEventFromBackend(eventId: string) {
 
   if (typeof window !== 'undefined') {
     const bookmarkIds = readCachedBookmarkIds().filter((id) => id !== eventId);
-    window.localStorage.setItem(HOME_SAVED_EVENTS_KEY, JSON.stringify(bookmarkIds));
+    window.localStorage.setItem(getHomeSavedEventsStorageKey(), JSON.stringify(bookmarkIds));
 
     if (window.localStorage.getItem(SELECTED_BROWSE_EVENT_KEY) === eventId) {
       window.localStorage.removeItem(SELECTED_BROWSE_EVENT_KEY);
@@ -269,13 +281,13 @@ export async function toggleEventBookmark(eventId: string, currentIds: string[])
   if (isSaved) {
     await removeEventBookmark(session.token, eventId);
     const next = currentIds.filter((id) => id !== eventId);
-    window.localStorage.setItem(HOME_SAVED_EVENTS_KEY, JSON.stringify(next));
+    window.localStorage.setItem(getHomeSavedEventsStorageKey(), JSON.stringify(next));
     return next;
   }
 
   await addEventBookmark(session.token, eventId);
   const next = [...currentIds, eventId];
-  window.localStorage.setItem(HOME_SAVED_EVENTS_KEY, JSON.stringify(next));
+  window.localStorage.setItem(getHomeSavedEventsStorageKey(), JSON.stringify(next));
   return next;
 }
 

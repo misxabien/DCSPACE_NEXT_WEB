@@ -254,6 +254,32 @@ export async function loginUser(email: string, password: string) {
   );
 }
 
+export async function sendForgotPasswordCode(email: string) {
+  return apiRequest<{ message: string; email: string; expiresAt: string }>("auth/forgot-password/send-code", {
+    method: "POST",
+    body: { email },
+  });
+}
+
+export async function verifyForgotPasswordCode(email: string, code: string) {
+  return apiRequest<{ message: string }>("auth/forgot-password/verify-code", {
+    method: "POST",
+    body: { email, code },
+  });
+}
+
+export async function resetForgotPassword(payload: {
+  email: string;
+  code: string;
+  password: string;
+  confirmPassword: string;
+}) {
+  return apiRequest<{ message: string }>("auth/forgot-password/reset", {
+    method: "POST",
+    body: payload,
+  });
+}
+
 export async function fetchProfile(token: string) {
   return apiRequest<{ profile: UserProfile }>("profile", { token });
 }

@@ -3,10 +3,53 @@ import { syncProfileToLegacyStorage } from '@/lib/user-mappers';
 
 export const PROFILE_PHOTO_STORAGE_KEY = 'dcspaceProfilePhotoImage';
 export const PROFILE_COVER_STORAGE_KEY = 'dcspaceProfileCoverImage';
+export const PROFILE_PHOTO_FIT_STORAGE_KEY = 'dcspaceProfilePhotoFit';
+export const PROFILE_COVER_FIT_STORAGE_KEY = 'dcspaceProfileCoverFit';
 
 const MAX_DIMENSION = 512;
 const JPEG_QUALITY = 0.82;
 const MAX_DATA_URL_LENGTH = 280_000;
+
+function normalizeStorageAccountKey(value?: string) {
+  return (value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'guest';
+}
+
+function getActiveStorageAccountKey() {
+  if (typeof window === 'undefined') return 'guest';
+  const session = readAuthSession();
+  const accountSeed =
+    session?.user.id ||
+    session?.user.email ||
+    window.localStorage.getItem('dcspaceStudentEmail') ||
+    window.localStorage.getItem('dcspaceStudentNumber') ||
+    '';
+  return normalizeStorageAccountKey(accountSeed);
+}
+
+export function getScopedStorageKey(baseKey: string, accountKey?: string) {
+  const resolvedAccountKey = normalizeStorageAccountKey(accountKey || getActiveStorageAccountKey());
+  return `${baseKey}:${resolvedAccountKey}`;
+}
+
+export function getProfilePhotoStorageKey(accountKey?: string) {
+  return getScopedStorageKey(PROFILE_PHOTO_STORAGE_KEY, accountKey);
+}
+
+export function getProfileCoverStorageKey(accountKey?: string) {
+  return getScopedStorageKey(PROFILE_COVER_STORAGE_KEY, accountKey);
+}
+
+export function getProfilePhotoFitStorageKey(accountKey?: string) {
+  return getScopedStorageKey(PROFILE_PHOTO_FIT_STORAGE_KEY, accountKey);
+}
+
+export function getProfileCoverFitStorageKey(accountKey?: string) {
+  return getScopedStorageKey(PROFILE_COVER_FIT_STORAGE_KEY, accountKey);
+}
 
 export function getProfilePhotoFromSession() {
   return readAuthSession()?.user.photoUrl?.trim() || '';
@@ -83,9 +126,9 @@ export async function prepareCoverImageForStorage(file: File) {
 }
 
 export function applyProfilePhotoLocally(photoUrl: string, fit?: { zoom: number; x: number; y: number }) {
-  safeSetLocalStorage(PROFILE_PHOTO_STORAGE_KEY, photoUrl);
+  safeSetLocalStorage(getProfilePhotoStorageKey(), photoUrl);
   if (fit) {
-    safeSetLocalStorage('dcspaceProfilePhotoFit', JSON.stringify(fit));
+    safeSetLocalStorage(getProfilePhotoFitStorageKey(), JSON.stringify(fit));
   }
 
   const session = readAuthSession();
@@ -99,13 +142,13 @@ export function applyProfilePhotoLocally(photoUrl: string, fit?: { zoom: number;
 export function pruneOversizedProfileStorage() {
   if (typeof window === 'undefined') return;
 
-  const photo = window.localStorage.getItem(PROFILE_PHOTO_STORAGE_KEY);
+  const photo = window.localStorage.getItem(getProfilePhotoStorageKey());
   if (photo && photo.length > MAX_DATA_URL_LENGTH) {
-    window.localStorage.removeItem(PROFILE_PHOTO_STORAGE_KEY);
+    window.localStorage.removeItem(getProfilePhotoStorageKey());
   }
 
-  const cover = window.localStorage.getItem(PROFILE_COVER_STORAGE_KEY);
+  const cover = window.localStorage.getItem(getProfileCoverStorageKey());
   if (cover && cover.length > MAX_DATA_URL_LENGTH * 2) {
-    window.localStorage.removeItem(PROFILE_COVER_STORAGE_KEY);
+    window.localStorage.removeItem(getProfileCoverStorageKey());
   }
 }

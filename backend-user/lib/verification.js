@@ -15,6 +15,8 @@ import {
   shouldUseMemoryVerificationStore,
 } from "@/lib/verification-store";
 
+const PASSWORD_RESET_PURPOSE = "password_reset";
+
 function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
@@ -29,6 +31,30 @@ async function getVerificationsCollection() {
   await collection.createIndex({ email: 1, purpose: 1 }, { unique: true });
   await collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   return collection;
+}
+
+function getMemoryVerificationKey(email, purpose) {
+  return `${purpose}:${normalizeEmail(email)}`;
+}
+
+function readMemoryVerificationByPurpose(email, purpose) {
+  return globalThis.__dcEmailVerifications?.get(getMemoryVerificationKey(email, purpose)) || null;
+}
+
+function saveMemoryVerificationByPurpose({ email, codeHash, expiresAt, purpose }) {
+  const normalizedEmail = normalizeEmail(email);
+  globalThis.__dcEmailVerifications.set(getMemoryVerificationKey(normalizedEmail, purpose), {
+    email: normalizedEmail,
+    purpose,
+    codeHash,
+    expiresAt,
+    attempts: 0,
+    updatedAt: new Date(),
+  });
+}
+
+function deleteMemoryVerificationByPurpose(email, purpose) {
+  globalThis.__dcEmailVerifications?.delete(getMemoryVerificationKey(email, purpose));
 }
 
 async function useMemoryStore() {
@@ -154,4 +180,121 @@ export async function verifyRegistrationCode(email, code) {
 
   await verifications.deleteOne({ _id: record._id });
   return { ok: true };
+}
+
+async function issueVerificationCodeForPurpose(email, purpose) {
+  const normalizedEmail = normalizeEmail(email);
+  const code = generateVerificationCode();
+  const codeHash = hashPassword(code);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + CODE_TTL_MS);
+
+  if (await useMemoryStore()) {
+    saveMemoryVerificationByPurpose({ email: normalizedEmail, codeHash, expiresAt, purpose });
+    await sendVerificationEmail({ email: normalizedEmail, code });
+    return {
+      email: normalizedEmail,
+      expiresAt: expiresAt.toISOString(),
+      delivered: true,
+      storage: "memory",
+    };
+  }
+
+  const verifications = await getVerificationsCollection();
+  await verifications.updateOne(
+    { email: normalizedEmail, purpose },
+    {
+      $set: {
+        email: normalizedEmail,
+        purpose,
+        codeHash,
+        expiresAt,
+        updatedAt: now,
+        attempts: 0,
+      },
+      $setOnInsert: { createdAt: now },
+    },
+    { upsert: true },
+  );
+
+  await sendVerificationEmail({ email: normalizedEmail, code });
+  return {
+    email: normalizedEmail,
+    expiresAt: expiresAt.toISOString(),
+    delivered: true,
+    storage: "database",
+  };
+}
+
+async function verifyCodeForPurpose(email, code, purpose, options = {}) {
+  const normalizedEmail = normalizeEmail(email);
+  const trimmedCode = String(code || "").trim();
+  const consume = options.consume === true;
+
+  if (!/^\d{6}$/.test(trimmedCode)) {
+    return { ok: false, error: "Verification code must be a 6-digit number." };
+  }
+
+  if (await useMemoryStore()) {
+    const record = readMemoryVerificationByPurpose(normalizedEmail, purpose);
+    if (!record) {
+      return { ok: false, error: "No verification code found. Please request a new code." };
+    }
+    if (isMemoryVerificationExpired(record)) {
+      deleteMemoryVerificationByPurpose(normalizedEmail, purpose);
+      return { ok: false, error: "Verification code has expired. Please request a new code." };
+    }
+    if ((record.attempts || 0) >= MAX_ATTEMPTS) {
+      deleteMemoryVerificationByPurpose(normalizedEmail, purpose);
+      return { ok: false, error: "Too many failed attempts. Please request a new code." };
+    }
+    if (!verifyPassword(trimmedCode, record.codeHash)) {
+      record.attempts = (record.attempts || 0) + 1;
+      if (record.attempts >= MAX_ATTEMPTS) {
+        deleteMemoryVerificationByPurpose(normalizedEmail, purpose);
+      }
+      return { ok: false, error: "Invalid verification code." };
+    }
+
+    if (consume) {
+      deleteMemoryVerificationByPurpose(normalizedEmail, purpose);
+    }
+
+    return { ok: true };
+  }
+
+  const verifications = await getVerificationsCollection();
+  const record = await verifications.findOne({ email: normalizedEmail, purpose });
+
+  if (!record) {
+    return { ok: false, error: "No verification code found. Please request a new code." };
+  }
+  if (record.expiresAt && new Date(record.expiresAt).getTime() < Date.now()) {
+    await verifications.deleteOne({ _id: record._id });
+    return { ok: false, error: "Verification code has expired. Please request a new code." };
+  }
+  if ((record.attempts || 0) >= MAX_ATTEMPTS) {
+    await verifications.deleteOne({ _id: record._id });
+    return { ok: false, error: "Too many failed attempts. Please request a new code." };
+  }
+
+  const isValid = verifyPassword(trimmedCode, record.codeHash);
+  if (!isValid) {
+    await verifications.updateOne({ _id: record._id }, { $inc: { attempts: 1 } });
+    return { ok: false, error: "Invalid verification code." };
+  }
+
+  if (consume) {
+    await verifications.deleteOne({ _id: record._id });
+  }
+
+  return { ok: true };
+}
+
+export async function issuePasswordResetCode(email) {
+  return issueVerificationCodeForPurpose(email, PASSWORD_RESET_PURPOSE);
+}
+
+export async function verifyPasswordResetCode(email, code, options = {}) {
+  return verifyCodeForPurpose(email, code, PASSWORD_RESET_PURPOSE, options);
 }

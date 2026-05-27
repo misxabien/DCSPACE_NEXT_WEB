@@ -3,6 +3,20 @@ import type { FrontendEvent } from '@/lib/dc-events';
 import type { AttendanceRecord, AttendanceUser, RegisteredEvent } from '@/lib/attendance';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const PROFILE_PHOTO_STORAGE_KEY = 'dcspaceProfilePhotoImage';
+
+function normalizeStorageAccountKey(value?: string) {
+  return (value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'guest';
+}
+
+function getProfilePhotoStorageKeyForProfile(profile: UserProfile) {
+  const accountKey = normalizeStorageAccountKey(profile.id || profile.email || profile.studentNumber);
+  return `${PROFILE_PHOTO_STORAGE_KEY}:${accountKey}`;
+}
 
 export function parseBackendEventDate(dateValue?: string) {
   if (!dateValue?.trim()) {
@@ -151,9 +165,11 @@ export function syncProfileToLegacyStorage(profile: UserProfile) {
   window.localStorage.setItem('dcspaceRfidNumber', profile.rfidNumber || '');
   if (profile.photoUrl && profile.photoUrl.length <= 300_000) {
     try {
-      window.localStorage.setItem('dcspaceProfilePhotoImage', profile.photoUrl);
-    } catch {
+      window.localStorage.setItem(getProfilePhotoStorageKeyForProfile(profile), profile.photoUrl);
+      // Clean up old global key so photos stay isolated per account.
       window.localStorage.removeItem('dcspaceProfilePhotoImage');
+    } catch {
+      window.localStorage.removeItem(getProfilePhotoStorageKeyForProfile(profile));
     }
   }
   window.sessionStorage.setItem('dcspaceLoggedIn', 'true');
