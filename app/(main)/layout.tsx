@@ -1,5 +1,9 @@
 import { AppShell } from "@/components/AppShell";
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+interface MainLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function MainLayout({ children }: Readonly<MainLayoutProps>) {
   return <AppShell>{children}</AppShell>;
 }

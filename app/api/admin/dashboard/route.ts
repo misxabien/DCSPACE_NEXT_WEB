@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "../../../../lib/admin/auth/roleGuard";
-import { sendToGemini } from "../../../../lib/admin/ai/gemini";
+import { requireAdmin } from "@/lib/admin/auth/roleGuard";
+import { sendToGemini } from "@/lib/admin/ai/gemini";
 import {
   getDashboardAttendanceData,
   getDashboardCharts,
   getDashboardStats,
-} from "../../../../lib/admin/db/dashboard";
+} from "@/lib/admin/db/dashboard";
 
 function toErrorResponse(error: unknown) {
   if (error instanceof Error && error.name === "AdminAuthorizationError") {

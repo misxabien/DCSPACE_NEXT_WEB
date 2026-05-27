@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { requireAdmin } from "../../../../../lib/admin/auth/roleGuard";
-import { sendToGemini } from "../../../../../lib/admin/ai/gemini";
+import { requireAdmin } from "@/lib/admin/auth/roleGuard";
+import { sendToGemini } from "@/lib/admin/ai/gemini";
 
 function toErrorResponse(error: unknown) {
   if (error instanceof Error && error.name === "AdminAuthorizationError") {

@@ -1,8 +1,14 @@
-"use client";
+'use client';
 
-import { Sidebar } from "@/components/Sidebar";
+import { Sidebar } from '@/components/Sidebar';
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+interface AppShellProps {
+  children: React.ReactNode;
+}
+
+export function AppShell({ children }: Readonly<AppShellProps>) {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <div className="app">
       <Sidebar />
