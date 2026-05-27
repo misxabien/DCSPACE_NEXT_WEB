@@ -5,11 +5,7 @@ import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { EmptyState } from '@/components/EmptyState';
 import { getCurrentAttendanceUser } from '@/lib/attendance';
-<<<<<<< HEAD
-import { submitOrganizedEventToBackend, userCanOrganize } from '@/lib/user-data';
-=======
 import { canOrganizeEvents, saveOrganizedEvent } from '@/lib/dc-events';
->>>>>>> origin/frontend-user
 
 type ReviewDetails = {
   eventName: string;
@@ -176,11 +172,7 @@ export function OrganizeForm() {
   const hostDepartment = currentUser?.school || 'School/Department';
 
   useEffect(() => {
-<<<<<<< HEAD
-    setCanCreate(userCanOrganize());
-=======
     setCanCreate(canOrganizeEvents());
->>>>>>> origin/frontend-user
   }, []);
 
   useEffect(() => {
@@ -201,72 +193,8 @@ export function OrganizeForm() {
     return typeof value === 'string' ? value.trim() : '';
   };
 
-<<<<<<< HEAD
   const getReviewDetails = () => {
     if (!formRef.current) return emptyReviewDetails;
-=======
-  const readFileAsDataUrl = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        resolve(typeof reader.result === "string" ? reader.result : "");
-      };
-      reader.onerror = () => {
-        reject(new Error("Failed to read uploaded file."));
-      };
-      reader.readAsDataURL(file);
-    });
-
-  const buildDetailsFromFormData = (formData: FormData): ReviewDetails => ({
-    eventName: getFormValue(formData, "event_name"),
-    eventDate: getFormValue(formData, "event_date"),
-    venue: getFormValue(formData, "venue"),
-    courseOrganizer: getFormValue(formData, "course_organizer_combined"),
-    school: getFormValue(formData, "school"),
-    department: getFormValue(formData, "department"),
-    startTime: getFormValue(formData, "start_time"),
-    endTime: getFormValue(formData, "end_time"),
-    eventType: getFormValue(formData, "event_type"),
-    duration: getFormValue(formData, "duration"),
-    minAttendance: getFormValue(formData, "min_attendance"),
-    posterFile: getFileName(formData, "poster"),
-    registrationFile: getFileName(formData, "registration"),
-    surveyFile: getFileName(formData, "survey"),
-    certificateTemplateFile: getFileName(formData, "certificate_template"),
-  });
-
-  useEffect(() => {
-    const form = formRef.current;
-    if (!form) {
-      return;
-    }
-
-    const syncLiveDetails = () => {
-      const formData = new FormData(form);
-      setLiveDetails(buildDetailsFromFormData(formData));
-    };
-
-    form.addEventListener("input", syncLiveDetails);
-    form.addEventListener("change", syncLiveDetails);
-    syncLiveDetails();
-
-    return () => {
-      form.removeEventListener("input", syncLiveDetails);
-      form.removeEventListener("change", syncLiveDetails);
-    };
-  }, []);
-
-  const handleReview = () => {
-    if (combinedRef.current && courseRef.current && orgRef.current) {
-      const course = (courseRef.current.value || "").trim();
-      const org = (orgRef.current.value || "").trim().replace(/^[\s—-]+|[\s—-]+$/g, "");
-      combinedRef.current.value = course && org ? `${course}-${org}` : course || org || "";
-    }
-
-    if (!formRef.current) {
-      return;
-    }
->>>>>>> backup/backend-user
 
     const formData = new FormData(formRef.current);
 
@@ -429,43 +357,11 @@ export function OrganizeForm() {
     };
   };
 
-<<<<<<< HEAD
-  const saveReviewEvent = async (status: 'Draft' | 'Pending') => {
-    if (!canCreate || !formRef.current?.checkValidity()) return;
-
-    const payload = getOrganizedEventPayload(status);
-    const details = getReviewDetails();
-
-    try {
-      await submitOrganizedEventToBackend({
-        eventName: details.eventName === 'Not provided' ? payload.eventName : details.eventName,
-        date: details.eventDate === 'Not provided' ? payload.eventDate : details.eventDate,
-        venue: details.venue === 'Not provided' ? payload.venue : details.venue,
-        description: details.eventDescription === 'Not provided' ? '' : details.eventDescription,
-        requester: hostOrganization,
-        department: hostDepartment,
-        school: hostDepartment,
-        courseOrganizer: hostOrganization,
-        startTime: details.startTime === 'Not provided' ? payload.startTime : details.startTime,
-        endTime: details.endTime === 'Not provided' ? payload.endTime : details.endTime,
-        minAttendance: details.minAttendance === 'Not provided' ? payload.minAttendance : details.minAttendance,
-        posterImage: bannerDataUrl,
-      });
-      router.push('/events-organized');
-    } catch (error) {
-      window.alert(
-        error instanceof Error
-          ? error.message
-          : 'Failed to save the event. Make sure the backend is running (npm run dev:backend-user).',
-      );
-    }
-=======
   const saveReviewEvent = (status: 'Draft' | 'Pending') => {
     if (!canCreate || !formRef.current?.checkValidity()) return;
 
     saveOrganizedEvent(getOrganizedEventPayload(status));
     router.push('/events-organized');
->>>>>>> origin/frontend-user
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -488,49 +384,7 @@ export function OrganizeForm() {
       onSubmit={handleSubmit}
       onKeyDown={handleFormKeyDown}
       aria-label="Create new event"
-<<<<<<< HEAD
       noValidate
-=======
-      onSubmit={async (event) => {
-        event.preventDefault();
-        if (!formRef.current) {
-          return;
-        }
-        try {
-          setSubmitError("");
-          setSubmitSuccess("");
-          setIsSubmitting(true);
-          const formData = new FormData(formRef.current);
-          const posterValue = formData.get("poster");
-          const posterImage =
-            posterValue instanceof File && posterValue.size > 0 ? await readFileAsDataUrl(posterValue) : "";
-          await submitOrganizedEvent({
-            eventName: getFormValue(formData, "event_name"),
-            date: getFormValue(formData, "event_date"),
-            venue: getFormValue(formData, "venue"),
-            description: getFormValue(formData, "event_type"),
-            requester: getFormValue(formData, "organizer_name"),
-            department: getFormValue(formData, "department"),
-            school: getFormValue(formData, "school"),
-            courseCode: getFormValue(formData, "course_code"),
-            courseOrganizer: getFormValue(formData, "course_organizer_combined"),
-            submittedByEmail: readAuthSession()?.user?.email || "",
-            startTime: getFormValue(formData, "start_time"),
-            endTime: getFormValue(formData, "end_time"),
-            duration: getFormValue(formData, "duration"),
-            minAttendance: getFormValue(formData, "min_attendance"),
-            posterImage,
-          });
-          setSubmitSuccess("Event submitted to admin for review. It will appear in Events after approval.");
-          formRef.current.reset();
-          setLiveDetails(emptyReviewDetails);
-        } catch (submitErrorValue) {
-          setSubmitError(submitErrorValue instanceof Error ? submitErrorValue.message : "Failed to submit event.");
-        } finally {
-          setIsSubmitting(false);
-        }
-      }}
->>>>>>> backup/backend-user
     >
       <ol className="organize-progress" aria-label="Create event progress">
         {progressSteps.map((step, index) => (

@@ -1223,11 +1223,7 @@
   background: transparent;
   color: #81817c;
   font-family: var(--font-poppins), sans-serif;
-<<<<<<< HEAD
   font-size: clamp(14px, 2.5vw, 18px);
-=======
-  font-size: 18px;
->>>>>>> backup/backend-user
   font-weight: 300;
   padding: 0 14px;
   outline: none;
@@ -2017,10 +2013,6 @@
     grid-template-columns: 1fr;
   }
 
-  .login-scope .register-two-col {
-    grid-template-columns: 1fr;
-  }
-
   .login-scope .register-name-row {
     grid-template-columns: 1fr;
   }
@@ -2465,27 +2457,5 @@
     font-size: 12px;
     padding-left: 10px;
     padding-right: 28px;
-  }
-
-  .login-scope .register-card {
-    min-height: auto;
-  }
-
-  .login-scope .register-name-row,
-  .login-scope .register-two-col {
-    grid-template-columns: 1fr;
-  }
-
-  .login-scope .register-review-list {
-    grid-template-columns: 1fr;
-  }
-
-  .login-scope .register-review-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .login-scope .password-requirements {
-    grid-template-columns: 1fr;
   }
 }

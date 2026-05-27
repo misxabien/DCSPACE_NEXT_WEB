@@ -1,23 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> backup/backend-user
-import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
-import { MongoClient, ObjectId } from "mongodb";
-
-const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
-const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
-<<<<<<< HEAD
-=======
 import { randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { MongoClient, ObjectId } from 'mongodb';
 
 const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
 const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
->>>>>>> origin/frontend-user
-=======
->>>>>>> backup/backend-user
 
 const globalForMongo = globalThis as unknown as {
   adminMongoClient?: MongoClient;
@@ -52,35 +38,16 @@ async function getDatabase() {
 
 async function getUsersCollection() {
   const db = await getDatabase();
-<<<<<<< HEAD
-<<<<<<< HEAD
-  return db.collection<any>("users");
-=======
   return db.collection<any>('users');
->>>>>>> origin/frontend-user
-=======
-  return db.collection<any>("users");
->>>>>>> backup/backend-user
 }
 
 async function getEventsCollection() {
   const db = await getDatabase();
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> backup/backend-user
-  return db.collection<any>("events");
-}
-
-function hashPassword(password: string, salt = randomBytes(16).toString("hex")) {
-  const hash = scryptSync(password, salt, 64).toString("hex");
-=======
   return db.collection<any>('events');
 }
 
 function hashPassword(password: string, salt = randomBytes(16).toString('hex')) {
   const hash = scryptSync(password, salt, 64).toString('hex');
->>>>>>> origin/frontend-user
   return `${salt}:${hash}`;
 }
 

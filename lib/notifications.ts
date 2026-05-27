@@ -1,14 +1,9 @@
-<<<<<<< HEAD
 import type { FrontendEvent } from "@/lib/dc-events";
-=======
-import { readOrganizedEvents } from "@/lib/dc-events";
->>>>>>> origin/frontend-user
 import {
   formatEventDate,
   getCertificateStatus,
   getEventStatus,
   getRegisteredEventId,
-<<<<<<< HEAD
   type AttendanceRecord,
   type RegisteredEvent,
 } from "@/lib/attendance";
@@ -18,12 +13,6 @@ import {
   loadRegisteredEvents,
   userCanOrganize,
 } from "@/lib/user-data";
-=======
-  readRegisteredEvents,
-  readUserAttendanceRecords,
-  getCurrentAttendanceUser,
-} from "@/lib/attendance";
->>>>>>> origin/frontend-user
 
 export const NOTIFICATION_READ_KEY = "dcspaceReadNotificationIds";
 export const NOTIFICATIONS_UPDATED_EVENT = "dcspace-notifications-updated";
@@ -93,27 +82,17 @@ export function formatNotificationTimeAgo(dateValue: string) {
   return getRelativeTime(dateValue);
 }
 
-<<<<<<< HEAD
 function buildNotifications(
   organizedEvents: FrontendEvent[],
   registeredEvents: RegisteredEvent[],
   records: Record<string, AttendanceRecord>,
 ): DcNotification[] {
   const readIds = getReadIds();
-=======
-export function readNotifications(): DcNotification[] {
-  const readIds = getReadIds();
-  const currentUser = getCurrentAttendanceUser();
-  const records = readUserAttendanceRecords(currentUser);
-  const registeredEvents = readRegisteredEvents();
-  const organizedEvents = readOrganizedEvents();
->>>>>>> origin/frontend-user
   const now = new Date().toISOString();
   const notifications = new Map<string, Omit<DcNotification, "isRead">>();
 
   organizedEvents.forEach((event) => {
     const eventDate = parseEventDate(event).toISOString();
-<<<<<<< HEAD
     const status = event.status?.toLowerCase() || "";
 
     if (status.includes("approve") || status.includes("accept")) {
@@ -139,18 +118,6 @@ export function readNotifications(): DcNotification[] {
         icon: "archive",
       });
     }
-=======
-    notifications.set(`new-event-${event.id}`, {
-      id: `new-event-${event.id}`,
-      category: "updates",
-      title: "New Event!",
-      subtitle: event.dateTime || formatEventDate(event),
-      eventName: event.name || "Event Name",
-      notifiedAt: eventDate,
-      actionAt: eventDate,
-      icon: "calendar-week",
-    });
->>>>>>> origin/frontend-user
   });
 
   registeredEvents.forEach((event) => {
@@ -165,33 +132,20 @@ export function readNotifications(): DcNotification[] {
         category: "reminders",
         title: "Upcoming Event Reminder",
         subtitle: event.dateTime || formatEventDate(event),
-<<<<<<< HEAD
         eventName: event.name || "Event",
-=======
-        eventName: event.name || "Event Name",
->>>>>>> origin/frontend-user
         notifiedAt: now,
         actionAt: eventDate,
         icon: "calendar-check-fill",
       });
     }
 
-<<<<<<< HEAD
     if (getCertificateStatus(record, event) === "Download") {
-=======
-    if (getCertificateStatus(record) === "Download") {
->>>>>>> origin/frontend-user
       notifications.set(`certificate-${eventId}`, {
         id: `certificate-${eventId}`,
         category: "updates",
         title: "Certificate Ready",
-<<<<<<< HEAD
         subtitle: "Your certificate is ready to download",
         eventName: event.name || "Event",
-=======
-        subtitle: "Certificate Title",
-        eventName: event.name || "Event Name",
->>>>>>> origin/frontend-user
         notifiedAt: record?.updatedAt || now,
         actionAt: record?.updatedAt || now,
         icon: "patch-check-fill",
@@ -207,7 +161,6 @@ export function readNotifications(): DcNotification[] {
     .sort((first, second) => new Date(second.notifiedAt).getTime() - new Date(first.notifiedAt).getTime());
 }
 
-<<<<<<< HEAD
 export async function loadNotifications(): Promise<DcNotification[]> {
   const [registeredEvents, records] = await Promise.all([
     loadRegisteredEvents(),
@@ -224,8 +177,6 @@ export function readNotifications(): DcNotification[] {
   return [];
 }
 
-=======
->>>>>>> origin/frontend-user
 export function markNotificationsAsRead(ids: string[]) {
   const readIds = getReadIds();
 

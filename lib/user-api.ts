@@ -4,14 +4,11 @@ const requestTimeoutMs = 10000;
 
 function getCandidateBaseUrls() {
   const urls = new Set<string>();
-<<<<<<< HEAD
 
   // Same-origin proxy (see next.config.ts rewrites) — works when frontend runs on :3000.
   if (typeof window !== "undefined") {
     urls.add(`${window.location.origin}/api/user`);
   }
-=======
->>>>>>> backup/backend-user
 
   // Prefer explicit environment first.
   if (configuredBackendUrl) {
@@ -36,7 +33,6 @@ function getCandidateBaseUrls() {
     urls.add("http://localhost:4102");
     urls.add("http://127.0.0.1:4101");
     urls.add("http://localhost:4101");
-<<<<<<< HEAD
     // If frontend is opened via LAN hostname/IP, try that host too.
     if (typeof window !== "undefined") {
       const host = window.location.hostname;
@@ -47,8 +43,6 @@ function getCandidateBaseUrls() {
         urls.add(`${protocol}//${host}:4101`);
       }
     }
-=======
->>>>>>> backup/backend-user
   }
 
   return Array.from(urls);
@@ -117,7 +111,6 @@ function extractErrorMessage(payload: unknown): string | null {
 
   const errorValue = (payload as { error?: unknown }).error;
   if (typeof errorValue === "string" && errorValue.trim()) {
-<<<<<<< HEAD
     const detailsValue = (payload as { details?: unknown }).details;
     const shouldAppendDetails =
       typeof detailsValue === "string" &&
@@ -129,25 +122,14 @@ function extractErrorMessage(payload: unknown): string | null {
 
     if (shouldAppendDetails && !errorValue.includes(detailsValue)) {
       return `${errorValue} ${detailsValue}`;
-=======
-    if (errorValue === "Failed to register account." || errorValue === "Failed to login.") {
-      const detailsValue = (payload as { details?: unknown }).details;
-      if (typeof detailsValue === "string" && detailsValue.trim()) {
-        return `${errorValue} ${detailsValue}`;
-      }
->>>>>>> backup/backend-user
     }
     return errorValue;
   }
   const detailsValue = (payload as { details?: unknown }).details;
-<<<<<<< HEAD
   if (typeof detailsValue === "string" && detailsValue.trim()) {
     return detailsValue;
   }
   return null;
-=======
-  return typeof detailsValue === "string" && detailsValue.trim() ? detailsValue : null;
->>>>>>> backup/backend-user
 }
 
 async function apiRequest<T>(
@@ -179,11 +161,7 @@ async function apiRequest<T>(
         lastError = new Error("Request timed out. Please check the server and try again.");
       } else {
         lastError = new Error(
-<<<<<<< HEAD
           "Could not reach the server. In a second terminal run: npm run dev:backend-user (port 4001), then try again.",
-=======
-          "Could not reach the server. Please make sure backend-user is running on port 4101 or 4001.",
->>>>>>> backup/backend-user
         );
       }
       continue;
@@ -245,10 +223,7 @@ export async function registerUser(payload: {
   lastName: string;
   studentNumber: string;
   email: string;
-<<<<<<< HEAD
   photoUrl?: string;
-=======
->>>>>>> backup/backend-user
   rfidNumber?: string;
   organizationPart?: string;
   organizationRole?: string;

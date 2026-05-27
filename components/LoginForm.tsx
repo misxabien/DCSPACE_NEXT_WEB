@@ -5,48 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
-<<<<<<< HEAD
-import { loginUser, saveAuthSession } from '@/lib/user-api';
-import { syncProfileToLegacyStorage } from '@/lib/user-mappers';
-=======
 import { signInAttendanceUser } from '@/lib/attendance';
->>>>>>> origin/frontend-user
 
 export function LoginForm() {
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<'student' | 'faculty'>('student');
 
-<<<<<<< HEAD
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  const handleSubmit = async (submitEvent: FormEvent<HTMLFormElement>) => {
-    submitEvent.preventDefault();
-    const formData = new FormData(submitEvent.currentTarget);
-    const email = String(formData.get('email') || '').trim().toLowerCase();
-    const password = String(formData.get('password') || '');
-
-    if (!email || !password) {
-      setErrorMessage('Email and password are required.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrorMessage('');
-
-    try {
-      const result = await loginUser(email, password);
-      saveAuthSession(result.token, result.user);
-      syncProfileToLegacyStorage(result.user);
-      window.localStorage.setItem('dcspaceAccountType', role);
-      router.push('/home');
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Login failed.');
-    } finally {
-      setIsSubmitting(false);
-    }
-=======
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -55,7 +20,6 @@ export function LoginForm() {
     window.localStorage.setItem('dcspaceAccountType', role);
     signInAttendanceUser(typeof email === 'string' ? email : '');
     router.push('/home');
->>>>>>> origin/frontend-user
   };
 
   return (
@@ -137,20 +101,14 @@ export function LoginForm() {
               </Link>
             </div>
 
-            {errorMessage ? (
-              <p className="form-error" role="alert">
-                {errorMessage}
-              </p>
-            ) : null}
-
-            <button className="btn primary" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'SIGNING IN…' : 'SIGN IN'}
+            <button className="btn primary" type="submit">
+              SIGN IN
             </button>
           </form>
 
           <div className="below">
             Don&apos;t have an account?
-            <Link href="/register" prefetch={false} aria-label="Register here">
+            <Link href="/register" aria-label="Register here">
               REGISTER HERE
             </Link>
           </div>

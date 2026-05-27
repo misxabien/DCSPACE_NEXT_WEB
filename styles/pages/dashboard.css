@@ -39,103 +39,11 @@
   gap: 24px;
 }
 
-<<<<<<< HEAD
 .dashboard-search {
   width: min(100%, 320px);
   height: 38px;
   border: 1px solid #d6d6d6;
   border-radius: 999px;
-=======
-.dashboard-tab {
-  border: none;
-  background: transparent;
-  color: rgba(107, 93, 74, 0.62);
-  font-family: var(--font), sans-serif;
-  font-size: clamp(34px, 4vw, 46px);
-  font-weight: 900;
-  letter-spacing: 0;
-  cursor: pointer;
-  transition: color 0.2s ease, transform 0.2s ease;
-}
-
-.dashboard-tab:hover {
-  transform: translateY(-1px);
-}
-
-.dashboard-tab.is-active {
-  color: var(--dashboard-blue);
-}
-
-.registered-sections {
-  display: grid;
-  gap: 32px;
-}
-
-.registered-group {
-  display: grid;
-  gap: 14px;
-}
-
-.registered-group-title {
-  margin: 0;
-  color: #8a6d00;
-  font-family: var(--font), sans-serif;
-  font-size: clamp(28px, 3vw, 34px);
-  font-weight: 900;
-}
-
-.registered-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(280px, 1fr));
-  gap: 14px;
-  width: 100%;
-}
-
-.registered-card {
-  display: grid;
-  grid-template-columns: 118px 118px 1fr;
-  align-items: center;
-  min-height: 172px;
-  border: none;
-  border-radius: 7px;
-  background: #f4ecd7;
-  box-shadow: 4px 5px 5px rgba(67, 57, 28, 0.38);
-  color: #705615;
-  cursor: pointer;
-  text-decoration: none;
-  text-align: left;
-  padding: 18px 22px;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, color 0.2s ease;
-}
-
-.registered-poster {
-  width: 96px;
-  height: 96px;
-  border-radius: 6px;
-  overflow: hidden;
-  background: #ead8a6;
-  display: inline-flex;
-}
-
-.registered-poster img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.registered-card:hover,
-.registered-card:focus-visible,
-.registered-card:active {
-  background: var(--dashboard-blue);
-  color: white;
-  box-shadow: 6px 8px 12px rgba(50, 62, 87, 0.35);
-  transform: translateY(-2px);
-  outline: none;
-}
-
-.registered-date,
-.registered-details {
->>>>>>> backup/backend-user
   display: flex;
   align-items: center;
   gap: 10px;
@@ -178,11 +86,7 @@
   border: 1px solid #323a8b;
   border-radius: 8px;
   display: grid;
-<<<<<<< HEAD
   grid-template-columns: 1fr 1fr 1fr 1fr;
-=======
-  grid-template-columns: 96px 1.25fr 0.85fr 1.1fr 1.25fr 150px;
->>>>>>> backup/backend-user
   align-items: center;
   background: #6b7df2;
   color: #ffffff;
@@ -192,7 +96,6 @@
   padding: 0 30px;
 }
 
-<<<<<<< HEAD
 .dashboard-upcoming-banner.is-empty {
   grid-template-columns: 1fr;
   place-items: center;
@@ -203,33 +106,6 @@
   color: rgba(255, 255, 255, 0.5);
   font-size: 20px;
   font-weight: 700;
-=======
-.organized-poster {
-  width: 72px;
-  height: 52px;
-  border-radius: 6px;
-  overflow: hidden;
-  background: #ead8a6;
-  display: inline-flex;
-}
-
-.organized-poster img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.organized-poster--empty {
-  width: 100%;
-  height: 100%;
-}
-
-.organized-header {
-  min-height: 58px;
-  font-family: var(--font), sans-serif;
-  font-size: 30px;
-  font-weight: 900;
->>>>>>> backup/backend-user
   line-height: 1;
 }
 
@@ -998,28 +874,12 @@ a.dashboard-summary-card:focus-visible {
     gap: 18px;
   }
 
-<<<<<<< HEAD
   .joined-events-filters {
     position: relative;
   }
 
   .joined-events-filter-wrap:has(.joined-date-picker) {
     position: static;
-=======
-  .registered-card {
-    grid-template-columns: 104px 104px 1fr;
-    min-height: 132px;
-    padding: 18px;
-  }
-
-  .registered-poster {
-    width: 86px;
-    height: 86px;
-  }
-
-  .registered-date span {
-    font-size: 24px;
->>>>>>> backup/backend-user
   }
 
   .joined-date-picker {
@@ -1030,7 +890,6 @@ a.dashboard-summary-card:focus-visible {
     width: min(260px, calc(100vw - 32px));
   }
 
-<<<<<<< HEAD
   .joined-events-grid.dashboard-joined-grid {
     grid-template-columns: 1fr;
   }
@@ -1373,45 +1232,5 @@ a.dashboard-summary-card:focus-visible {
   .dashboard-chart {
     gap: 8px;
     overflow-x: auto;
-=======
-  .registered-details {
-    gap: 8px;
-    font-size: 16px;
-  }
-
-  .registered-details strong {
-    font-size: 23px;
-  }
-
-  .organized-table {
-    width: 100%;
-    margin: 0;
-    overflow-x: auto;
-  }
-
-  .organized-row {
-    grid-template-columns: 88px 170px 120px 170px 170px 140px;
-    min-width: 860px;
-    padding: 0 18px;
-    font-size: 17px;
-  }
-
-  .organized-header {
-    font-size: 22px;
-  }
-
-  .privacy-overlay {
-    align-items: flex-start;
-    overflow-y: auto;
-    padding: 24px 16px;
-  }
-
-  .privacy-card {
-    margin-top: 30px;
-  }
-
-  .privacy-actions {
-    flex-direction: column;
->>>>>>> backup/backend-user
   }
 }

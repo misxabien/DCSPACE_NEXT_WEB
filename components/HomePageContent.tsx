@@ -5,25 +5,6 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import {
   getCertificateStatus,
-<<<<<<< HEAD
-  getEventStatus,
-  getRegisteredEventId,
-  type AttendanceRecord,
-  type RegisteredEvent,
-} from '@/lib/attendance';
-import { DateRangeCalendarPicker } from '@/components/DateRangeCalendarPicker';
-import { type FrontendEvent, setSelectedBrowseEventId } from '@/lib/dc-events';
-import {
-  loadApprovedBrowseEvents,
-  loadAttendanceRecords,
-  loadBookmarkedEventIds,
-  loadRegisteredEvents,
-  toggleEventBookmark,
-} from '@/lib/user-data';
-
-const filters = ['All', 'Today', 'Tomorrow', 'This Weekend', 'Pick a date'];
-
-=======
   getCurrentAttendanceUser,
   getEventStatus,
   getRegisteredEventId,
@@ -45,7 +26,6 @@ function readSavedHomeEvents() {
   }
 }
 
->>>>>>> origin/frontend-user
 function getEventDate(event: FrontendEvent) {
   const parsedDate = new Date(`${event.month} ${event.day}, ${event.year}`);
 
@@ -137,55 +117,11 @@ export function HomePageContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
-<<<<<<< HEAD
-  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
-=======
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, ReturnType<typeof readUserAttendanceRecords>[string]>>({});
->>>>>>> origin/frontend-user
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
   useEffect(() => {
-<<<<<<< HEAD
-    let cancelled = false;
-
-    const refreshEvents = async () => {
-      try {
-        const [browse, bookmarks, registered, attendance] = await Promise.all([
-          loadApprovedBrowseEvents(),
-          loadBookmarkedEventIds(),
-          loadRegisteredEvents(),
-          loadAttendanceRecords(),
-        ]);
-
-        if (cancelled) return;
-
-        setEvents(browse);
-        setSavedEventIds(bookmarks);
-        setRegisteredEvents(registered);
-        setAttendanceRecords(attendance);
-      } catch {
-        if (cancelled) return;
-        setEvents([]);
-        setSavedEventIds([]);
-        setRegisteredEvents([]);
-        setAttendanceRecords({});
-      }
-    };
-
-    void refreshEvents();
-    window.addEventListener('pageshow', () => void refreshEvents());
-    window.addEventListener('storage', () => void refreshEvents());
-    window.addEventListener('dcspace-events-updated', () => void refreshEvents());
-    window.addEventListener('dcspace-registered-events-updated', () => void refreshEvents());
-
-    return () => {
-      cancelled = true;
-      window.removeEventListener('pageshow', () => void refreshEvents());
-      window.removeEventListener('storage', () => void refreshEvents());
-      window.removeEventListener('dcspace-events-updated', () => void refreshEvents());
-      window.removeEventListener('dcspace-registered-events-updated', () => void refreshEvents());
-=======
     const refreshEvents = () => {
       setEvents(readBrowseEvents());
       setSavedEventIds(readSavedHomeEvents());
@@ -204,7 +140,6 @@ export function HomePageContent() {
       window.removeEventListener('storage', refreshEvents);
       window.removeEventListener('dcspace-events-updated', refreshEvents);
       window.removeEventListener('dcspace-registered-events-updated', refreshEvents);
->>>>>>> origin/frontend-user
     };
   }, []);
 
@@ -235,9 +170,6 @@ export function HomePageContent() {
   );
 
   const toggleSavedEvent = (eventId: string) => {
-<<<<<<< HEAD
-    void toggleEventBookmark(eventId, savedEventIds).then(setSavedEventIds);
-=======
     setSavedEventIds((current) => {
       const nextSavedEventIds = current.includes(eventId)
         ? current.filter((savedEventId) => savedEventId !== eventId)
@@ -246,7 +178,6 @@ export function HomePageContent() {
       window.localStorage.setItem(HOME_SAVED_EVENTS_KEY, JSON.stringify(nextSavedEventIds));
       return nextSavedEventIds;
     });
->>>>>>> origin/frontend-user
   };
 
   const handleFilterClick = (filter: string) => {

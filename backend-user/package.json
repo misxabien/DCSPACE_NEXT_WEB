@@ -3,16 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-<<<<<<< HEAD
     "dev": "next dev -H 0.0.0.0 -p 4001 --webpack",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 4001",
     "check:email": "node scripts/check-email-config.mjs"
-=======
-    "dev": "next dev -H 127.0.0.1 -p 4001 --webpack",
-    "build": "next build",
-    "start": "next start -H 127.0.0.1 -p 4001"
->>>>>>> backup/backend-user
   },
   "dependencies": {
     "jsonwebtoken": "^9.0.2",
