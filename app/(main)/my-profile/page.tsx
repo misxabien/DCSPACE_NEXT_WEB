@@ -3,7 +3,7 @@ import { MyProfileContent } from '@/components/MyProfileContent';
 import '@/styles/pages/my-profile.css';
 
 export const metadata: Metadata = {
-  title: 'My Profile — DC Space',
+  title: 'My Profile',
 };
 
 export default function MyProfilePage() {

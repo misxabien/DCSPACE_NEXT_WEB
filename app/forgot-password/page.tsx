@@ -3,7 +3,7 @@ import { ForgotPasswordContent } from '@/components/ForgotPasswordContent';
 import '@/app/login/login.css';
 
 export const metadata: Metadata = {
-  title: 'Forgot Password | DC Space',
+  title: 'Forgot Password',
 };
 
 export default function ForgotPasswordPage() {
