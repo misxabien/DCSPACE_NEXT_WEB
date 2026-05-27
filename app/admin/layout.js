@@ -1,4 +1,4 @@
-import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminLayoutGate } from "@/components/admin/AdminLayoutGate";
 import "@/styles/admin.css";
 
 export const metadata = {
@@ -9,5 +9,5 @@ export const metadata = {
 };
 
 export default function AdminLayout({ children }) {
-  return <AdminShell>{children}</AdminShell>;
+  return <AdminLayoutGate>{children}</AdminLayoutGate>;
 }

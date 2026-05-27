@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { randomBytes, scryptSync, timingSafeEqual } from 'crypto';
-import { MongoClient, ObjectId } from 'mongodb';
+import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { MongoClient, ObjectId } from "mongodb";
 
 const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
 const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
@@ -250,6 +250,60 @@ export async function registerUser(input: RegisterUserInput) {
   const result = await users.insertOne(document);
 
   return mapUserRecord({ ...document, _id: result.insertedId });
+}
+
+export type UpsertAdminInput = {
+  email: string;
+  password: string;
+  name?: string;
+};
+
+/**
+ * Creates or updates an admin user with a hashed password (used for dev seeding).
+ */
+export async function upsertAdminUser(input: UpsertAdminInput) {
+  const users = await getUsersCollection();
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const now = new Date();
+  const existing = await users.findOne({ email: normalizedEmail });
+
+  if (existing) {
+    await users.updateOne(
+      { _id: existing._id },
+      {
+        $set: {
+          name: input.name ?? existing.name ?? "Admin",
+          passwordHash: hashPassword(input.password),
+          role: "admin",
+          isActive: true,
+          updatedAt: now,
+        },
+      },
+    );
+
+    const updated = await users.findOne({ _id: existing._id });
+    return mapAuthenticatedUser(updated);
+  }
+
+  const document = {
+    name: input.name ?? "Admin",
+    email: normalizedEmail,
+    passwordHash: hashPassword(input.password),
+    role: "admin",
+    organizationName: null,
+    studentId: null,
+    rfid: null,
+    registrationStatus: "Not Registered",
+    isActive: true,
+    authProviders: ["credentials"],
+    googleId: null,
+    assignedEventIds: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const result = await users.insertOne(document);
+  return mapAuthenticatedUser({ ...document, _id: result.insertedId });
 }
 
 /**

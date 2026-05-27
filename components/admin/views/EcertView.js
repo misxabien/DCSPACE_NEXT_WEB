@@ -77,6 +77,27 @@ function normalizeChipClass(value) {
     .replace(/[^a-z0-9_-]+/g, "-");
 }
 
+function attendeeMatchesQuery(row, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+
+  return [
+    row.id,
+    row.userId,
+    row.attendeeId,
+    row.studentNumber,
+    row.studentId,
+    row.name,
+    row.fullName,
+    row.email,
+    row.course,
+    row.status,
+    row.attendanceStatus,
+  ]
+    .filter(Boolean)
+    .some((value) => String(value).toLowerCase().includes(q));
+}
+
 function buildMeta(selectedEvent, selectedEventDetail) {
   const event = selectedEventDetail ?? selectedEvent ?? {};
 
@@ -166,6 +187,7 @@ export function EcertView({ openAttendance = false }) {
   const templateInputRef = useRef(null);
   const [query, setQuery] = useState("");
   const [detailOpen, setDetailOpen] = useState(false);
+  const [attendanceQuery, setAttendanceQuery] = useState("");
   const [ecertState, setEcertState] = useState("pre");
   const [events, setEvents] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
@@ -236,6 +258,7 @@ export function EcertView({ openAttendance = false }) {
     const firstEvent = events[0] ?? MOCK_EVENTS[0];
     setSelectedEvent(firstEvent);
     setDetailOpen(true);
+    setAttendanceQuery("");
     setEcertState("post");
     if (firstEvent.isMock) {
       setSelectedEventDetail(firstEvent);
@@ -264,6 +287,7 @@ export function EcertView({ openAttendance = false }) {
     setSelectedEventDetail(null);
     setAttendees([]);
     setDetailOpen(true);
+    setAttendanceQuery("");
     setEcertState("pre");
     if (ev.isMock) {
       setSelectedEventDetail(ev);
@@ -359,12 +383,13 @@ export function EcertView({ openAttendance = false }) {
     }
   }
 
+  const filteredAttendees = useMemo(
+    () => attendees.filter((row) => attendeeMatchesQuery(row, attendanceQuery)),
+    [attendanceQuery, attendees],
+  );
+
   return (
     <section className="view ecert-view" id="ecertView">
-      <div className="header-row">
-        <h1>E-Certificate and Attendance Management</h1>
-      </div>
-
       <section className="ecert-wrap">
         <div
           className={`ecert-list-view${detailOpen ? " hidden" : ""}`}
@@ -530,6 +555,30 @@ export function EcertView({ openAttendance = false }) {
             </dl>
 
             <section className="ecert-table-section" aria-label="Attendee records">
+              <div className="ecert-attendance-toolbar">
+                <label className="search-wrap">
+                  <span aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                      <path d="M20 20l-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  <input
+                    id="ecertAttendanceSearch"
+                    type="search"
+                    placeholder="Search name, course, or student number"
+                    value={attendanceQuery}
+                    onChange={(e) => {
+                      setAttendanceQuery(e.target.value);
+                      const count = attendees.filter((row) =>
+                        attendeeMatchesQuery(row, e.target.value),
+                      ).length;
+                      showStatus(`${count} attendee(s) shown`);
+                    }}
+                  />
+                </label>
+              </div>
+
               <div className="ecert-table-wrap">
                 <table className="ecert-table">
                   <thead>
@@ -545,7 +594,7 @@ export function EcertView({ openAttendance = false }) {
                   </thead>
                   <tbody id="ecertTableBody">
                     <EcertTableBody
-                      rows={attendees}
+                      rows={filteredAttendees}
                       selectedEvent={selectedEvent}
                       selectedEventDetail={selectedEventDetail}
                       loading={rowsLoading}

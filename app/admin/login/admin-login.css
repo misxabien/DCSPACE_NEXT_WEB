@@ -1,0 +1,55 @@
+/* Admin login — Montserrat typography */
+.login-scope.admin-login-scope {
+  font-family: var(--font-montserrat), "Montserrat", system-ui, -apple-system, sans-serif;
+}
+
+.login-scope.admin-login-scope .brand__headline,
+.login-scope.admin-login-scope .brand__sub,
+.login-scope.admin-login-scope .card,
+.login-scope.admin-login-scope .btn,
+.login-scope.admin-login-scope .input,
+.login-scope.admin-login-scope .divider,
+.login-scope.admin-login-scope .link,
+.login-scope.admin-login-scope .auth-field-error,
+.login-scope.admin-login-scope .admin-login-eyebrow {
+  font-family: inherit;
+}
+
+/* Admin login — logo aspect + card eyebrow */
+.login-scope .brand__logo-wrap--admin {
+  width: min(360px, 82vw);
+  aspect-ratio: 4 / 3;
+  height: auto;
+}
+
+.login-scope.admin-login-scope .brand__logo-wrap--admin .brand__logo {
+  filter: brightness(0) invert(1)
+    drop-shadow(0 10px 24px rgba(255, 255, 255, 0.45));
+  opacity: 0.98;
+}
+
+.login-scope .admin-login-eyebrow {
+  margin: 0 0 18px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  color: rgba(42, 42, 42, 0.55);
+}
+
+.login-scope.admin-login-scope .admin-login-page .card {
+  padding-top: 28px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow:
+    0 4px 24px rgba(31, 61, 109, 0.1),
+    0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.login-scope.admin-login-scope .admin-login-page .google,
+.login-scope.admin-login-scope .admin-login-page .input {
+  background: #ffffff;
+}
