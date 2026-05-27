@@ -55,7 +55,11 @@ export async function GET(request: Request) {
       .toArray();
 
     return NextResponse.json(
-      { registrations: rows.map((row) => toRegistrationResponse(row as Parameters<typeof toRegistrationResponse>[0])) },
+      {
+        registrations: rows.map((row) =>
+          toRegistrationResponse(row as unknown as Parameters<typeof toRegistrationResponse>[0]),
+        ),
+      },
       { status: 200 },
     );
   } catch (error) {
@@ -114,7 +118,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           message: 'Registration updated.',
-          registration: toRegistrationResponse(saved as Parameters<typeof toRegistrationResponse>[0]),
+          registration: toRegistrationResponse(saved as unknown as Parameters<typeof toRegistrationResponse>[0]),
         },
         { status: 200 },
       );

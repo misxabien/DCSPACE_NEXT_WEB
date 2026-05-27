@@ -12,6 +12,8 @@ type EventDoc = {
   endTime?: string;
   status?: string;
   certificate?: string;
+  minAttendance?: string;
+  duration?: string;
   posterImage?: string;
   createdAt?: string;
 };
@@ -51,6 +53,8 @@ export function toEventSnapshot(event: EventDoc) {
     endTime: event.endTime || '',
     status: event.status || 'pending',
     certificate: event.certificate || 'Processing',
+    minAttendance: event.minAttendance || '',
+    duration: event.duration || '',
     posterImage: event.posterImage || '',
     createdAt: event.createdAt || new Date().toISOString(),
   };
@@ -85,6 +89,8 @@ export function toRegistrationResponse(registration: RegistrationDoc) {
       endTime: String(snapshot.endTime || ''),
       status: String(snapshot.status || ''),
       certificate: String(snapshot.certificate || ''),
+      minAttendance: String(snapshot.minAttendance || ''),
+      duration: String(snapshot.duration || ''),
       posterImage: String(snapshot.posterImage || ''),
     },
   };
