@@ -356,9 +356,6 @@ export function Sidebar() {
               alt=""
             />
           </button>
-          <button className="topbar__help" type="button" aria-label="Help" onClick={() => setIsNotificationsOpen(false)}>
-            ?
-          </button>
         </div>
       </header>
 

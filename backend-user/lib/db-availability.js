@@ -7,9 +7,6 @@ let probePromise = null;
  * Returns whether MongoDB is reachable. Result is cached for the process lifetime.
  */
 export async function isDatabaseAvailable() {
-  if (process.env.VERIFICATION_USE_MEMORY === "true") {
-    return false;
-  }
   if (cachedAvailability !== null) {
     return cachedAvailability;
   }

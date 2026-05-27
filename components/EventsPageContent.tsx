@@ -4,7 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { EmptyState } from '@/components/EmptyState';
-import { type FrontendEvent, readBrowseEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
+import { type FrontendEvent, setSelectedBrowseEventId } from '@/lib/dc-events';
+import { loadApprovedBrowseEvents } from '@/lib/user-data';
 
 const today = new Date();
 const calendarYear = today.getFullYear();
@@ -22,17 +23,20 @@ export function EventsPageContent() {
   const [eventCards, setEventCards] = useState<FrontendEvent[]>([]);
 
   useEffect(() => {
-    const refreshEvents = () => setEventCards(readBrowseEvents());
+    let cancelled = false;
 
-    refreshEvents();
-    window.addEventListener('pageshow', refreshEvents);
-    window.addEventListener('storage', refreshEvents);
-    window.addEventListener('dcspace-events-updated', refreshEvents);
+    const refreshEvents = async () => {
+      const browse = await loadApprovedBrowseEvents();
+      if (!cancelled) setEventCards(browse);
+    };
+
+    void refreshEvents();
+    window.addEventListener('pageshow', () => void refreshEvents());
+    window.addEventListener('storage', () => void refreshEvents());
+    window.addEventListener('dcspace-events-updated', () => void refreshEvents());
 
     return () => {
-      window.removeEventListener('pageshow', refreshEvents);
-      window.removeEventListener('storage', refreshEvents);
-      window.removeEventListener('dcspace-events-updated', refreshEvents);
+      cancelled = true;
     };
   }, []);
 

@@ -3,8 +3,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { type RegisteredEvent, readRegisteredEvents } from '@/lib/attendance';
-import { type FrontendEvent, readOrganizedEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
+import { type RegisteredEvent } from '@/lib/attendance';
+import { type FrontendEvent, setSelectedBrowseEventId } from '@/lib/dc-events';
+import { loadOrganizedEventsForUser, loadRegisteredEvents } from '@/lib/user-data';
 
 type StatusKey = 'upcoming' | 'ongoing' | 'completed' | 'pending';
 
@@ -68,22 +69,34 @@ export function EventsOrganizedPageContent() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const refreshEvents = () => {
-      setEvents(readOrganizedEvents());
-      setRegisteredEvents(readRegisteredEvents());
+    let cancelled = false;
+
+    const refreshEvents = async () => {
+      try {
+        const [organized, registered] = await Promise.all([
+          loadOrganizedEventsForUser(),
+          loadRegisteredEvents(),
+        ]);
+
+        if (cancelled) return;
+
+        setEvents(organized);
+        setRegisteredEvents(registered);
+      } catch {
+        if (cancelled) return;
+        setEvents([]);
+        setRegisteredEvents([]);
+      }
     };
 
-    refreshEvents();
-    window.addEventListener('pageshow', refreshEvents);
-    window.addEventListener('storage', refreshEvents);
-    window.addEventListener('dcspace-events-updated', refreshEvents);
-    window.addEventListener('dcspace-registered-events-updated', refreshEvents);
+    void refreshEvents();
+    window.addEventListener('pageshow', () => void refreshEvents());
+    window.addEventListener('storage', () => void refreshEvents());
+    window.addEventListener('dcspace-events-updated', () => void refreshEvents());
+    window.addEventListener('dcspace-registered-events-updated', () => void refreshEvents());
 
     return () => {
-      window.removeEventListener('pageshow', refreshEvents);
-      window.removeEventListener('storage', refreshEvents);
-      window.removeEventListener('dcspace-events-updated', refreshEvents);
-      window.removeEventListener('dcspace-registered-events-updated', refreshEvents);
+      cancelled = true;
     };
   }, []);
 

@@ -5,7 +5,7 @@ import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { EmptyState } from '@/components/EmptyState';
 import { getCurrentAttendanceUser } from '@/lib/attendance';
-import { canOrganizeEvents, saveOrganizedEvent } from '@/lib/dc-events';
+import { submitOrganizedEventToBackend, userCanOrganize } from '@/lib/user-data';
 
 type ReviewDetails = {
   eventName: string;
@@ -172,7 +172,7 @@ export function OrganizeForm() {
   const hostDepartment = currentUser?.school || 'School/Department';
 
   useEffect(() => {
-    setCanCreate(canOrganizeEvents());
+    setCanCreate(userCanOrganize());
   }, []);
 
   useEffect(() => {
@@ -357,11 +357,35 @@ export function OrganizeForm() {
     };
   };
 
-  const saveReviewEvent = (status: 'Draft' | 'Pending') => {
+  const saveReviewEvent = async (status: 'Draft' | 'Pending') => {
     if (!canCreate || !formRef.current?.checkValidity()) return;
 
-    saveOrganizedEvent(getOrganizedEventPayload(status));
-    router.push('/events-organized');
+    const payload = getOrganizedEventPayload(status);
+    const details = getReviewDetails();
+
+    try {
+      await submitOrganizedEventToBackend({
+        eventName: details.eventName === 'Not provided' ? payload.eventName : details.eventName,
+        date: details.eventDate === 'Not provided' ? payload.eventDate : details.eventDate,
+        venue: details.venue === 'Not provided' ? payload.venue : details.venue,
+        description: details.eventDescription === 'Not provided' ? '' : details.eventDescription,
+        requester: hostOrganization,
+        department: hostDepartment,
+        school: hostDepartment,
+        courseOrganizer: hostOrganization,
+        startTime: details.startTime === 'Not provided' ? payload.startTime : details.startTime,
+        endTime: details.endTime === 'Not provided' ? payload.endTime : details.endTime,
+        minAttendance: details.minAttendance === 'Not provided' ? payload.minAttendance : details.minAttendance,
+        posterImage: bannerDataUrl,
+      });
+      router.push('/events-organized');
+    } catch (error) {
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : 'Failed to save the event. Make sure the backend is running (npm run dev:backend-user).',
+      );
+    }
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {

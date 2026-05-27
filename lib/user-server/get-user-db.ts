@@ -1,20 +1,16 @@
-import { MongoClient, type Db } from 'mongodb';
+import type { Db } from 'mongodb';
+import { connectUserMongo } from '@/lib/user-server/mongo-connect';
 
 let connectPromise: Promise<Db> | null = null;
 
 export async function getUserDb(): Promise<Db> {
   if (!connectPromise) {
-    const uri = process.env.MONGODB_URI;
-    const dbName = process.env.MONGODB_DB_NAME;
-
-    if (!uri || !dbName) {
-      throw new Error('Missing MONGODB_URI or MONGODB_DB_NAME in environment variables.');
-    }
-
-    connectPromise = MongoClient.connect(uri, {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 10000,
-    }).then((client) => client.db(dbName));
+    connectPromise = connectUserMongo()
+      .then(({ db }) => db)
+      .catch((error) => {
+        connectPromise = null;
+        throw error;
+      });
   }
 
   return connectPromise;

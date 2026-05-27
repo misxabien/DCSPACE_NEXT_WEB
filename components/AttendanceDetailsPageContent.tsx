@@ -14,10 +14,9 @@ import {
   getEventStatus,
   getRegisteredEventId,
   getSelectedAttendanceEventId,
-  readRegisteredEvents,
-  readUserAttendanceRecords,
   recordRfidAttendanceTap,
 } from '@/lib/attendance';
+import { loadAttendanceRecords, loadRegisteredEvents } from '@/lib/user-data';
 
 function getTimeMinutes(time?: string) {
   if (!time) return null;
@@ -74,21 +73,19 @@ type AttendanceDetail = {
   user: AttendanceUser;
 };
 
-const placeholderEvent: RegisteredEvent = {
-  name: 'Event Name',
-};
-
-function readSelectedAttendanceDetail(): AttendanceDetail {
+async function readSelectedAttendanceDetail(): Promise<AttendanceDetail | null> {
   const user = getCurrentAttendanceUser();
-  const registeredEvents = readRegisteredEvents();
+  const [registeredEvents, records] = await Promise.all([loadRegisteredEvents(), loadAttendanceRecords()]);
   const selectedEventId = getSelectedAttendanceEventId();
 
   const event =
     registeredEvents.find((registeredEvent) => getRegisteredEventId(registeredEvent) === selectedEventId) ||
-    registeredEvents[0] ||
-    placeholderEvent;
+    registeredEvents[0];
 
-  const records = readUserAttendanceRecords(user);
+  if (!event) {
+    return null;
+  }
+
   const record = records[getRegisteredEventId(event)];
 
   return { event, record, user };
@@ -102,7 +99,7 @@ export function AttendanceDetailsPageContent() {
   const [detail, setDetail] = useState<AttendanceDetail | null>(null);
 
   const refreshDetail = useCallback(() => {
-    setDetail(readSelectedAttendanceDetail());
+    void readSelectedAttendanceDetail().then(setDetail);
   }, []);
 
   const focusScanner = useCallback(() => {
@@ -136,9 +133,17 @@ export function AttendanceDetailsPageContent() {
     };
   }, [refreshDetail, focusScanner]);
 
-  const event = detail?.event || placeholderEvent;
-  const record = detail?.record;
-  const user = detail?.user;
+  if (!detail) {
+    return (
+      <div className="details-wrap">
+        <p className="attendance-details-empty">
+          No registered events yet. Register for an event, then return here to record attendance.
+        </p>
+      </div>
+    );
+  }
+
+  const { event, record, user } = detail;
   const progressPercent = getProgressPercent(record, event);
   const isPassedEvent = getEventStatus(event) === 'Passed';
   const certificateStatus = getCertificateStatus(record, event);
@@ -162,13 +167,13 @@ export function AttendanceDetailsPageContent() {
       return;
     }
 
-    const registeredEvents = readRegisteredEvents();
-    const result = recordRfidAttendanceTap(scannedRfid, registeredEvents);
-
-    setScanMessage(result.message);
-    setRfidInput('');
-    refreshDetail();
-    focusScanner();
+    void loadRegisteredEvents().then((registeredEvents) => {
+      const result = recordRfidAttendanceTap(scannedRfid, registeredEvents);
+      setScanMessage(result.message);
+      setRfidInput('');
+      refreshDetail();
+      focusScanner();
+    });
   };
 
   const handleCertificateDownload = () => {

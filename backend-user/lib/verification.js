@@ -58,10 +58,10 @@ function deleteMemoryVerificationByPurpose(email, purpose) {
 }
 
 async function useMemoryStore() {
-  if (shouldUseMemoryVerificationStore()) {
+  if (!(await isDatabaseAvailable())) {
     return true;
   }
-  return !(await isDatabaseAvailable());
+  return shouldUseMemoryVerificationStore() && process.env.FORCE_VERIFICATION_MEMORY === "true";
 }
 
 async function issueRegistrationVerificationCodeInMemory(email) {
@@ -72,13 +72,15 @@ async function issueRegistrationVerificationCodeInMemory(email) {
 
   saveMemoryVerification({ email: normalizedEmail, codeHash, expiresAt });
 
-  await sendVerificationEmail({ email: normalizedEmail, code });
+  const sendResult = await sendVerificationEmail({ email: normalizedEmail, code });
 
   return {
     email: normalizedEmail,
     expiresAt: expiresAt.toISOString(),
     delivered: true,
     storage: "memory",
+    devMode: sendResult.devMode,
+    code: sendResult.devMode ? code : undefined,
   };
 }
 
@@ -113,13 +115,15 @@ export async function issueRegistrationVerificationCode(email) {
     { upsert: true },
   );
 
-  await sendVerificationEmail({ email: normalizedEmail, code });
+  const sendResult = await sendVerificationEmail({ email: normalizedEmail, code });
 
   return {
     email: normalizedEmail,
     expiresAt: expiresAt.toISOString(),
     delivered: true,
     storage: "database",
+    devMode: sendResult.devMode,
+    code: sendResult.devMode ? code : undefined,
   };
 }
 
@@ -128,58 +132,52 @@ export async function issueRegistrationVerificationCode(email) {
  */
 export async function verifyRegistrationCode(email, code) {
   const normalizedEmail = normalizeEmail(email);
-  const trimmedCode = String(code || "").trim();
+  const trimmedCode = String(code || "").trim().replace(/\s/g, "");
 
   if (!/^\d{6}$/.test(trimmedCode)) {
     return { ok: false, error: "Verification code must be a 6-digit number." };
   }
 
-  if (await useMemoryStore()) {
-    const record = readMemoryVerification(normalizedEmail);
-    if (!record) {
-      return { ok: false, error: "No verification code found. Please request a new code." };
+  if (await isDatabaseAvailable()) {
+    const verifications = await getVerificationsCollection();
+    const record = await verifications.findOne({ email: normalizedEmail, purpose: PURPOSE });
+    if (record) {
+      if (record.expiresAt && new Date(record.expiresAt).getTime() < Date.now()) {
+        await verifications.deleteOne({ _id: record._id });
+        return { ok: false, error: "Verification code has expired. Please request a new code." };
+      }
+      if ((record.attempts || 0) >= MAX_ATTEMPTS) {
+        await verifications.deleteOne({ _id: record._id });
+        return { ok: false, error: "Too many failed attempts. Please request a new code." };
+      }
+      if (!verifyPassword(trimmedCode, record.codeHash)) {
+        await verifications.updateOne({ _id: record._id }, { $inc: { attempts: 1 } });
+        return { ok: false, error: "Invalid verification code." };
+      }
+      await verifications.deleteOne({ _id: record._id });
+      return { ok: true };
     }
-    if (isMemoryVerificationExpired(record)) {
+  }
+
+  const memoryRecord = readMemoryVerification(normalizedEmail);
+  if (memoryRecord) {
+    if (isMemoryVerificationExpired(memoryRecord)) {
       deleteMemoryVerification(normalizedEmail);
       return { ok: false, error: "Verification code has expired. Please request a new code." };
     }
-    if ((record.attempts || 0) >= MAX_ATTEMPTS) {
+    if ((memoryRecord.attempts || 0) >= MAX_ATTEMPTS) {
       deleteMemoryVerification(normalizedEmail);
       return { ok: false, error: "Too many failed attempts. Please request a new code." };
     }
-    if (!verifyPassword(trimmedCode, record.codeHash)) {
-      incrementMemoryAttempts(record);
+    if (!verifyPassword(trimmedCode, memoryRecord.codeHash)) {
+      incrementMemoryAttempts(memoryRecord);
       return { ok: false, error: "Invalid verification code." };
     }
     deleteMemoryVerification(normalizedEmail);
     return { ok: true };
   }
 
-  const verifications = await getVerificationsCollection();
-  const record = await verifications.findOne({ email: normalizedEmail, purpose: PURPOSE });
-
-  if (!record) {
-    return { ok: false, error: "No verification code found. Please request a new code." };
-  }
-
-  if (record.expiresAt && new Date(record.expiresAt).getTime() < Date.now()) {
-    await verifications.deleteOne({ _id: record._id });
-    return { ok: false, error: "Verification code has expired. Please request a new code." };
-  }
-
-  if ((record.attempts || 0) >= MAX_ATTEMPTS) {
-    await verifications.deleteOne({ _id: record._id });
-    return { ok: false, error: "Too many failed attempts. Please request a new code." };
-  }
-
-  const isValid = verifyPassword(trimmedCode, record.codeHash);
-  if (!isValid) {
-    await verifications.updateOne({ _id: record._id }, { $inc: { attempts: 1 } });
-    return { ok: false, error: "Invalid verification code." };
-  }
-
-  await verifications.deleteOne({ _id: record._id });
-  return { ok: true };
+  return { ok: false, error: "No verification code found. Please request a new code." };
 }
 
 async function issueVerificationCodeForPurpose(email, purpose) {
@@ -191,12 +189,14 @@ async function issueVerificationCodeForPurpose(email, purpose) {
 
   if (await useMemoryStore()) {
     saveMemoryVerificationByPurpose({ email: normalizedEmail, codeHash, expiresAt, purpose });
-    await sendVerificationEmail({ email: normalizedEmail, code });
+    const sendResult = await sendVerificationEmail({ email: normalizedEmail, code });
     return {
       email: normalizedEmail,
       expiresAt: expiresAt.toISOString(),
       delivered: true,
       storage: "memory",
+      devMode: sendResult.devMode,
+      code: sendResult.devMode ? code : undefined,
     };
   }
 
@@ -217,12 +217,14 @@ async function issueVerificationCodeForPurpose(email, purpose) {
     { upsert: true },
   );
 
-  await sendVerificationEmail({ email: normalizedEmail, code });
+  const sendResult = await sendVerificationEmail({ email: normalizedEmail, code });
   return {
     email: normalizedEmail,
     expiresAt: expiresAt.toISOString(),
     delivered: true,
     storage: "database",
+    devMode: sendResult.devMode,
+    code: sendResult.devMode ? code : undefined,
   };
 }
 
