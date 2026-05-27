@@ -3,12 +3,19 @@ import { toEventResponse } from "@/lib/event-helpers";
 
 export function toRegistrationResponse(registration) {
   const snapshot = registration.eventSnapshot || {};
+  const userSnapshot = registration.userSnapshot || {};
   return {
     id: registration._id.toString(),
     eventId: registration.eventId,
     status: registration.status || "Registered",
     certificate: registration.certificate || "Pending",
     requirementFiles: registration.requirementFiles || [],
+    participantName:
+      `${String(userSnapshot.firstName || "").trim()} ${String(userSnapshot.lastName || "").trim()}`.trim() ||
+      "Participant Name",
+    participantEmail: String(userSnapshot.email || "").trim().toLowerCase(),
+    course: String(userSnapshot.course || "").trim(),
+    organization: String(userSnapshot.organization || "").trim(),
     createdAt: registration.createdAt || new Date().toISOString(),
     event: {
       id: snapshot.id || registration.eventId,

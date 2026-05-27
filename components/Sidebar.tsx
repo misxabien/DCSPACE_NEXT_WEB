@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { type CSSProperties, useEffect, useState } from 'react';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { clearAuthSession } from '@/lib/user-api';
-import { getProfilePhotoFromSession, PROFILE_PHOTO_STORAGE_KEY } from '@/lib/profile-images';
+import { getProfilePhotoFitStorageKey, getProfilePhotoFromSession, getProfilePhotoStorageKey } from '@/lib/profile-images';
 import { userCanOrganize } from '@/lib/user-data';
 import {
   type DcNotification,
@@ -43,11 +43,11 @@ export function Sidebar() {
       const firstName = window.localStorage.getItem('dcspaceFirstName')?.trim();
       const lastName = window.localStorage.getItem('dcspaceLastName')?.trim();
       const fullName = [firstName, lastName].filter(Boolean).join(' ');
-      const savedFit = window.localStorage.getItem('dcspaceProfilePhotoFit');
+      const savedFit = window.localStorage.getItem(getProfilePhotoFitStorageKey());
 
       setUserName(fullName || 'User Name');
       const sessionPhoto = getProfilePhotoFromSession();
-      const cachedPhoto = window.localStorage.getItem(PROFILE_PHOTO_STORAGE_KEY) || '';
+      const cachedPhoto = window.localStorage.getItem(getProfilePhotoStorageKey()) || '';
       setProfilePhotoImage(sessionPhoto || cachedPhoto);
 
       if (savedFit) {

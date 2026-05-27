@@ -28,11 +28,35 @@ export async function GET(request) {
 
     const db = await getDb();
     const userId = authResult.user._id.toString();
-    const rows = await db
-      .collection("event_registrations")
-      .find({ userId })
-      .sort({ createdAt: -1 })
-      .toArray();
+    const { searchParams } = new URL(request.url);
+    const eventId = String(searchParams.get("eventId") || "").trim();
+    const query = {};
+
+    if (eventId) {
+      if (!ObjectId.isValid(eventId)) {
+        return withCors(NextResponse.json({ error: "Invalid eventId." }, { status: 400 }));
+      }
+
+      const event = await db.collection("events").findOne({ _id: new ObjectId(eventId) });
+      if (!event) {
+        return withCors(NextResponse.json({ error: "Event not found." }, { status: 404 }));
+      }
+
+      const userEmail = String(authResult.user.email || "").trim().toLowerCase();
+      const submitterEmail = String(event.submittedByEmail || "").trim().toLowerCase();
+      const role = String(authResult.user.organizationRole || "").toLowerCase();
+      const isOfficer = role.includes("officer");
+
+      if (submitterEmail && submitterEmail !== userEmail && !isOfficer) {
+        return withCors(NextResponse.json({ error: "You can only review registrations for your own events." }, { status: 403 }));
+      }
+
+      query.eventId = eventId;
+    } else {
+      query.userId = userId;
+    }
+
+    const rows = await db.collection("event_registrations").find(query).sort({ createdAt: -1 }).toArray();
 
     return withCors(
       NextResponse.json({ registrations: rows.map(toRegistrationResponse) }, { status: 200 }),
@@ -104,6 +128,14 @@ export async function POST(request) {
       userId,
       eventId,
       eventSnapshot: buildEventSnapshot(event),
+      userSnapshot: {
+        id: userId,
+        firstName: String(authResult.user.firstName || "").trim(),
+        lastName: String(authResult.user.lastName || "").trim(),
+        email: String(authResult.user.email || "").trim().toLowerCase(),
+        course: String(authResult.user.course || "").trim(),
+        organization: String(authResult.user.organizationPart || "").trim(),
+      },
       requirementFiles,
       status: "Registered",
       certificate: "Pending",

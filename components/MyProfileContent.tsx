@@ -14,10 +14,12 @@ import {
 } from '@/lib/attendance';
 import {
   getProfilePhotoFromSession,
+  getProfileCoverFitStorageKey,
+  getProfileCoverStorageKey,
+  getProfilePhotoFitStorageKey,
+  getProfilePhotoStorageKey,
   prepareCoverImageForStorage,
   prepareProfilePhotoForStorage,
-  PROFILE_COVER_STORAGE_KEY,
-  PROFILE_PHOTO_STORAGE_KEY,
   pruneOversizedProfileStorage,
   safeSetLocalStorage,
 } from '@/lib/profile-images';
@@ -29,6 +31,7 @@ import {
   saveProfilePhoto,
   userCanOrganize,
 } from '@/lib/user-data';
+import { readAuthSession } from '@/lib/user-api';
 
 const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
 
@@ -87,6 +90,28 @@ function isFacultyUser(user: ReturnType<typeof getCurrentAttendanceUser> | null)
   return values.some((value) => value?.toLowerCase().includes('faculty'));
 }
 
+function resolveProfileUser() {
+  const attendanceUser = getCurrentAttendanceUser();
+  const sessionUser = readAuthSession()?.user;
+
+  if (!sessionUser) {
+    return attendanceUser;
+  }
+
+  return {
+    ...attendanceUser,
+    firstName: attendanceUser.firstName || sessionUser.firstName || '',
+    lastName: attendanceUser.lastName || sessionUser.lastName || '',
+    studentEmail: attendanceUser.studentEmail || sessionUser.email || '',
+    studentNumber: attendanceUser.studentNumber || sessionUser.studentNumber || '',
+    rfidNumber: attendanceUser.rfidNumber || sessionUser.rfidNumber || '',
+    course: attendanceUser.course || sessionUser.course || '',
+    school: attendanceUser.school || sessionUser.school || '',
+    organizationPart: attendanceUser.organizationPart || sessionUser.organizationPart || '',
+    organizationRole: attendanceUser.organizationRole || sessionUser.organizationRole || '',
+  };
+}
+
 export function MyProfileContent() {
   const [user, setUser] = useState<ReturnType<typeof getCurrentAttendanceUser> | null>(null);
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
@@ -111,7 +136,7 @@ export function MyProfileContent() {
     const refreshProfileData = async () => {
       pruneOversizedProfileStorage();
       await refreshProfile();
-      const currentUser = getCurrentAttendanceUser();
+      const currentUser = resolveProfileUser();
       const canOrganize = userCanOrganize();
       const canViewOrganizedStatistics = canOrganize || isFacultyUser(currentUser);
 
@@ -130,13 +155,13 @@ export function MyProfileContent() {
       setOrganizedEvents(organized);
       const sessionPhoto = getProfilePhotoFromSession();
       const cachedPhoto =
-        typeof window !== 'undefined' ? window.localStorage.getItem(PROFILE_PHOTO_STORAGE_KEY) || '' : '';
+        typeof window !== 'undefined' ? window.localStorage.getItem(getProfilePhotoStorageKey()) || '' : '';
       setProfilePhotoImage(sessionPhoto || cachedPhoto);
-      setProfilePhotoFit(readImageFit('dcspaceProfilePhotoFit'));
+      setProfilePhotoFit(readImageFit(getProfilePhotoFitStorageKey()));
       setProfileCoverImage(
-        typeof window !== 'undefined' ? window.localStorage.getItem(PROFILE_COVER_STORAGE_KEY) || '' : '',
+        typeof window !== 'undefined' ? window.localStorage.getItem(getProfileCoverStorageKey()) || '' : '',
       );
-      setProfileCoverFit(readImageFit('dcspaceProfileCoverFit'));
+      setProfileCoverFit(readImageFit(getProfileCoverFitStorageKey()));
     };
 
     void refreshProfileData();
@@ -217,8 +242,8 @@ export function MyProfileContent() {
   const saveProfileCover = () => {
     if (!draftCoverImage) return;
 
-    safeSetLocalStorage(PROFILE_COVER_STORAGE_KEY, draftCoverImage);
-    safeSetLocalStorage('dcspaceProfileCoverFit', JSON.stringify(draftCoverFit));
+    safeSetLocalStorage(getProfileCoverStorageKey(), draftCoverImage);
+    safeSetLocalStorage(getProfileCoverFitStorageKey(), JSON.stringify(draftCoverFit));
     setProfileCoverImage(draftCoverImage);
     setProfileCoverFit(draftCoverFit);
     setDraftCoverImage('');

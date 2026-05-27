@@ -34,6 +34,7 @@ export async function GET(_request, { params }) {
       { status: 500 },
     ));
   }
+}
 
 export async function DELETE(request, { params }) {
   try {
@@ -78,5 +79,4 @@ export async function DELETE(request, { params }) {
       ),
     );
   }
-}
 }
