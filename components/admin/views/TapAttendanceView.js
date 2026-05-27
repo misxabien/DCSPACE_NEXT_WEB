@@ -12,6 +12,8 @@ const DEMO_STUDENTS = [
   { rfid: "2023004", studentId: "202389624", name: "Misxa Germino", course: "BSIT" },
 ];
 
+const DEMO_EVENT_ID = "mock-digital-campus-ugnayan";
+
 function formatClockTime(date) {
   return date.toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -43,6 +45,37 @@ function findStudentByRfid(scan) {
   return DEMO_STUDENTS.find((s) => s.rfid.toLowerCase() === normalized) ?? null;
 }
 
+function mapBackendStudent(user, fallbackRfid) {
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
+
+  return {
+    rfid: user?.rfidNumber || fallbackRfid,
+    studentId: user?.studentNumber || user?.id || "-",
+    name: user?.fullName || fullName || user?.email || "Registered Student",
+    course: user?.course || user?.organizationPart || "-",
+  };
+}
+
+async function recordBackendTap(scannedRfid, eventId, eventName) {
+  const response = await fetch("/api/rfid/tap", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      rfidNumber: scannedRfid,
+      eventId,
+      eventName,
+      eventDate: new Date().toISOString().slice(0, 10),
+    }),
+  });
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(data?.error || "RFID tap was not saved.");
+  }
+
+  return data;
+}
+
 function getInitials(name) {
   return name
     .split(" ")
@@ -60,7 +93,10 @@ function isEditableTarget(target) {
   );
 }
 
-export function TapAttendanceView({ eventName = "Digital Campus Ugnayan Seminar" }) {
+export function TapAttendanceView({
+  eventId = DEMO_EVENT_ID,
+  eventName = "Digital Campus Ugnayan Seminar",
+}) {
   const showStatus = useShowStatus();
   const [now, setNow] = useState(() => new Date());
   const [activeStudent, setActiveStudent] = useState(null);
@@ -76,7 +112,7 @@ export function TapAttendanceView({ eventName = "Digital Campus Ugnayan Seminar"
     return () => window.clearInterval(id);
   }, []);
 
-  const processScan = useCallback(
+  const processMockScan = useCallback(
     (scannedRfid) => {
       const student = findStudentByRfid(scannedRfid);
 
@@ -109,6 +145,32 @@ export function TapAttendanceView({ eventName = "Digital Campus Ugnayan Seminar"
     [showStatus],
   );
 
+  const processScan = useCallback(
+    async (scannedRfid) => {
+      const normalizedRfid = scannedRfid.trim();
+
+      try {
+        const data = await recordBackendTap(normalizedRfid, eventId, eventName);
+        const student = mapBackendStudent(data.user, normalizedRfid);
+        const record = data.record || {};
+
+        setActiveStudent(student);
+        setTapRecords((prev) => ({
+          ...prev,
+          [student.rfid]: {
+            tapIn: record.tapIn || "",
+            tapOut: record.tapOut || "",
+          },
+        }));
+        setStatusMessage(data.message || `${student.name} attendance recorded.`);
+        showStatus(data.tapType === "tap out" ? `Tap out: ${student.name}` : `Tap in: ${student.name}`);
+      } catch {
+        processMockScan(normalizedRfid);
+      }
+    },
+    [eventId, eventName, processMockScan, showStatus],
+  );
+
   useEffect(() => {
     scannerRef.current?.focus();
   }, []);
@@ -126,7 +188,7 @@ export function TapAttendanceView({ eventName = "Digital Campus Ugnayan Seminar"
       if (event.key === "Enter") {
         const scanned = scanBufferRef.current.trim();
         scanBufferRef.current = "";
-        if (scanned) processScan(scanned);
+        if (scanned) void processScan(scanned);
         return;
       }
 
@@ -150,7 +212,7 @@ export function TapAttendanceView({ eventName = "Digital Campus Ugnayan Seminar"
     const scanned = rfidInput.trim();
     setRfidInput("");
     if (!scanned) return;
-    processScan(scanned);
+    void processScan(scanned);
     scannerRef.current?.focus();
   };
 

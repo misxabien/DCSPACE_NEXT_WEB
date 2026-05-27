@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { requireAdmin } from '@/lib/admin/auth/roleGuard';
-import { updateEventTemplate } from '@/lib/admin/db/events';
+import {
+  getCertificateTemplateInfo,
+  saveCertificateTemplate,
+} from '@/lib/admin/db/certificates';
 import { toErrorResponse } from '@/lib/admin/errors';
-import { promises as fs } from 'fs';
-import path from 'path';
 
-const CERTIFICATES_DIR = path.join(process.cwd(), 'public', 'certificates');
 const MAX_FILE_SIZE = 5 * 1024 * 1024; /* 5 MB */
 const ALLOWED_TYPES = new Set(['image/png', 'image/jpeg', 'image/jpg']);
 
@@ -53,27 +53,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    /* Determine extension from MIME type. */
+    const trimmedEventId = eventId.trim();
     const ext = file.type === 'image/png' ? 'png' : 'jpg';
-    const fileName = `${eventId.trim()}.${ext}`;
-    const filePath = path.join(CERTIFICATES_DIR, fileName);
-
-    /* Ensure the certificates directory exists. */
-    await fs.mkdir(CERTIFICATES_DIR, { recursive: true });
-
-    /* Write the uploaded file to disk. */
+    const fallbackFileName = `${trimmedEventId}.${ext}`;
     const arrayBuffer = await file.arrayBuffer();
-    await fs.writeFile(filePath, Buffer.from(arrayBuffer));
-
-    /* Persist the template path on the event document. */
-    const templateUrl = `/certificates/${fileName}`;
-    await updateEventTemplate(eventId.trim(), filePath, templateUrl);
+    const savedTemplate = await saveCertificateTemplate(trimmedEventId, {
+      fileName: file.name || fallbackFileName,
+      contentType: file.type,
+      data: Buffer.from(arrayBuffer),
+    });
 
     return NextResponse.json(
       {
         success: true,
-        templateUrl,
-        fileName,
+        ...savedTemplate,
       },
       { status: 200 },
     );
@@ -98,33 +91,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    /* Check for a custom template on disk. */
-    const pngPath = path.join(CERTIFICATES_DIR, `${eventId}.png`);
-    const jpgPath = path.join(CERTIFICATES_DIR, `${eventId}.jpg`);
-
-    let customPath: string | null = null;
-    let customUrl: string | null = null;
-
-    try {
-      await fs.access(pngPath);
-      customPath = pngPath;
-      customUrl = `/certificates/${eventId}.png`;
-    } catch {
-      try {
-        await fs.access(jpgPath);
-        customPath = jpgPath;
-        customUrl = `/certificates/${eventId}.jpg`;
-      } catch {
-        /* No custom template found. */
-      }
-    }
+    const templateInfo = await getCertificateTemplateInfo(eventId);
 
     return NextResponse.json(
       {
-        eventId,
-        hasCustomTemplate: customPath !== null,
-        templateUrl: customUrl ?? '/certificates/default-template.png',
-        isDefault: customPath === null,
+        ...templateInfo,
       },
       { status: 200 },
     );

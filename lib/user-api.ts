@@ -138,6 +138,10 @@ export async function loginUser(email: string, password: string) {
   });
 }
 
+export async function createGoogleUserSession() {
+  return apiRequest<{ token: string; user: UserProfile; message: string }>("/api/auth/google-session");
+}
+
 export async function fetchProfile(token: string) {
   return apiRequest<{ profile: UserProfile }>("/api/profile", { token });
 }
@@ -159,6 +163,16 @@ export async function fetchEvents(search?: string, options: FetchEventsOptions =
 
 export async function fetchEventById(eventId: string) {
   return apiRequest<{ event: UserEvent }>(`/api/events/${encodeURIComponent(eventId)}`);
+}
+
+export async function registerForEvent(token: string, eventId: string) {
+  return apiRequest<{ message: string; eventId: string }>(
+    `/api/events/registrations/${encodeURIComponent(eventId)}`,
+    {
+      method: "POST",
+      token,
+    },
+  );
 }
 
 export async function submitOrganizedEvent(
@@ -241,6 +255,23 @@ export function saveAuthSession(token: string, user: UserProfile) {
     return;
   }
   window.localStorage.setItem(authStorageKey, JSON.stringify({ token, user }));
+}
+
+export function saveUserProfileDetails(user: UserProfile) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem("dcspaceFirstName", user.firstName || "");
+  window.localStorage.setItem("dcspaceLastName", user.lastName || "");
+  window.localStorage.setItem("dcspaceStudentNumber", user.studentNumber || "");
+  window.localStorage.setItem("dcspaceStudentEmail", user.email || "");
+  window.localStorage.setItem("dcspacePhotoUrl", user.photoUrl || "");
+  window.localStorage.setItem("dcspaceRfidNumber", user.rfidNumber || "");
+  window.localStorage.setItem("dcspaceCourse", user.course || "");
+  window.localStorage.setItem("dcspaceSchool", user.school || "");
+  window.localStorage.setItem("dcspaceOrganizationPart", user.organizationPart || "");
+  window.localStorage.setItem("dcspaceOrganizationRole", user.organizationRole || "");
 }
 
 export function clearAuthSession() {

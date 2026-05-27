@@ -48,8 +48,12 @@ const DEFAULT_TEMPLATE = path.join(
   'default-template.png',
 );
 
-async function resolveTemplateBytes(templatePath?: string | null) {
-  const resolved = templatePath ?? DEFAULT_TEMPLATE;
+async function resolveTemplateBytes(template?: string | Buffer | Uint8Array | null) {
+  if (template && typeof template !== 'string') {
+    return Buffer.from(template);
+  }
+
+  const resolved = template ?? DEFAULT_TEMPLATE;
 
   try {
     return await fs.readFile(resolved);
@@ -88,9 +92,9 @@ function isPng(bytes: Buffer) {
  */
 export async function generateCertificatePdf(
   data: CertificateData,
-  templatePath?: string | null,
+  template?: string | Buffer | Uint8Array | null,
 ): Promise<Uint8Array> {
-  const templateBytes = await resolveTemplateBytes(templatePath);
+  const templateBytes = await resolveTemplateBytes(template);
 
   /* Create a blank landscape-A4 PDF. */
   const pdfDoc = await PDFDocument.create();

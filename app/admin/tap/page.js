@@ -10,6 +10,10 @@ export default async function AdminTapPage({ searchParams }) {
     typeof params?.event === "string" && params.event.trim()
       ? decodeURIComponent(params.event.trim())
       : "Digital Campus Ugnayan Seminar";
+  const eventId =
+    typeof params?.eventId === "string" && params.eventId.trim()
+      ? params.eventId.trim()
+      : "mock-digital-campus-ugnayan";
 
-  return <TapAttendanceView eventName={eventName} />;
+  return <TapAttendanceView eventId={eventId} eventName={eventName} />;
 }

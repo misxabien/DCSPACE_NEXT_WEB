@@ -864,6 +864,217 @@
   filter: brightness(1.04);
 }
 
+.login-scope.forgot-scope {
+  --forgot-card: rgba(255, 255, 255, 0.76);
+  --forgot-border: rgba(255, 255, 255, 0.72);
+  --forgot-text: #1c1c1e;
+  --forgot-muted: rgba(60, 60, 67, 0.72);
+  --forgot-blue: #0a84ff;
+  --forgot-blue-deep: #2868d8;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(10, 132, 255, 0.35), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 90% 20%, rgba(94, 92, 230, 0.28), transparent 50%),
+    linear-gradient(165deg, #c5d8f5 0%, #a8c4f0 35%, #7eb3ff 70%, #5e9aff 100%);
+}
+
+.login-scope .forgot-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) minmax(360px, 520px);
+  align-items: stretch;
+  gap: clamp(28px, 5vw, 72px);
+  padding: clamp(24px, 5vw, 54px);
+}
+
+.login-scope .forgot-main,
+.login-scope .forgot-side {
+  display: grid;
+  align-items: center;
+}
+
+.login-scope .forgot-form-panel {
+  width: min(100%, 620px);
+  justify-self: end;
+  border: 1px solid var(--forgot-border);
+  border-radius: 24px;
+  background: var(--forgot-card);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  padding: clamp(28px, 5vw, 48px);
+}
+
+.login-scope .forgot-step {
+  display: grid;
+  gap: 22px;
+  animation: registerActionsIn 0.35s ease both;
+}
+
+.login-scope .forgot-step h1 {
+  margin: 0;
+  color: var(--forgot-text);
+  font-size: clamp(30px, 5vw, 46px);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.login-scope .forgot-copy {
+  margin: 0;
+  color: var(--forgot-muted);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.login-scope .forgot-field {
+  display: grid;
+  gap: 9px;
+  color: var(--forgot-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.login-scope .forgot-field input {
+  width: 100%;
+  height: 50px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--forgot-text);
+  font: inherit;
+  font-weight: 500;
+  outline: none;
+  padding: 0 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.login-scope .forgot-field input:focus {
+  border-color: rgba(10, 132, 255, 0.75);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.14);
+}
+
+.login-scope .forgot-password-field {
+  position: relative;
+}
+
+.login-scope .forgot-password-field input {
+  padding-right: 56px;
+}
+
+.login-scope .forgot-eye {
+  position: absolute;
+  right: 8px;
+  bottom: 5px;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.login-scope .forgot-eye img {
+  width: 24px;
+  height: 24px;
+}
+
+.login-scope .forgot-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.login-scope .forgot-back,
+.login-scope .forgot-primary,
+.login-scope .forgot-signin-btn {
+  min-height: 48px;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-scope .forgot-back {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.54);
+  color: var(--forgot-muted);
+  padding: 0 18px;
+}
+
+.login-scope .forgot-primary {
+  border: 0;
+  background: linear-gradient(135deg, var(--forgot-blue), var(--forgot-blue-deep));
+  color: #fff;
+  box-shadow: 0 12px 26px rgba(10, 132, 255, 0.22);
+  padding: 0 22px;
+}
+
+.login-scope .forgot-back:hover,
+.login-scope .forgot-primary:hover,
+.login-scope .forgot-signin-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.login-scope .forgot-side__content {
+  width: min(100%, 460px);
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  color: #fff;
+}
+
+.login-scope .forgot-side__logo {
+  width: min(390px, 76vw);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 18px rgba(43, 63, 108, 0.2));
+}
+
+.login-scope .forgot-side h2 {
+  margin: -18px 0 10px;
+  font-size: clamp(30px, 5vw, 48px);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.login-scope .forgot-side p {
+  margin: 0 0 18px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.login-scope .forgot-signin-btn {
+  border: 1px solid rgba(255, 255, 255, 0.54);
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 22px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.login-scope .forgot-signin-btn img {
+  width: 18px;
+  height: 18px;
+}
+
 @keyframes registerCardIn {
   from {
     opacity: 0.4;
@@ -937,6 +1148,49 @@
 
   .login-scope .forgot-form button {
     height: 54px;
+  }
+
+  .login-scope .forgot-shell {
+    grid-template-columns: 1fr;
+    padding: 22px 16px 28px;
+  }
+
+  .login-scope .forgot-main {
+    order: 2;
+  }
+
+  .login-scope .forgot-side {
+    order: 1;
+    align-items: end;
+  }
+
+  .login-scope .forgot-form-panel {
+    justify-self: stretch;
+    border-radius: 18px;
+    padding: 24px 18px;
+  }
+
+  .login-scope .forgot-step h1 {
+    font-size: 30px;
+  }
+
+  .login-scope .forgot-controls {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .login-scope .forgot-back,
+  .login-scope .forgot-primary {
+    width: 100%;
+  }
+
+  .login-scope .forgot-side__logo {
+    width: min(240px, 70vw);
+  }
+
+  .login-scope .forgot-side h2 {
+    margin-top: -14px;
+    font-size: 28px;
   }
 }
 

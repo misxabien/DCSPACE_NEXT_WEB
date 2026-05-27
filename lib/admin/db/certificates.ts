@@ -51,7 +51,17 @@ async function getUsersCollection() {
 
 async function getAttendanceCollection() {
   const db = await getDatabase();
-  return db.collection<any>('attendance');
+  return db.collection<any>('attendance_logs');
+}
+
+async function getCertificateTemplatesCollection() {
+  const db = await getDatabase();
+  return db.collection<any>('certificate_templates');
+}
+
+async function getEventRegistrationsCollection() {
+  const db = await getDatabase();
+  return db.collection<any>('event_registrations');
 }
 
 function toObjectId(id: string, label: string) {
@@ -141,8 +151,13 @@ function normalizeRegistrationStatus(user: any, attendance: any) {
   return (
     attendance.registrationStatus ??
     user.registrationStatus ??
-    (user.rfid ? 'Registered' : 'Not Registered')
+    (user.rfid ?? user.rfidNumber ? 'Registered' : 'Not Registered')
   );
+}
+
+function getUserDisplayName(user: any) {
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+  return user.name ?? user.fullName ?? fullName ?? user.email ?? '';
 }
 
 function mapEventSummary(event: any) {
@@ -167,20 +182,25 @@ function mapAttendeeRow(user: any, attendance: any) {
     attendance.updatedAt ?? user.updatedAt ?? attendance.createdAt ?? user.createdAt ?? null,
   );
   const userId = String(user._id);
+  const attendanceStatus = deriveAttendanceStatus(attendance);
 
   return {
     attendeeId: attendance?._id ? String(attendance._id) : userId,
     userId,
-    name: user.name ?? user.fullName ?? '',
+    name: getUserDisplayName(user),
     email: user.email ?? '',
-    id: String(user.studentId ?? user.idNumber ?? userId),
+    id: String(user.studentNumber ?? user.studentId ?? user.idNumber ?? userId),
     organization: user.organizationName ?? user.organization?.name ?? 'Unassigned',
-    rfid: user.rfid ?? null,
+    rfid: user.rfid ?? user.rfidNumber ?? null,
     status: normalizeRegistrationStatus(user, attendance),
-    attendanceStatus: attendance.attendanceStatus ?? 'Pending',
-    certificateStatus: attendance.certificateStatus ?? 'Pending',
+    attendanceStatus,
+    certificateStatus: attendance.certificateStatus ?? (attendanceStatus === 'Completed' ? 'Available' : 'Pending'),
     toggleActive: attendance.isActive ?? true,
     lastUpdated: timestamp?.relative ?? 'Just now',
+    tapIn: attendance.tapIn ?? attendance.attendance?.tapIn ?? '',
+    tapOut: attendance.tapOut ?? attendance.attendance?.tapOut ?? '',
+    canGenerate: attendanceStatus === 'Completed',
+    canDownload: Boolean(attendance.certificateId),
     timestamp,
   };
 }
@@ -207,13 +227,15 @@ export async function getAttendeesByEvent(eventId: string, search?: string | nul
     throw createAppError('ValidationError', 'eventId is required', 400);
   }
 
-  const [event, attendance, users] = await Promise.all([
+  const [event, attendance, users, registrations] = await Promise.all([
     findEventById(trimmedEventId),
     getAttendanceCollection(),
     getUsersCollection(),
+    getEventRegistrationsCollection(),
   ]);
 
   const eventObjectId = toObjectId(trimmedEventId, 'event');
+  const registrationRows = await registrations.find({ eventId: trimmedEventId }).toArray();
   const attendanceRows = await attendance
     .find({
       $or: [{ eventId: trimmedEventId }, { eventId: eventObjectId }],
@@ -224,6 +246,12 @@ export async function getAttendeesByEvent(eventId: string, search?: string | nul
   const participantIds = new Set<string>();
 
   for (const row of attendanceRows) {
+    if (row.userId) {
+      participantIds.add(String(row.userId));
+    }
+  }
+
+  for (const row of registrationRows) {
     if (row.userId) {
       participantIds.add(String(row.userId));
     }
@@ -270,6 +298,7 @@ export async function getAttendeesByEvent(eventId: string, search?: string | nul
       mapAttendeeRow(user, {
         _id: String(user._id),
         isActive: true,
+        registrationStatus: 'Registered',
         attendanceStatus: 'Pending',
         certificateStatus: 'Pending',
         updatedAt: user.updatedAt ?? user.createdAt ?? null,
@@ -387,6 +416,10 @@ export async function toggleAttendeeStatus(id: string, eventId: string, nextStat
 function formatTapTime(value: Date | string | null | undefined) {
   if (!value) return '00:00';
 
+  if (typeof value === 'string' && /am|pm|^\d{1,2}:\d{2}/i.test(value.trim())) {
+    return value.trim();
+  }
+
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return '00:00';
 
@@ -419,7 +452,7 @@ function mapCertAttendanceRecord(user: any, attendance: any) {
   const attendanceStatus = deriveAttendanceStatus(attendance);
 
   return {
-    studentNumber: String(user.studentId ?? user.idNumber ?? user._id),
+    studentNumber: String(user.studentNumber ?? user.studentId ?? user.idNumber ?? user._id),
     date: attendance.createdAt
       ? new Intl.DateTimeFormat('en-US', {
           month: 'long',
@@ -431,7 +464,7 @@ function mapCertAttendanceRecord(user: any, attendance: any) {
             : new Date(attendance.createdAt),
         )
       : 'N/A',
-    registration: user.rfid ? 'Registered' : 'Not Registered',
+    registration: user.rfid ?? user.rfidNumber ? 'Registered' : 'Not Registered',
     tapIn: formatTapTime(attendance.tapIn ?? attendance.attendance?.tapIn),
     tapOut: formatTapTime(attendance.tapOut ?? attendance.attendance?.tapOut),
     attendance: attendanceStatus,
@@ -456,13 +489,15 @@ export async function getCertAttendanceByEvent(
     throw createAppError('ValidationError', 'eventId is required', 400);
   }
 
-  const [event, attendance, users] = await Promise.all([
+  const [event, attendance, users, registrations] = await Promise.all([
     findEventById(trimmedEventId),
     getAttendanceCollection(),
     getUsersCollection(),
+    getEventRegistrationsCollection(),
   ]);
 
   const eventObjectId = toObjectId(trimmedEventId, 'event');
+  const registrationRows = await registrations.find({ eventId: trimmedEventId }).toArray();
   const attendanceRows = await attendance
     .find({
       $or: [{ eventId: trimmedEventId }, { eventId: eventObjectId }],
@@ -473,6 +508,10 @@ export async function getCertAttendanceByEvent(
   const participantIds = new Set<string>();
 
   for (const row of attendanceRows) {
+    if (row.userId) participantIds.add(String(row.userId));
+  }
+
+  for (const row of registrationRows) {
     if (row.userId) participantIds.add(String(row.userId));
   }
 
@@ -510,6 +549,28 @@ export async function getCertAttendanceByEvent(
     records.push(mapCertAttendanceRecord(user, row));
   }
 
+  for (const user of userRows) {
+    if (attendanceRows.some((row) => String(row.userId) === String(user._id))) {
+      continue;
+    }
+
+    if (
+      search &&
+      !String(user.studentNumber ?? user.studentId ?? user.idNumber ?? '')
+        .toLowerCase()
+        .includes(search.trim().toLowerCase())
+    ) {
+      continue;
+    }
+
+    records.push(
+      mapCertAttendanceRecord(user, {
+        createdAt: null,
+        attendanceStatus: 'Pending',
+      }),
+    );
+  }
+
   const start = event.startTime ?? event.startDate ?? event.eventDate ?? null;
   const end = event.endTime ?? event.endDate ?? null;
 
@@ -537,29 +598,121 @@ export async function getCertAttendanceByEvent(
 const CERTIFICATES_DIR = path.join(process.cwd(), 'public', 'certificates');
 const DEFAULT_TEMPLATE = path.join(CERTIFICATES_DIR, 'default-template.png');
 
+function templateDataToBuffer(value: any) {
+  if (Buffer.isBuffer(value)) {
+    return value;
+  }
+
+  if (value?.buffer) {
+    return Buffer.from(value.buffer);
+  }
+
+  return Buffer.from(value);
+}
+
 /**
- * Resolves the absolute file path to the certificate template for an event.
- * Checks for a custom upload first, then falls back to the default.
+ * Resolves the certificate template bytes for an event.
+ * Checks for a MongoDB-backed upload first, then falls back to the default.
  */
-export async function getEventTemplatePath(eventId: string): Promise<string> {
-  const pngPath = path.join(CERTIFICATES_DIR, `${eventId}.png`);
-  const jpgPath = path.join(CERTIFICATES_DIR, `${eventId}.jpg`);
+export async function getEventTemplateBytes(eventId: string): Promise<Buffer> {
+  const templates = await getCertificateTemplatesCollection();
+  const template = await templates.findOne({ eventId });
 
-  try {
-    await fs.access(pngPath);
-    return pngPath;
-  } catch {
-    /* not found — try jpg */
+  if (template?.data) {
+    return templateDataToBuffer(template.data);
   }
 
-  try {
-    await fs.access(jpgPath);
-    return jpgPath;
-  } catch {
-    /* not found — use default */
+  return fs.readFile(DEFAULT_TEMPLATE);
+}
+
+export async function saveCertificateTemplate(
+  eventId: string,
+  input: { fileName: string; contentType: string; data: Buffer },
+) {
+  const trimmedEventId = eventId?.trim();
+
+  if (!trimmedEventId) {
+    throw createAppError('ValidationError', 'eventId is required', 400);
   }
 
-  return DEFAULT_TEMPLATE;
+  await findEventById(trimmedEventId);
+
+  const now = new Date();
+  const templates = await getCertificateTemplatesCollection();
+  const existingTemplate = await templates.findOne({ eventId: trimmedEventId });
+
+  await templates.replaceOne(
+    { eventId: trimmedEventId },
+    {
+      eventId: trimmedEventId,
+      fileName: input.fileName,
+      contentType: input.contentType,
+      data: input.data,
+      storage: 'mongodb',
+      createdAt: existingTemplate?.createdAt ?? now,
+      updatedAt: now,
+    },
+    { upsert: true },
+  );
+
+  const events = await getEventsCollection();
+  await events.updateOne(
+    { _id: toObjectId(trimmedEventId, 'event') },
+    {
+      $set: {
+        eCertificateTemplate: input.fileName,
+        eCertificateTemplateStorage: 'mongodb',
+        updatedAt: now,
+      },
+    },
+  );
+
+  return {
+    eventId: trimmedEventId,
+    fileName: input.fileName,
+    contentType: input.contentType,
+    hasCustomTemplate: true,
+    isDefault: false,
+    storage: 'mongodb',
+    updatedAt: now.toISOString(),
+  };
+}
+
+export async function getCertificateTemplateInfo(eventId: string) {
+  const trimmedEventId = eventId?.trim();
+
+  if (!trimmedEventId) {
+    throw createAppError('ValidationError', 'eventId is required', 400);
+  }
+
+  await findEventById(trimmedEventId);
+
+  const templates = await getCertificateTemplatesCollection();
+  const template = await templates.findOne({ eventId: trimmedEventId });
+
+  if (template) {
+    return {
+      eventId: trimmedEventId,
+      hasCustomTemplate: true,
+      isDefault: false,
+      fileName: template.fileName ?? null,
+      contentType: template.contentType ?? null,
+      storage: template.storage ?? 'mongodb',
+      updatedAt: template.updatedAt?.toISOString?.() ?? null,
+    };
+  }
+
+  await fs.access(DEFAULT_TEMPLATE);
+
+  return {
+    eventId: trimmedEventId,
+    hasCustomTemplate: false,
+    isDefault: true,
+    fileName: path.basename(DEFAULT_TEMPLATE),
+    contentType: 'image/png',
+    storage: 'default-file',
+    updatedAt: null,
+  };
 }
 
 /* ------------------------------------------------------------------ */
@@ -623,7 +776,7 @@ export async function generateAndSaveCertificate(
   }
 
   /* Resolve template. */
-  const templatePath = await getEventTemplatePath(trimmedEventId);
+  const templateBytes = await getEventTemplateBytes(trimmedEventId);
 
   /* Build certificate data. */
   const now = new Date();
@@ -635,7 +788,7 @@ export async function generateAndSaveCertificate(
   const eventStart = event.startTime ?? event.startDate ?? event.eventDate ?? null;
 
   const certData: CertificateData = {
-    studentName: user.name ?? user.fullName ?? 'Student',
+    studentName: getUserDisplayName(user) || 'Student',
     eventTitle: event.title ?? event.name ?? 'Untitled Event',
     eventDate: formatDateLabel(eventStart),
     organizer: event.organizerName ?? event.organizer?.name ?? 'Unknown organizer',
@@ -644,7 +797,7 @@ export async function generateAndSaveCertificate(
   };
 
   /* Generate the PDF. */
-  const pdfBytes = await generateCertificatePdf(certData, templatePath);
+  const pdfBytes = await generateCertificatePdf(certData, templateBytes);
 
   /* Persist certificate metadata to the attendance record. */
   await attendance.updateOne(

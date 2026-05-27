@@ -125,14 +125,27 @@ export const authOptions: AuthOptions = {
 
       const email = (profile?.email ?? user.email ?? '').toLowerCase();
 
-      if (!email || !isAllowedGoogleEmail(email)) {
-        return false;
+      if (!email) {
+        return '/login?error=GoogleAccount';
       }
 
-      const registeredUser = await findUserByEmail(email);
-      return Boolean(registeredUser);
+      return true;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      if (account?.provider === 'google') {
+        const email = String(token.email || user?.email || '').toLowerCase();
+        const registeredUser = email ? await findUserByEmail(email) : null;
+
+        if (registeredUser) {
+          token.sub = registeredUser.id;
+          token.role = registeredUser.role;
+          token.organization = registeredUser.organization ?? null;
+          token.isActive = registeredUser.isActive ?? true;
+        }
+
+        return token as JWT;
+      }
+
       if (user) {
         token.role = user.role;
         token.organization = user.organization ?? null;
@@ -154,5 +167,6 @@ export const authOptions: AuthOptions = {
   },
   pages: {
     signIn: '/login',
+    error: '/login',
   },
 };
