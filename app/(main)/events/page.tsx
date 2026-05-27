@@ -3,7 +3,7 @@ import { SavedEventsPageContent } from '@/components/SavedEventsPageContent';
 import '@/styles/pages/saved-events.css';
 
 export const metadata: Metadata = {
-  title: 'My Saved Events - DC Space',
+  title: 'Browse Events',
 };
 
 export default function EventsPage() {
