@@ -46,13 +46,37 @@ const MOCK_EVENTS = [
   },
 ];
 
+const MOCK_STUDENT_NAMES = [
+  "Blue Jay",
+  "Mika Santos",
+  "Andre Reyes",
+  "Sam Cruz",
+  "Lara Mendoza",
+  "Nico Garcia",
+  "Janelle Flores",
+  "Paolo Rivera",
+  "Ela Dizon",
+  "Rafa Aquino",
+];
+
+function sanitizeFilePart(value) {
+  return String(value || "certificate")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64) || "certificate";
+}
+
 function buildMockRows(state) {
   const sourceRows = state === "post" ? postAttendanceRows : preAttendanceRows;
 
-  return sourceRows.map((row) => ({
+  return sourceRows.map((row, index) => ({
     isMock: true,
     id: row[0],
     userId: row[0],
+    name: MOCK_STUDENT_NAMES[index] ?? `Student ${row[0]}`,
+    studentNumber: row[0],
     status: row[2],
     tapIn: row[3] === "00:00" ? "" : row[3],
     tapOut: row[4] === "00:00" ? "" : row[4],
@@ -299,11 +323,6 @@ export function EcertView({ openAttendance = false }) {
   }
 
   async function downloadCertificate(row) {
-    if (row.isMock) {
-      showStatus("Sample e-certificate downloaded");
-      return;
-    }
-
     if (!selectedEvent?.id || !row.userId) {
       showStatus("Missing event or user data");
       return;
@@ -311,10 +330,22 @@ export function EcertView({ openAttendance = false }) {
 
     try {
       showStatus("Generating e-certificate");
+      const eventForCertificate = selectedEventDetail ?? selectedEvent;
+      const certificatePayload = row.isMock
+        ? {
+            mockup: true,
+            studentName: row.name ?? row.fullName ?? row.id ?? row.userId,
+            studentNumber: row.studentNumber ?? row.id ?? row.userId,
+            eventTitle: getEventTitle(eventForCertificate),
+            eventDate: eventForCertificate?.date ?? "TBA",
+            organizer: eventForCertificate?.organizer ?? "DC Space",
+            organization: eventForCertificate?.organization ?? "Domini Xode",
+          }
+        : { eventId: selectedEvent.id, userId: row.userId };
       const response = await fetch("/api/admin/certificates/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId: selectedEvent.id, userId: row.userId }),
+        body: JSON.stringify(certificatePayload),
       });
 
       if (!response.ok) {
@@ -326,7 +357,9 @@ export function EcertView({ openAttendance = false }) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `certificate-${row.id ?? row.userId}.pdf`;
+      link.download = `certificate-${sanitizeFilePart(row.name ?? row.id ?? row.userId)}-${sanitizeFilePart(
+        getEventTitle(selectedEventDetail ?? selectedEvent),
+      )}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -339,7 +372,7 @@ export function EcertView({ openAttendance = false }) {
             : currentRow,
         ),
       );
-      showStatus("E-certificate downloaded");
+      showStatus(row.isMock ? "Sample e-certificate downloaded" : "E-certificate downloaded");
     } catch (downloadError) {
       const message =
         downloadError instanceof Error ? downloadError.message : "Unable to generate certificate";
