@@ -128,7 +128,7 @@ function DashboardQuickActions({ className = '' }: { className?: string }) {
 }
 
 export function DashboardPageContent() {
-  const [firstName, setFirstName] = useState('User');
+  const [firstName, setFirstName] = useState('');
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
   const [hasQuickActionsAccess, setHasQuickActionsAccess] = useState(false);
   const [joinedFilter, setJoinedFilter] = useState<JoinedFilter>('all');
@@ -136,6 +136,7 @@ export function DashboardPageContent() {
   const [selectedJoinedDateRange, setSelectedJoinedDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -156,7 +157,9 @@ export function DashboardPageContent() {
       const profile = (await refreshProfile()) || session.user;
       const registered = await loadRegisteredEvents();
 
-      if (cancelled) return;
+      if (cancelled) {
+        return;
+      }
 
       setFirstName(profile.firstName || '');
       setRegisteredEvents(registered);
