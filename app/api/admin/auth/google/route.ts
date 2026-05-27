@@ -5,10 +5,10 @@ import {
   getGoogleSsoConfig,
   isAllowedGoogleEmail,
 } from "../../../../../lib/admin/auth/authOptions";
-import { findUserByEmail } from "../../../../../lib/admin/db/users";
+import { buildHardcodedAdminUser, getDevAdminConfig } from "../../../../../lib/admin/auth/devAdmin";
 
 /**
- * Handles Google SSO registration checks before creating an admin session payload.
+ * Handles Google SSO checks for hardcoded admin mode.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -22,22 +22,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const user = await findUserByEmail(body.email);
-
-    if (!user) {
-      return NextResponse.json(
-        {
-          error: "User is not registered",
-          redirectTo: "/register",
-          sso: getGoogleSsoConfig(typeof body.callbackUrl === "string" ? body.callbackUrl : undefined),
-        },
-        { status: 404 },
-      );
-    }
-
-    if (user.role !== "admin") {
+    const adminEmail = getDevAdminConfig().email;
+    if (body.email.trim().toLowerCase() !== adminEmail) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+
+    const user = buildHardcodedAdminUser();
 
     return NextResponse.json(
       {

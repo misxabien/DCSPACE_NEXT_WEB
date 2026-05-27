@@ -252,6 +252,60 @@ export async function registerUser(input: RegisterUserInput) {
   return mapUserRecord({ ...document, _id: result.insertedId });
 }
 
+export type UpsertAdminInput = {
+  email: string;
+  password: string;
+  name?: string;
+};
+
+/**
+ * Creates or updates an admin user with a hashed password (used for dev seeding).
+ */
+export async function upsertAdminUser(input: UpsertAdminInput) {
+  const users = await getUsersCollection();
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const now = new Date();
+  const existing = await users.findOne({ email: normalizedEmail });
+
+  if (existing) {
+    await users.updateOne(
+      { _id: existing._id },
+      {
+        $set: {
+          name: input.name ?? existing.name ?? "Admin",
+          passwordHash: hashPassword(input.password),
+          role: "admin",
+          isActive: true,
+          updatedAt: now,
+        },
+      },
+    );
+
+    const updated = await users.findOne({ _id: existing._id });
+    return mapAuthenticatedUser(updated);
+  }
+
+  const document = {
+    name: input.name ?? "Admin",
+    email: normalizedEmail,
+    passwordHash: hashPassword(input.password),
+    role: "admin",
+    organizationName: null,
+    studentId: null,
+    rfid: null,
+    registrationStatus: "Not Registered",
+    isActive: true,
+    authProviders: ["credentials"],
+    googleId: null,
+    assignedEventIds: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const result = await users.insertOne(document);
+  return mapAuthenticatedUser({ ...document, _id: result.insertedId });
+}
+
 /**
  * Logs in a registered user with email and password.
  */
