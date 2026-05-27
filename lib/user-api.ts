@@ -5,6 +5,11 @@ const requestTimeoutMs = 10000;
 function getCandidateBaseUrls() {
   const urls = new Set<string>();
 
+  // Same-origin proxy (see next.config.ts rewrites) — works when frontend runs on :3000.
+  if (typeof window !== "undefined") {
+    urls.add(`${window.location.origin}/api/user`);
+  }
+
   // Prefer explicit environment first.
   if (configuredBackendUrl) {
     urls.add(configuredBackendUrl);
@@ -85,6 +90,20 @@ type ApiOptions = {
   token?: string;
 };
 
+type AuthEndpoint = "send-verification" | "register" | "login";
+
+function resolveApiPath(path: string, baseUrl: string) {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  if (baseUrl.endsWith("/api/user")) {
+    return normalized.startsWith("/api/") ? normalized.replace(/^\/api/, "") : normalized;
+  }
+  return normalized.startsWith("/api/") ? normalized : `/api${normalized}`;
+}
+
+function resolveUserAuthPath(endpoint: AuthEndpoint, baseUrl: string) {
+  return resolveApiPath(`auth/${endpoint}`, baseUrl);
+}
+
 function extractErrorMessage(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") {
     return null;
@@ -92,29 +111,43 @@ function extractErrorMessage(payload: unknown): string | null {
 
   const errorValue = (payload as { error?: unknown }).error;
   if (typeof errorValue === "string" && errorValue.trim()) {
-    if (errorValue === "Failed to register account." || errorValue === "Failed to login.") {
-      const detailsValue = (payload as { details?: unknown }).details;
-      if (typeof detailsValue === "string" && detailsValue.trim()) {
-        return `${errorValue} ${detailsValue}`;
-      }
+    const detailsValue = (payload as { details?: unknown }).details;
+    const shouldAppendDetails =
+      typeof detailsValue === "string" &&
+      detailsValue.trim() &&
+      (errorValue === "Failed to register account." ||
+        errorValue === "Failed to login." ||
+        errorValue === "Failed to send verification email." ||
+        /email delivery is not configured|mail server|verification email/i.test(errorValue));
+
+    if (shouldAppendDetails && !errorValue.includes(detailsValue)) {
+      return `${errorValue} ${detailsValue}`;
     }
     return errorValue;
   }
   const detailsValue = (payload as { details?: unknown }).details;
-  return typeof detailsValue === "string" && detailsValue.trim() ? detailsValue : null;
+  if (typeof detailsValue === "string" && detailsValue.trim()) {
+    return detailsValue;
+  }
+  return null;
 }
 
-async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T> {
+async function apiRequest<T>(
+  path: string | ((baseUrl: string) => string),
+  options: ApiOptions = {},
+): Promise<T> {
   const candidateBaseUrls = getCandidateBaseUrls();
   let lastError: Error | null = null;
 
   for (const baseUrl of candidateBaseUrls) {
+    const rawPath = typeof path === "function" ? path(baseUrl) : path;
+    const resolvedPath = resolveApiPath(rawPath, baseUrl);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
     let response: Response;
 
     try {
-      response = await fetch(`${baseUrl}${path}`, {
+      response = await fetch(`${baseUrl}${resolvedPath}`, {
         method: options.method || "GET",
         headers: {
           "Content-Type": "application/json",
@@ -128,7 +161,7 @@ async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T>
         lastError = new Error("Request timed out. Please check the server and try again.");
       } else {
         lastError = new Error(
-          "Could not reach the server. Please make sure backend-user is running on port 4101 or 4001.",
+          "Could not reach the server. In a second terminal run: npm run dev:backend-user (port 4001), then try again.",
         );
       }
       continue;
@@ -140,6 +173,13 @@ async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T>
     if (contentType.includes("application/json")) {
       const json = await response.json();
       if (!response.ok) {
+        if (response.status >= 500) {
+          lastError = new Error(
+            extractErrorMessage(json) ||
+              "Could not reach the server. In a second terminal run: npm run dev:backend-user (port 4001), then try again.",
+          );
+          continue;
+        }
         throw new Error(extractErrorMessage(json) || "Request failed.");
       }
       return json as T;
@@ -147,13 +187,35 @@ async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T>
 
     const rawBody = await response.text();
     if (!response.ok) {
+      if (response.status >= 500) {
+        lastError = new Error(
+          "Could not reach the server. In a second terminal run: npm run dev:backend-user (port 4001), then try again.",
+        );
+        continue;
+      }
       throw new Error(`Request failed (${response.status}).`);
     }
 
     throw new Error(`Unexpected server response. ${rawBody ? "Please verify backend URL and API route setup." : ""}`.trim());
   }
 
-  throw lastError || new Error("Request failed.");
+  throw (
+    lastError ||
+    new Error(
+      "Could not reach the server. In a second terminal run: npm run dev:backend-user (port 4001), then try again.",
+    )
+  );
+}
+
+export async function sendRegistrationVerificationEmail(email: string) {
+  return apiRequest<{
+    message: string;
+    email: string;
+    expiresAt: string;
+  }>( (baseUrl) => resolveUserAuthPath("send-verification", baseUrl), {
+    method: "POST",
+    body: { email },
+  });
 }
 
 export async function registerUser(payload: {
@@ -169,24 +231,54 @@ export async function registerUser(payload: {
   school?: string;
   password: string;
   confirmPassword: string;
+  verificationCode: string;
   role?: "student" | "faculty";
   dataPrivacyAccepted: boolean;
 }) {
-  return apiRequest<{ token: string; user: UserProfile; message: string }>("/api/auth/register", {
-    method: "POST",
+  return apiRequest<{ token: string; user: UserProfile; message: string }>(
+    (baseUrl) => resolveUserAuthPath("register", baseUrl),
+    {
+      method: "POST",
+      body: payload,
+    },
+  );
+}
+
+export async function loginUser(email: string, password: string) {
+  return apiRequest<{ token: string; user: UserProfile; message: string }>(
+    (baseUrl) => resolveUserAuthPath("login", baseUrl),
+    {
+      method: "POST",
+      body: { email, password },
+    },
+  );
+}
+
+export async function fetchProfile(token: string) {
+  return apiRequest<{ profile: UserProfile }>("profile", { token });
+}
+
+export async function updateProfile(
+  token: string,
+  payload: Partial<
+    Pick<
+      UserProfile,
+      "firstName" | "lastName" | "photoUrl" | "course" | "school" | "organizationPart" | "organizationRole" | "rfidNumber"
+    >
+  >,
+) {
+  return apiRequest<{ profile: UserProfile; message: string }>("profile", {
+    method: "PATCH",
+    token,
     body: payload,
   });
 }
 
-export async function loginUser(email: string, password: string) {
-  return apiRequest<{ token: string; user: UserProfile; message: string }>("/api/auth/login", {
-    method: "POST",
-    body: { email, password },
+export async function deleteEvent(token: string, eventId: string) {
+  return apiRequest<{ message: string }>(`events/${encodeURIComponent(eventId)}`, {
+    method: "DELETE",
+    token,
   });
-}
-
-export async function fetchProfile(token: string) {
-  return apiRequest<{ profile: UserProfile }>("/api/profile", { token });
 }
 
 export async function fetchEvents(search?: string, options: FetchEventsOptions = {}) {
@@ -201,11 +293,80 @@ export async function fetchEvents(search?: string, options: FetchEventsOptions =
     params.set("submittedByEmail", options.submittedByEmail);
   }
   const query = params.toString() ? `?${params.toString()}` : "";
-  return apiRequest<{ events: UserEvent[] }>(`/api/events${query}`);
+  return apiRequest<{ events: UserEvent[] }>(`events${query}`);
 }
 
 export async function fetchEventById(eventId: string) {
-  return apiRequest<{ event: UserEvent }>(`/api/events/${encodeURIComponent(eventId)}`);
+  return apiRequest<{ event: UserEvent }>(`events/${encodeURIComponent(eventId)}`);
+}
+
+export async function fetchBookmarkedEvents(token: string) {
+  return apiRequest<{ events: UserEvent[] }>("events/bookmarks", { token });
+}
+
+export async function addEventBookmark(token: string, eventId: string) {
+  return apiRequest<{ message: string }>(`events/bookmarks/${encodeURIComponent(eventId)}`, {
+    method: "POST",
+    token,
+  });
+}
+
+export async function removeEventBookmark(token: string, eventId: string) {
+  return apiRequest<{ message: string }>(`events/bookmarks/${encodeURIComponent(eventId)}`, {
+    method: "DELETE",
+    token,
+  });
+}
+
+export async function fetchCertificates(token: string) {
+  return apiRequest<{
+    certificates: Array<{
+      id: string;
+      eventId: string;
+      eventName: string;
+      eventDate: string;
+      issuedAt?: string;
+      downloadUrl?: string;
+    }>;
+  }>("certificates", { token });
+}
+
+export type UserRegistration = {
+  id: string;
+  eventId: string;
+  status: string;
+  certificate: string;
+  requirementFiles: Array<{
+    requirementName?: string;
+    name: string;
+    type: string;
+    size: number;
+  }>;
+  createdAt: string;
+  event: UserEvent;
+};
+
+export async function fetchRegistrations(token: string) {
+  return apiRequest<{ registrations: UserRegistration[] }>("registrations", { token });
+}
+
+export async function registerForEvent(
+  token: string,
+  payload: {
+    eventId: string;
+    requirementFiles?: Array<{
+      requirementName?: string;
+      name: string;
+      type: string;
+      size: number;
+    }>;
+  },
+) {
+  return apiRequest<{ message: string; registration: UserRegistration }>("registrations", {
+    method: "POST",
+    token,
+    body: payload,
+  });
 }
 
 export async function submitOrganizedEvent(
@@ -227,7 +388,7 @@ export async function submitOrganizedEvent(
     posterImage?: string;
   },
 ) {
-  return apiRequest<{ event: UserEvent; message: string }>("/api/events", {
+  return apiRequest<{ event: UserEvent; message: string }>("events", {
     method: "POST",
     body: event,
   });
@@ -257,7 +418,7 @@ export async function recordAttendanceTap(
       taps?: Array<{ tapIn?: string; tapOut?: string }>;
       updatedAt: string;
     };
-  }>("/api/attendance", {
+  }>("attendance", {
     method: "POST",
     token,
     body: payload,
@@ -277,7 +438,7 @@ export async function fetchAttendanceLogs(token: string) {
       taps?: Array<{ tapIn?: string; tapOut?: string }>;
       updatedAt?: string;
     }>;
-  }>("/api/attendance", {
+  }>("attendance", {
     method: "GET",
     token,
   });

@@ -23,7 +23,15 @@ export function sanitizeUser(user) {
 }
 
 export function validateRegistrationBody(body) {
-  const requiredFields = ["firstName", "lastName", "studentNumber", "email", "password", "confirmPassword"];
+  const requiredFields = [
+    "firstName",
+    "lastName",
+    "studentNumber",
+    "email",
+    "password",
+    "confirmPassword",
+    "verificationCode",
+  ];
   for (const field of requiredFields) {
     if (!body[field] || String(body[field]).trim() === "") {
       return `${field} is required.`;
@@ -31,6 +39,9 @@ export function validateRegistrationBody(body) {
   }
   if (!isSchoolEmail(body.email)) {
     return "email must use your school domain (@sdca.edu.ph).";
+  }
+  if (!/^\d{6}$/.test(String(body.verificationCode).trim())) {
+    return "verificationCode must be a 6-digit number.";
   }
   if (String(body.password).length < 8) {
     return "password must be at least 8 characters.";

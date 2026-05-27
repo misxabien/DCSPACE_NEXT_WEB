@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import { sanitizeUser, validateRegistrationBody } from "@/lib/auth-helpers";
 import { hashPassword } from "@/lib/password";
 import { signAuthToken } from "@/lib/token";
+import { verifyRegistrationCode } from "@/lib/verification";
 
 function withCors(response) {
   response.headers.set("Access-Control-Allow-Origin", "*");
@@ -21,6 +22,11 @@ export async function POST(request) {
     const validationError = validateRegistrationBody(body);
     if (validationError) {
       return withCors(NextResponse.json({ error: validationError }, { status: 400 }));
+    }
+
+    const verification = await verifyRegistrationCode(body.email, body.verificationCode);
+    if (!verification.ok) {
+      return withCors(NextResponse.json({ error: verification.error }, { status: 400 }));
     }
 
     const rfidNumber = String(body.rfidNumber || "").trim();

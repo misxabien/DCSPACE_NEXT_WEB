@@ -1,0 +1,448 @@
+.saved-events-page {
+  min-height: calc(100vh - var(--topbar-height, 72px));
+  background: #efefef;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  padding: 24px 26px 44px;
+}
+
+.saved-events-page__header {
+  display: grid;
+  grid-template-columns: 1fr minmax(250px, 356px);
+  align-items: start;
+  gap: 28px;
+  margin-bottom: 42px;
+}
+
+.saved-events-page__copy h2 {
+  margin: 0 0 18px;
+  color: #000000;
+  font-family: var(--font-display), "Montserrat", sans-serif;
+  font-size: clamp(28px, 3.4vw, 42px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.saved-events-page__copy h2 span {
+  color: #000000;
+}
+
+.saved-events-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding-left: 5px;
+}
+
+.saved-events-page__filter-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.saved-events-page__filter {
+  min-width: 60px;
+  height: 20px;
+  border: 1px solid #c7cbd4;
+  border-radius: 999px;
+  background: #efefef;
+  color: #1d1d1d;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 9px;
+  font-weight: 400;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 14px;
+}
+
+.saved-events-page__filter img {
+  width: 8px;
+  height: 8px;
+  transition: transform 0.18s ease;
+}
+
+.saved-events-page__filter.is-open img {
+  transform: rotate(180deg);
+}
+
+.saved-events-page__filter:hover,
+.saved-events-page__filter.is-active {
+  border-color: #20a8f4;
+  color: #20a8f4;
+}
+
+.saved-events-date-picker {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 8;
+  width: 260px;
+  border: 1px solid #c7cbd4;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(31, 35, 60, 0.12);
+  overflow: hidden;
+  padding: 0;
+}
+
+.saved-events-date-picker label {
+  display: grid;
+  gap: 5px;
+  color: #1d1d1d;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.saved-events-date-picker input {
+  width: 100%;
+  height: 30px;
+  border: 1px solid #d7dae2;
+  border-radius: 6px;
+  color: #1d1d1d;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 11px;
+  padding: 0 8px;
+}
+
+.saved-events-date-picker__clear {
+  height: 26px;
+  border: 1px solid #d7dae2;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #5b6378;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.saved-events-page__search {
+  height: 32px;
+  border: 1px solid #cfd2d8;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #ffffff;
+  margin-top: 7px;
+  padding: 0 13px;
+}
+
+.saved-events-page__search img {
+  width: 10px;
+  height: 10px;
+}
+
+.saved-events-page__search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #000000;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 8px;
+}
+
+.saved-events-page__search input::placeholder {
+  color: #000000;
+}
+
+.saved-events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: clamp(14px, 1.4vw, 20px);
+}
+
+.saved-events-grid:has(> :only-child) {
+  grid-template-columns: minmax(min(100%, 340px), min(100%, 420px));
+}
+
+.saved-event-card {
+  position: relative;
+  min-height: 250px;
+  overflow: hidden;
+  border: 1px solid #8d8d8d;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 3px 4px 2px rgba(0, 0, 0, 0.22);
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.saved-event-card:hover,
+.saved-event-card:focus-within {
+  border-color: #b9975e;
+  background: #f5d29d;
+}
+
+.saved-event-card__save {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.saved-event-card__bookmark-outline,
+.saved-event-card__bookmark-fill {
+  grid-area: 1 / 1;
+  width: 30px;
+  height: 30px;
+  display: block;
+  background: #ffc107;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
+
+.saved-event-card__bookmark-outline {
+  mask-image: url("/assets/Bookmark-notfilled.svg");
+  -webkit-mask-image: url("/assets/Bookmark-notfilled.svg");
+  opacity: 0;
+}
+
+.saved-event-card__bookmark-fill {
+  mask-image: url("/assets/bookmark-fill.svg");
+  -webkit-mask-image: url("/assets/bookmark-fill.svg");
+  opacity: 1;
+}
+
+.saved-event-card__link {
+  min-height: 250px;
+  display: grid;
+  grid-template-rows: 150px 1fr;
+  color: #000000;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  text-decoration: none;
+  padding: 0;
+}
+
+.saved-event-card__media {
+  position: relative;
+  min-height: 150px;
+  display: block;
+  background: transparent;
+  overflow: hidden;
+}
+
+.saved-event-card__media img {
+  object-fit: cover;
+}
+
+.saved-event-card__content {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: start;
+  gap: 22px;
+  padding: 18px 34px 30px 30px;
+}
+
+.saved-event-card__date {
+  display: grid;
+  justify-items: center;
+  align-self: start;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  line-height: 0.95;
+  padding-top: 1px;
+}
+
+.saved-event-card__date span {
+  color: #000000;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.saved-event-card__date strong {
+  color: #19a7ef;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 0.9;
+}
+
+.saved-event-card__details {
+  display: grid;
+  gap: 0;
+  align-self: start;
+  color: #000000;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.08;
+}
+
+.saved-event-card__details strong {
+  color: #000000;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.05;
+  margin-bottom: 14px;
+}
+
+.saved-event-card__venue {
+  color: #8ab6ff;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 7px;
+}
+
+.saved-event-card__time {
+  color: #000000;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.saved-event-card:hover .saved-event-card__date span,
+.saved-event-card:hover .saved-event-card__details,
+.saved-event-card:hover .saved-event-card__details strong,
+.saved-event-card:hover .saved-event-card__time,
+.saved-event-card:focus-within .saved-event-card__date span,
+.saved-event-card:focus-within .saved-event-card__details,
+.saved-event-card:focus-within .saved-event-card__details strong,
+.saved-event-card:focus-within .saved-event-card__time {
+  color: #ffffff;
+}
+
+.saved-event-card:hover .saved-event-card__date strong,
+.saved-event-card:hover .saved-event-card__venue,
+.saved-event-card:focus-within .saved-event-card__date strong,
+.saved-event-card:focus-within .saved-event-card__venue {
+  color: #448aff;
+}
+
+.saved-events-empty {
+  min-height: 360px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  color: #7e7d77;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  text-align: center;
+}
+
+.saved-events-empty h3 {
+  margin: 0 0 12px;
+  font-family: var(--font-display), "Montserrat", sans-serif;
+  font-size: 27px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.saved-events-empty p {
+  margin: 0 0 24px;
+  font-size: 17px;
+  font-weight: 400;
+}
+
+.saved-events-empty a {
+  min-width: 132px;
+  height: 28px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #8ab6ff;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (max-width: 1100px) {
+  .saved-events-page__header {
+    grid-template-columns: 1fr;
+    margin-bottom: 36px;
+  }
+
+  .saved-events-page__copy h2 {
+    font-size: clamp(26px, 4.6vw, 36px);
+    line-height: 1.05;
+    letter-spacing: 0;
+  }
+
+  .saved-events-page__search {
+    max-width: 360px;
+  }
+
+  .saved-events-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: 16px;
+  }
+
+  .saved-events-grid:has(> :only-child) {
+    grid-template-columns: minmax(min(100%, 320px), min(100%, 420px));
+  }
+}
+
+@media (max-width: 700px) {
+  .saved-events-page {
+    min-height: calc(100vh - var(--mobile-topbar-height, 56px));
+    padding: clamp(14px, 4vw, 20px) clamp(16px, 5vw, 18px) 38px;
+  }
+
+  .saved-events-page__header {
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+
+  .saved-events-page__copy h2 {
+    font-size: clamp(24px, 8.2vw, 32px);
+    line-height: 1.05;
+    letter-spacing: 0;
+    margin-bottom: 14px;
+  }
+
+  .saved-events-page__filters {
+    position: relative;
+    gap: 8px;
+    padding-left: 0;
+  }
+
+  .saved-events-page__filter {
+    min-width: 52px;
+    padding-inline: 11px;
+  }
+
+  .saved-events-page__filter-wrap:has(.saved-events-date-picker) {
+    position: static;
+  }
+
+  .saved-events-date-picker {
+    left: 50%;
+    right: 0;
+    top: calc(100% + 8px);
+    transform: translateX(-50%);
+    width: min(260px, calc(100vw - 32px));
+  }
+
+  .saved-events-page__search {
+    width: 100%;
+    max-width: none;
+    margin-top: 0;
+  }
+
+  .saved-events-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+@media (max-width: 380px) {
+  .saved-events-page__copy h2 {
+    font-size: clamp(21px, 7.4vw, 28px);
+  }
+}

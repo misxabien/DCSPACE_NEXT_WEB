@@ -38,7 +38,7 @@ export async function POST(request) {
   try {
     const authResult = await requireAuth(request);
     if (authResult.error) {
-      return withCors(NextResponse.json({ error: authResult.error }, { status: authResult.status }));
+      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
     const body = await request.json();
@@ -49,13 +49,13 @@ export async function POST(request) {
     const userRfid = String(authResult.user?.rfidNumber || "").replace(/\s+/g, "").toLowerCase();
 
     if (!eventId) {
-      return withCors(NextResponse.json({ error: "eventId is required." }, { status: 400 }));
+      return NextResponse.json({ error: "eventId is required." }, { status: 400 });
     }
     if (!scannedRfid) {
-      return withCors(NextResponse.json({ error: "rfidNumber is required." }, { status: 400 }));
+      return NextResponse.json({ error: "rfidNumber is required." }, { status: 400 });
     }
     if (!userRfid || scannedRfid !== userRfid) {
-      return withCors(NextResponse.json({ error: "RFID card does not match the signed-in account." }, { status: 400 }));
+      return NextResponse.json({ error: "RFID card does not match the signed-in account." }, { status: 400 });
     }
 
     const db = await getDb();
@@ -74,12 +74,12 @@ export async function POST(request) {
         existingRecord?.taps?.length && existingRecord.taps[existingRecord.taps.length - 1]?.tapOut
           ? "tap out"
           : "tap in";
-      return withCors(NextResponse.json({
+      return NextResponse.json({
         message: "Duplicate RFID scan ignored.",
         tapType: duplicateTapType,
         currentTime,
         record: existingRecord,
-      }, { status: 200 }));
+      }, { status: 200 });
     }
     const taps = Array.isArray(existingRecord?.taps)
       ? [...existingRecord.taps]
@@ -116,6 +116,24 @@ export async function POST(request) {
       { userId, eventId },
       { $set: nextRecord },
       { upsert: true },
+    );
+
+    return NextResponse.json(
+      {
+        message: `${tapType === "tap in" ? "Tap in" : "Tap out"} recorded.`,
+        tapType,
+        currentTime,
+        record: nextRecord,
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: "Failed to record attendance.",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
     );
   }
 }

@@ -5,12 +5,14 @@
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 4001 --webpack",
     "build": "next build",
-    "start": "next start -H 0.0.0.0 -p 4001"
+    "start": "next start -H 0.0.0.0 -p 4001",
+    "check:email": "node scripts/check-email-config.mjs"
   },
   "dependencies": {
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^7.1.1",
     "next": "16.2.4",
+    "nodemailer": "^7.0.13",
     "react": "19.2.0",
     "react-dom": "19.2.0"
   }
