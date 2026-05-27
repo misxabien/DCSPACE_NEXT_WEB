@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RFID Mockup System</title>
+  <style>
+    :root {
+      --bg: #8eb1eb;
+      --panel: #f1ede3;
+      --line: #b9a277;
+      --text: #6d5630;
+      --muted: #8e815f;
+      --blue: #89a9dd;
+      --logo: #5f4dcf;
+      --ok: #2e5f18;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: linear-gradient(180deg, #a6bee5 0%, var(--bg) 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .app {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--panel);
+      border-radius: 16px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+      overflow: hidden;
+      border: 1px solid #d9c8a1;
+    }
+    .topbar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #d7c49f;
+      background: #f8f4ea;
+    }
+    .brand-logo {
+      width: 105px;
+      max-width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+    }
+    .panel {
+      display: block;
+      padding: 16px;
+    }
+    .clock-card {
+      background: var(--blue);
+      color: #fff3d6;
+      text-align: center;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    #timeNow {
+      font-size: 52px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    #dateNow {
+      font-size: 30px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+    .student-wrap {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .photo-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .photo {
+      width: 220px;
+      height: 220px;
+      object-fit: cover;
+      border: 1px solid #bfa779;
+      border-radius: 6px;
+      background: #ddd;
+      display: block;
+    }
+    .student-no {
+      margin-top: 8px;
+      width: 100%;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #b79d74;
+      border-radius: 8px;
+      background: #f8f5ef;
+      color: #7c5d2e;
+      font-size: 26px;
+      font-weight: 800;
+    }
+    .student-meta {
+      width: 100%;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid #b79d74;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f7f4ee;
+    }
+    th, td {
+      border-bottom: 1px solid #c2ab82;
+      padding: 10px;
+      text-align: center;
+      font-size: 22px;
+      color: var(--text);
+    }
+    th { font-weight: 700; }
+    td { font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
+    .tap-status {
+      margin-top: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ok);
+    }
+    .extra-info {
+      margin-top: 10px;
+      border: 1px solid #c2ab82;
+      border-radius: 8px;
+      background: #f8f5ef;
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+      font-size: 14px;
+      color: #6d5630;
+    }
+    .extra-info span {
+      font-weight: 700;
+    }
+    .small-note {
+      margin-top: 8px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    @media (max-width: 780px) {
+      .student-wrap {
+        grid-template-columns: 1fr;
+      }
+      .photo {
+        width: 100%;
+        max-width: 220px;
+      }
+      #timeNow { font-size: 36px; }
+      #dateNow { font-size: 22px; }
+      th, td { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <img class="brand-logo" src="/assets/logo-dc-space.png" alt="DC Space logo" />
+    </div>
+
+    <section class="panel active" id="attendancePanel">
+      <div class="clock-card">
+        <div id="timeNow">--:--:-- --</div>
+        <div id="dateNow">---</div>
+      </div>
+
+      <div class="student-wrap">
+        <div class="photo-block">
+          <img class="photo" id="studentPhoto" alt="Student Photo" src="https://via.placeholder.com/220x220?text=No+Photo" />
+          <div class="student-no" id="studentNumberBox">No Student</div>
+        </div>
+        <div class="student-meta">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Course</th>
+                <th>Tap in</th>
+                <th>Tap out</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td id="studentNameCell">-</td>
+                <td id="studentCourseCell">-</td>
+                <td id="tapInCell">-</td>
+                <td id="tapOutCell">-</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="extra-info">
+            <div><span>Email:</span> <span id="studentEmailText">-</span></div>
+            <div><span>RFID:</span> <span id="studentRfidText">-</span></div>
+            <div><span>School:</span> <span id="studentSchoolText">-</span></div>
+            <div><span>Organization:</span> <span id="studentOrgText">-</span></div>
+            <div><span>Role:</span> <span id="studentRoleText">-</span></div>
+          </div>
+          <div class="tap-status" id="attendanceStatus">Tap a card to load student details.</div>
+        </div>
+      </div>
+      <div class="small-note">When card is scanned: first scan = Tap In, next scan = Tap Out.</div>
+    </section>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:4001";
+    const FALLBACK_EVENT_ID = "rfid-mockup-event";
+    const FALLBACK_EVENT_NAME = "RFID Attendance";
+
+    const attendancePanel = document.getElementById("attendancePanel");
+    const attendanceStatus = document.getElementById("attendanceStatus");
+
+    const studentPhoto = document.getElementById("studentPhoto");
+    const studentNumberBox = document.getElementById("studentNumberBox");
+    const studentNameCell = document.getElementById("studentNameCell");
+    const studentCourseCell = document.getElementById("studentCourseCell");
+    const tapInCell = document.getElementById("tapInCell");
+    const tapOutCell = document.getElementById("tapOutCell");
+    const studentEmailText = document.getElementById("studentEmailText");
+    const studentRfidText = document.getElementById("studentRfidText");
+    const studentSchoolText = document.getElementById("studentSchoolText");
+    const studentOrgText = document.getElementById("studentOrgText");
+    const studentRoleText = document.getElementById("studentRoleText");
+
+    let scanBuffer = "";
+    let lastKeyTime = 0;
+
+    function readRegisteredEvents() {
+      const ownerEmail = String(localStorage.getItem("dcspaceStudentEmail") || "").trim().toLowerCase();
+      try {
+        const first = JSON.parse(localStorage.getItem("dcspace_registered_events") || "[]");
+        if (Array.isArray(first) && first.length) {
+          return first.filter((event) => {
+            const eventOwner = String(event?.ownerEmail || "").trim().toLowerCase();
+            return !ownerEmail || !eventOwner || eventOwner === ownerEmail;
+          });
+        }
+      } catch {}
+      try {
+        const second = JSON.parse(localStorage.getItem("dcspaceRegisteredEvents") || "[]");
+        if (Array.isArray(second)) {
+          return second.filter((event) => {
+            const eventOwner = String(event?.ownerEmail || "").trim().toLowerCase();
+            return !ownerEmail || !eventOwner || eventOwner === ownerEmail;
+          });
+        }
+      } catch {}
+      return [];
+    }
+
+    function normalizeKey(value) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "event";
+    }
+
+    function getStoredEventId(storedEvent) {
+      const explicitId = String(storedEvent?.id || "").trim();
+      if (explicitId) return explicitId;
+      const composite = [
+        storedEvent?.name,
+        storedEvent?.month,
+        storedEvent?.day,
+        storedEvent?.year,
+        storedEvent?.dateTime,
+      ].filter(Boolean).join("|");
+      return normalizeKey(composite);
+    }
+
+    function buildEventDateFromStoredEvent(storedEvent) {
+      const month = String(storedEvent?.month || "").trim();
+      const day = String(storedEvent?.day || "").trim();
+      const year = String(storedEvent?.year || "").trim();
+      if (!month || !day || !year) {
+        return new Date().toISOString().slice(0, 10);
+      }
+      const parsed = new Date(`${month} ${day}, ${year}`);
+      if (Number.isNaN(parsed.getTime())) {
+        return new Date().toISOString().slice(0, 10);
+      }
+      return parsed.toISOString().slice(0, 10);
+    }
+
+    function getActiveEventContext() {
+      const selectedEventId = String(localStorage.getItem("dcspaceSelectedAttendanceEventId") || "").trim();
+      const events = readRegisteredEvents();
+      const selectedEvent =
+        events.find((event) => getStoredEventId(event) === selectedEventId) ||
+        events[0] ||
+        null;
+      const resolvedEventId = selectedEventId || (selectedEvent ? getStoredEventId(selectedEvent) : "");
+
+      return {
+        eventId: resolvedEventId || FALLBACK_EVENT_ID,
+        eventName: String(selectedEvent?.name || "").trim() || FALLBACK_EVENT_NAME,
+        eventDate: buildEventDateFromStoredEvent(selectedEvent),
+      };
+    }
+
+    function getAuthToken() {
+      try {
+        const raw = localStorage.getItem("dcspace_auth");
+        if (!raw) return "";
+        const parsed = JSON.parse(raw);
+        return String(parsed?.token || "").trim();
+      } catch {
+        return "";
+      }
+    }
+
+    function renderStudent(user, record) {
+      const fullName = user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim();
+      studentPhoto.src = user.photoUrl || "https://via.placeholder.com/220x220?text=No+Photo";
+      studentNumberBox.textContent = user.studentNumber || "-";
+      studentNameCell.textContent = fullName || "-";
+      studentCourseCell.textContent = user.course || "-";
+      tapInCell.textContent = record?.tapIn || "-";
+      tapOutCell.textContent = record?.tapOut || "-";
+      studentEmailText.textContent = user.email || "-";
+      studentRfidText.textContent = user.rfidNumber || "-";
+      studentSchoolText.textContent = user.school || "-";
+      studentOrgText.textContent = user.organizationPart || "-";
+      studentRoleText.textContent = user.organizationRole || "-";
+    }
+
+    async function identifyRfid(rfidTag) {
+      const response = await fetch(`${API_BASE}/api/rfid/identify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rfidNumber: rfidTag }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || "RFID identify failed.");
+      }
+      return payload.user;
+    }
+
+    async function tapRfid(rfidTag) {
+      const activeEvent = getActiveEventContext();
+      const requestBody = {
+        rfidNumber: rfidTag,
+        eventId: activeEvent.eventId,
+        eventName: activeEvent.eventName,
+        eventDate: activeEvent.eventDate,
+      };
+      const token = getAuthToken();
+
+      if (token) {
+        const attendanceResponse = await fetch(`${API_BASE}/api/attendance`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify(requestBody),
+        });
+        const attendancePayload = await attendanceResponse.json();
+        if (!attendanceResponse.ok) {
+          throw new Error(attendancePayload.error || "Attendance tap failed.");
+        }
+        return attendancePayload;
+      }
+
+      // Fallback for kiosk usage when there is no logged-in web session.
+      const rfidResponse = await fetch(`${API_BASE}/api/rfid/tap`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+      const rfidPayload = await rfidResponse.json();
+      if (!rfidResponse.ok) {
+        throw new Error(rfidPayload.error || "RFID tap failed.");
+      }
+      return rfidPayload;
+    }
+
+    async function processAttendanceScan(rfidTag) {
+      attendanceStatus.textContent = `Reading RFID ${rfidTag}...`;
+      try {
+        const user = await identifyRfid(rfidTag);
+        const tapResult = await tapRfid(rfidTag);
+        renderStudent(user, tapResult.record);
+        attendanceStatus.textContent = `RFID Attendance ${tapResult.tapType} recorded.`;
+      } catch (error) {
+        attendanceStatus.textContent = error instanceof Error
+          ? error.message
+          : "Cannot connect to backend server.";
+      }
+    }
+
+    function handleScannedRfid(rfidTag) {
+      if (!rfidTag) return;
+      processAttendanceScan(rfidTag);
+    }
+
+    document.addEventListener("keydown", (event) => {
+      const active = document.activeElement;
+      const isInputFocused = active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.tagName === "SELECT");
+      if (isInputFocused) return;
+
+      const now = Date.now();
+      if (now - lastKeyTime > 180) scanBuffer = "";
+      lastKeyTime = now;
+
+      if (event.key === "Enter") {
+        handleScannedRfid(scanBuffer.trim());
+        scanBuffer = "";
+        event.preventDefault();
+        return;
+      }
+      if (event.key.length === 1) {
+        scanBuffer += event.key;
+      }
+      clearTimeout(window.__scanTimer);
+      window.__scanTimer = setTimeout(() => {
+        if (scanBuffer.length >= 6) {
+          handleScannedRfid(scanBuffer.trim());
+          scanBuffer = "";
+        }
+      }, 70);
+    });
+
+    function tickClock() {
+      const d = new Date();
+      document.getElementById("timeNow").textContent = d.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+      document.getElementById("dateNow").textContent = d.toLocaleDateString([], {
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+      });
+    }
+    tickClock();
+    setInterval(tickClock, 1000);
+
+    attendancePanel.classList.add("active");
+  </script>
+</body>
+</html>
