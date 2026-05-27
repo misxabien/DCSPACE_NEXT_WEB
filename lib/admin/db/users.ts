@@ -127,21 +127,33 @@ function mapAuthenticatedUser(user: any) {
   };
 }
 
+function splitName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const firstName = parts[0] ?? '';
+  const lastName = parts.length > 1 ? parts.slice(1).join(' ') : '';
+
+  return { firstName, lastName };
+}
+
 function mapUserRecord(user: any) {
   const timestamp = formatTimestamp(user.updatedAt ?? user.createdAt ?? null);
-  const registrationStatus = user.registrationStatus ?? (user.rfid ? 'Registered' : 'Not Registered');
+  const rfid = user.rfid ?? user.rfidNumber ?? null;
+  const registrationStatus = user.registrationStatus ?? (rfid ? 'Registered' : 'Not Registered');
 
   return {
     id: String(user._id),
-    name: user.name ?? user.fullName ?? '',
+    name: user.name ?? user.fullName ?? [user.firstName, user.lastName].filter(Boolean).join(' ') ?? '',
     email: user.email ?? '',
     role: user.role ?? 'student',
-    organization: user.organizationName ?? user.organization?.name ?? 'Unassigned',
-    rfid: user.rfid ?? null,
+    organization: user.organizationName ?? user.organizationPart ?? user.organization?.name ?? 'Unassigned',
+    rfid,
+    rfidNumber: rfid,
     registrationStatus,
     isActive: user.isActive ?? true,
     status: registrationStatus,
-    studentId: user.studentId ?? user.idNumber ?? null,
+    studentId: user.studentId ?? user.studentNumber ?? user.idNumber ?? null,
+    studentNumber: user.studentNumber ?? user.studentId ?? user.idNumber ?? null,
+    course: user.course ?? '',
     assignedEventIds: Array.isArray(user.assignedEventIds) ? user.assignedEventIds : [],
     timestamp,
     actions: {
@@ -172,6 +184,7 @@ export type RegisterUserInput = {
   organization?: string | null;
   studentId?: string | null;
   rfid?: string | null;
+  course?: string | null;
   googleId?: string | null;
 };
 
@@ -197,6 +210,7 @@ export type CreateUserInput = {
   organization?: string | null;
   studentId?: string | null;
   rfid?: string | null;
+  course?: string | null;
   isActive?: boolean;
   password?: string;
 };
@@ -208,6 +222,7 @@ export type UpdateUserInput = Partial<{
   organization: string | null;
   studentId: string | null;
   rfid: string | null;
+  course: string | null;
   isActive: boolean;
   registrationStatus: string;
 }>;
@@ -230,14 +245,22 @@ export async function registerUser(input: RegisterUserInput) {
   }
 
   const now = new Date();
+  const { firstName, lastName } = splitName(input.name);
   const document = {
     name: input.name,
+    firstName,
+    lastName,
+    fullName: input.name,
     email: normalizedEmail,
     passwordHash: hashPassword(input.password),
     role: (input.role ?? 'student').toLowerCase(),
     organizationName: input.organization ?? null,
+    organizationPart: input.organization ?? null,
     studentId: input.studentId ?? null,
+    studentNumber: input.studentId ?? null,
     rfid: input.rfid ?? null,
+    rfidNumber: input.rfid ?? null,
+    course: input.course ?? null,
     registrationStatus: input.rfid ? 'Registered' : 'Not Registered',
     isActive: true,
     authProviders: input.googleId ? ['credentials', 'google'] : ['credentials'],
@@ -372,6 +395,9 @@ export async function getUsers(params: GetUsersParams) {
         { studentId: { $regex: search, $options: 'i' } },
         { idNumber: { $regex: search, $options: 'i' } },
         { rfid: { $regex: search, $options: 'i' } },
+        { studentNumber: { $regex: search, $options: 'i' } },
+        { rfidNumber: { $regex: search, $options: 'i' } },
+        { course: { $regex: search, $options: 'i' } },
       ],
     });
   }
@@ -443,6 +469,7 @@ export async function createUser(input: CreateUserInput) {
     organization: input.organization ?? null,
     studentId: input.studentId ?? null,
     rfid: input.rfid ?? null,
+    course: input.course ?? null,
   });
 
   if (input.isActive === false) {
@@ -468,12 +495,28 @@ export async function updateUser(id: string, input: UpdateUserInput) {
     updatedAt: new Date(),
   };
 
-  if (input.name !== undefined) updates.name = input.name;
+  if (input.name !== undefined) {
+    const { firstName, lastName } = splitName(input.name);
+    updates.name = input.name;
+    updates.fullName = input.name;
+    updates.firstName = firstName;
+    updates.lastName = lastName;
+  }
   if (input.email !== undefined) updates.email = input.email.trim().toLowerCase();
   if (input.role !== undefined) updates.role = input.role.toLowerCase();
-  if (input.organization !== undefined) updates.organizationName = input.organization;
-  if (input.studentId !== undefined) updates.studentId = input.studentId;
-  if (input.rfid !== undefined) updates.rfid = input.rfid;
+  if (input.organization !== undefined) {
+    updates.organizationName = input.organization;
+    updates.organizationPart = input.organization;
+  }
+  if (input.studentId !== undefined) {
+    updates.studentId = input.studentId;
+    updates.studentNumber = input.studentId;
+  }
+  if (input.rfid !== undefined) {
+    updates.rfid = input.rfid;
+    updates.rfidNumber = input.rfid;
+  }
+  if (input.course !== undefined) updates.course = input.course;
   if (input.isActive !== undefined) updates.isActive = input.isActive;
   if (input.registrationStatus !== undefined) updates.registrationStatus = input.registrationStatus;
 

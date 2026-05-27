@@ -1,84 +1,109 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useShowStatus } from "@/contexts/ShowStatusContext";
 
 const CHIPS = ["Weekly", "Monthly", "Quarterly"];
 
-const STATS = [
+const FALLBACK_RECOMMENDATIONS = [
   {
-    action: "Total Events opened",
-    label: "Total Events",
-    trend: "+12%",
-    value: "320",
-    hint: "Compared to last period",
-  },
-  {
-    action: "Attendees opened",
-    label: "Attendees",
-    trend: "+18%",
-    value: "1,685",
-    hint: "Unique users attended",
-  },
-  {
-    action: "Certificates opened",
-    label: "Certificates",
-    trend: "+16%",
-    value: "1,563",
-    hint: "Issued automatically",
-  },
-  {
-    action: "Organizations opened",
-    label: "Organizations",
-    trend: "+14%",
-    value: "23",
-    hint: "Active partner schools",
+    title: "Collect Attendance Data",
+    body: "Start RFID tapping to generate event analytics and smart recommendations.",
   },
 ];
 
-const INSIGHTS = [
-  ["BSIT - DX", "100%", "135"],
-  ["BMMA - RC", "76%", "102"],
-  ["BACOMM - ADC", "74%", "100"],
-  ["BMLS - LD", "70%", "95"],
-  ["BS/BEED - GEG", "63%", "85"],
-  ["BSTM - JTTC", "51%", "69"],
-];
+function formatNumber(value) {
+  return new Intl.NumberFormat("en-US").format(Number(value || 0));
+}
 
-const ENGAGED = [
-  ["BSIT - DX", "100%", "160"],
-  ["BMMA - RC", "75%", "121"],
-  ["BACOMM - ADC", "74%", "119"],
-  ["BMLS - LD", "70%", "113"],
-  ["BS/BEED - GEG", "63%", "101"],
-  ["BSTM - JTTC", "51%", "82"],
-];
+function getPercentRows(rows) {
+  const maxValue = Math.max(...rows.map((row) => Number(row.value || 0)), 1);
+  return rows.slice(0, 6).map((row) => [
+    row.label,
+    `${Math.max(8, Math.round((Number(row.value || 0) / maxValue) * 100))}%`,
+    String(row.value || 0),
+  ]);
+}
 
-const BAR_HEIGHTS = [42, 50, 54, 61, 58, 64, 69, 66, 76];
-
-const PINS = [
-  {
-    title: "Best Time to Schedule",
-    body: "Friday 4:00 PM currently has the highest attendance.",
-  },
-  {
-    title: "Suggested Venue",
-    body: "Use DRA Hall for events with expected large audiences.",
-  },
-  {
-    title: "Target Audience",
-    body: "BSIT students are most likely to attend this month.",
-  },
-  {
-    title: "Conflict Warning",
-    body: "Two events overlap on April 25 from 2:00 to 4:00 PM.",
-  },
-];
+function getBarHeights(rows) {
+  const maxValue = Math.max(...rows.map((row) => Number(row.value || 0)), 1);
+  return rows.slice(0, 9).map((row) =>
+    Math.max(18, Math.round((Number(row.value || 0) / maxValue) * 100)),
+  );
+}
 
 export function DashboardView() {
   const showStatus = useShowStatus();
   const [range, setRange] = useState("Weekly");
   const [pinned, setPinned] = useState(() => new Set());
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadDashboard() {
+      try {
+        const response = await fetch("/api/admin/dashboard", {
+          credentials: "same-origin",
+        });
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(data?.error || "Unable to load dashboard analytics");
+        }
+
+        setDashboardData(data);
+      } catch (error) {
+        showStatus(error instanceof Error ? error.message : "Unable to load dashboard analytics");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDashboard();
+  }, [showStatus]);
+
+  const stats = useMemo(
+    () => [
+      {
+        action: "Total Events opened",
+        label: "Total Events",
+        trend: loading ? "..." : "Live",
+        value: formatNumber(dashboardData?.totalEvents),
+        hint: "From MongoDB events",
+      },
+      {
+        action: "Attendees opened",
+        label: "Attendees",
+        trend: loading ? "..." : "Live",
+        value: formatNumber(dashboardData?.totalAttendees),
+        hint: "From RFID attendance logs",
+      },
+      {
+        action: "Certificates opened",
+        label: "Certificates",
+        trend: loading ? "..." : "Live",
+        value: formatNumber(dashboardData?.totalCertificates),
+        hint: "Issued certificate records",
+      },
+      {
+        action: "Organizations opened",
+        label: "Organizations",
+        trend: loading ? "..." : "Live",
+        value: formatNumber(dashboardData?.totalOrganizations),
+        hint: "Distinct event organizations",
+      },
+    ],
+    [dashboardData, loading],
+  );
+
+  const attendanceTrends = dashboardData?.aiAnalytics?.attendanceTrends ?? [];
+  const peakEventTimes = dashboardData?.aiAnalytics?.peakEventTimes ?? [];
+  const eventInsights = useMemo(() => getPercentRows(attendanceTrends), [attendanceTrends]);
+  const peakTimes = useMemo(() => getPercentRows(peakEventTimes), [peakEventTimes]);
+  const barHeights = useMemo(() => getBarHeights(peakEventTimes), [peakEventTimes]);
+  const recommendations = dashboardData?.aiAnalytics?.recommendations?.length
+    ? dashboardData.aiAnalytics.recommendations
+    : FALLBACK_RECOMMENDATIONS;
 
   function togglePin(i) {
     setPinned((prev) => {
@@ -114,7 +139,7 @@ export function DashboardView() {
       </div>
 
       <section className="grid">
-        {STATS.map((s) => (
+        {stats.map((s) => (
           <article
             key={s.label}
             className="card stat"
@@ -142,49 +167,53 @@ export function DashboardView() {
           <div className="panel-title">
             <h2>Key Events Insights</h2>
           </div>
-          {INSIGHTS.map(([name, w, n]) => (
-            <div key={name} className="metric-row">
-              <span>{name}</span>
-              <div className="progress">
-                <div className="bar" style={{ width: w }} />
+          {eventInsights.length ? (
+            eventInsights.map(([name, w, n]) => (
+              <div key={name} className="metric-row">
+                <span>{name}</span>
+                <div className="progress">
+                  <div className="bar" style={{ width: w }} />
+                </div>
+                <span>{n}</span>
               </div>
-              <span>{n}</span>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="muted">No attendance data yet.</p>
+          )}
         </article>
 
         <article className="card two-col">
           <div className="panel-title">
-            <h2>Top Engaged Course</h2>
+            <h2>Peak Event Times</h2>
           </div>
-          {ENGAGED.map(([name, w, n]) => (
-            <div key={name} className="metric-row">
-              <span>{name}</span>
-              <div className="progress">
-                <div className="bar" style={{ width: w }} />
+          {peakTimes.length ? (
+            peakTimes.map(([name, w, n]) => (
+              <div key={name} className="metric-row">
+                <span>{name}</span>
+                <div className="progress">
+                  <div className="bar" style={{ width: w }} />
+                </div>
+                <span>{n}</span>
               </div>
-              <span>{n}</span>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="muted">No tap time data yet.</p>
+          )}
         </article>
 
         <article className="card chart-panel">
           <div className="panel-title">
-            <h2>Most Used Facilities</h2>
+            <h2>Attendance by Time</h2>
           </div>
           <div className="mini-chart">
-            {BAR_HEIGHTS.map((h, i) => (
-              <div
-                key={i}
-                className="mini-bar"
-                style={{ height: `${h}%` }}
-              />
+            {(barHeights.length ? barHeights : [18, 18, 18]).map((h, i) => (
+              <div key={i} className="mini-bar" style={{ height: `${h}%` }} />
             ))}
             <div className="x-labels">
-              {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"].map(
-                (m) => (
-                  <span key={m}>{m}</span>
-                )
+              {(peakEventTimes.length ? peakEventTimes.slice(0, 9).map((row) => row.label) : ["No", "Data", "Yet"]).map(
+                (label) => (
+                  <span key={label}>{label}</span>
+                ),
               )}
             </div>
           </div>
@@ -195,7 +224,7 @@ export function DashboardView() {
             <h2>Smart Recommendations</h2>
           </div>
           <div className="ai-list">
-            {PINS.map((p, i) => (
+            {recommendations.map((p, i) => (
               <div key={p.title} className="ai-item">
                 <div>
                   <h3>{p.title}</h3>
@@ -208,7 +237,7 @@ export function DashboardView() {
                   aria-pressed={pinned.has(i)}
                   onClick={() => togglePin(i)}
                 >
-                  📌
+                  Pin
                 </button>
               </div>
             ))}

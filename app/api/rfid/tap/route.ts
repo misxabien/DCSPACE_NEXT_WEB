@@ -32,8 +32,9 @@ export async function POST(request: Request) {
     }
 
     const db = await getDb();
+    const rfidQuery = { $regex: `^${escapeRegex(rfidNumber)}$`, $options: "i" };
     const user = await db.collection("users").findOne({
-      rfidNumber: { $regex: `^${escapeRegex(rfidNumber)}$`, $options: "i" },
+      $or: [{ rfidNumber: rfidQuery }, { rfid: rfidQuery }],
     });
 
     if (!user) {

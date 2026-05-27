@@ -259,6 +259,7 @@ export function UsersView() {
       organization: String(formData.get("organization") || "").trim(),
       studentId: String(formData.get("studentId") || "").trim(),
       rfid: String(formData.get("rfid") || "").trim(),
+      course: String(formData.get("course") || "").trim(),
       password: password || undefined,
       isActive: formData.get("isActive") === "on",
     };
@@ -494,6 +495,11 @@ export function UsersView() {
                 <label>
                   <span>RFID</span>
                   <input name="rfid" type="text" placeholder="Optional" disabled={savingUser} />
+                </label>
+
+                <label>
+                  <span>Course</span>
+                  <input name="course" type="text" placeholder="Optional" disabled={savingUser} />
                 </label>
 
                 <label className="admin-user-form__wide">
