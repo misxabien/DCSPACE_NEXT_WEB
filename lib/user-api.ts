@@ -80,6 +80,8 @@ export type UserEvent = {
   endTime: string;
   status: string;
   certificate: string;
+  minAttendance?: string;
+  duration?: string;
   posterImage?: string;
 };
 
@@ -102,6 +104,19 @@ function resolveApiPath(path: string, baseUrl: string) {
     return normalized.startsWith("/api/") ? normalized.replace(/^\/api/, "") : normalized;
   }
   return normalized.startsWith("/api/") ? normalized : `/api${normalized}`;
+}
+
+function resolveRequestUrl(path: string, baseUrl: string) {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  if (baseUrl.endsWith("/api/user") && normalized.startsWith("/api/")) {
+    return `${baseUrl.slice(0, -"/api/user".length)}${normalized}`;
+  }
+
+  return `${baseUrl}${resolveApiPath(path, baseUrl)}`;
 }
 
 function resolveUserAuthPath(endpoint: AuthEndpoint, baseUrl: string) {
@@ -146,13 +161,12 @@ async function apiRequest<T>(
 
   for (const baseUrl of candidateBaseUrls) {
     const rawPath = typeof path === "function" ? path(baseUrl) : path;
-    const resolvedPath = resolveApiPath(rawPath, baseUrl);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
     let response: Response;
 
     try {
-      response = await fetch(`${baseUrl}${resolvedPath}`, {
+      response = await fetch(resolveRequestUrl(rawPath, baseUrl), {
         method: options.method || "GET",
         headers: {
           "Content-Type": "application/json",
@@ -238,12 +252,12 @@ export async function registerUser(payload: {
   school?: string;
   password: string;
   confirmPassword: string;
-  verificationCode: string;
+  verificationCode?: string;
   role?: "student" | "faculty";
   dataPrivacyAccepted: boolean;
 }) {
   return apiRequest<{ token: string; user: UserProfile; message: string }>(
-    (baseUrl) => resolveUserAuthPath("register", baseUrl),
+    payload.verificationCode ? (baseUrl) => resolveUserAuthPath("register", baseUrl) : "/api/auth/register",
     {
       method: "POST",
       body: payload,

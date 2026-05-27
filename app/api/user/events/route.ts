@@ -36,6 +36,8 @@ function toEventResponse(event: EventDoc) {
     endTime: event.endTime || '',
     status: event.status || 'pending',
     certificate: event.certificate || 'Processing',
+    minAttendance: event.minAttendance || '',
+    duration: event.duration || '',
     posterImage: event.posterImage || '',
     createdAt: event.createdAt || new Date().toISOString(),
   };
