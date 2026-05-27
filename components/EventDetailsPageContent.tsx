@@ -1138,7 +1138,7 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
 function SubmittedRequirementLink({
   requirement,
   file,
-}: {
+}: Readonly<{
   requirement: string;
   file: UploadedRequirementFile;
 }) {
