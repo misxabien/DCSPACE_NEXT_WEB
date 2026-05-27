@@ -54,14 +54,18 @@ export async function getDashboardStats() {
   const events = db.collection<any>('events');
   const attendance = db.collection<any>('attendance_logs');
 
-  const [totalEvents, totalAttendees] = await Promise.all([
+  const [totalEvents, totalAttendees, totalCertificates, organizations] = await Promise.all([
     events.countDocuments({}),
     attendance.countDocuments({}),
+    attendance.countDocuments({ certificateId: { $exists: true, $ne: null } }),
+    events.distinct('organization'),
   ]);
 
   return {
     totalEvents,
     totalAttendees,
+    totalCertificates,
+    totalOrganizations: organizations.filter(Boolean).length,
   };
 }
 
