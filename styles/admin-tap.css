@@ -1,0 +1,367 @@
+/* Tap in / Tap out kiosk — fullscreen within admin */
+
+.admin-app.admin-app--tap-mode {
+  grid-template-columns: 1fr;
+  background: linear-gradient(165deg, #8ec0ff 0%, #6aa8ff 28%, #4a8dff 62%, #3d7de8 100%);
+}
+
+.admin-app.admin-app--tap-mode .admin-sidebar,
+.admin-app.admin-app--tap-mode .admin-topbar,
+.admin-app.admin-app--tap-mode .admin-backdrop {
+  display: none !important;
+}
+
+.admin-app.admin-app--tap-mode .admin-shell {
+  grid-column: 1 / -1;
+  margin: 0;
+  width: 100%;
+  max-width: none;
+  min-height: 100svh;
+}
+
+.admin-app.admin-app--tap-mode .admin-main {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  padding: clamp(16px, 3vw, 32px);
+  min-height: 100svh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+.admin-app .tap-kiosk {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.admin-app .tap-kiosk__scanner-form {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.admin-app .tap-kiosk__scanner-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.admin-app .tap-kiosk__panel {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, rgba(255, 252, 247, 0.98) 0%, rgba(255, 248, 238, 0.96) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    0 24px 64px rgba(31, 86, 180, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  padding: clamp(22px, 3vw, 32px) clamp(24px, 3.5vw, 40px) clamp(18px, 2.5vw, 28px);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 22px;
+}
+
+.admin-app .tap-kiosk__header {
+  width: 100%;
+}
+
+.admin-app .tap-kiosk__brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.admin-app .tap-kiosk__brand > div:last-child {
+  min-width: 0;
+}
+
+.admin-app .tap-kiosk__back {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--glass-border-subtle);
+  background: #fff;
+  color: var(--primary-strong);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s var(--ease);
+}
+
+.admin-app .tap-kiosk__back:hover {
+  border-color: rgba(74, 141, 255, 0.35);
+  box-shadow: 0 6px 16px var(--primary-glow);
+  transform: translateY(-1px);
+}
+
+.admin-app .tap-kiosk__title {
+  margin: 0;
+  font-size: clamp(1.25rem, 2.2vw, 1.65rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.admin-app .tap-kiosk__event {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary-strong);
+  line-height: 1.35;
+}
+
+.admin-app .tap-kiosk__nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.admin-app .tap-kiosk__nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  background: rgba(74, 141, 255, 0.12);
+  color: var(--primary-strong);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.admin-app .tap-kiosk__nav-btn:hover {
+  background: rgba(74, 141, 255, 0.2);
+}
+
+.admin-app .tap-kiosk__nav-btn.active {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: linear-gradient(135deg, var(--primary-strong), var(--primary));
+  color: #fff;
+  box-shadow: 0 8px 22px var(--primary-glow);
+}
+
+.admin-app .tap-kiosk__clock {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  padding: clamp(20px, 3vw, 28px) 20px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(145deg, #5b97ff 0%, var(--primary) 50%, #3d7de8 100%);
+  box-shadow:
+    0 12px 32px var(--primary-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.admin-app .tap-kiosk__clock-time {
+  display: block;
+  font-size: clamp(2.25rem, 6vw, 3.5rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.admin-app .tap-kiosk__clock-date {
+  margin: 10px 0 0;
+  font-size: clamp(14px, 2vw, 16px);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.admin-app .tap-kiosk__body {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 32px);
+  align-items: start;
+  width: 100%;
+}
+
+.admin-app .tap-kiosk__profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-app .tap-kiosk__photo {
+  width: 100%;
+  max-width: 200px;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border-subtle);
+  background: linear-gradient(165deg, #f0f5ff 0%, #e3edff 100%);
+  display: grid;
+  place-items: center;
+  color: var(--primary-strong);
+  overflow: hidden;
+}
+
+.admin-app .tap-kiosk__initials {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--primary-strong);
+  letter-spacing: 0.04em;
+}
+
+.admin-app .tap-kiosk__student-id {
+  margin: 0;
+  width: 100%;
+  max-width: 200px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border-subtle);
+  background: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--text);
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 8px rgba(47, 111, 205, 0.06);
+}
+
+.admin-app .tap-kiosk__details {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  width: 100%;
+}
+
+.admin-app .tap-kiosk__table-wrap {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-border-subtle);
+  background: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+}
+
+.admin-app .tap-kiosk__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: fixed;
+}
+
+.admin-app .tap-kiosk__table th {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--primary-strong);
+  background: rgba(74, 141, 255, 0.08);
+  border-bottom: 1px solid var(--glass-border-subtle);
+}
+
+.admin-app .tap-kiosk__table th:nth-child(3),
+.admin-app .tap-kiosk__table th:nth-child(4),
+.admin-app .tap-kiosk__table td:nth-child(3),
+.admin-app .tap-kiosk__table td:nth-child(4) {
+  text-align: center;
+}
+
+.admin-app .tap-kiosk__table td {
+  padding: 14px;
+  color: var(--text);
+  font-weight: 600;
+  border-bottom: 1px solid rgba(74, 141, 255, 0.06);
+  vertical-align: middle;
+}
+
+.admin-app .tap-kiosk__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.admin-app .tap-kiosk__status {
+  margin: 0;
+  padding-left: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--success);
+  line-height: 1.45;
+  text-align: left;
+}
+
+.admin-app .tap-kiosk__status--idle {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.admin-app .tap-kiosk__footer {
+  width: 100%;
+  text-align: center;
+  padding-top: 4px;
+}
+
+.admin-app .tap-kiosk__hint-sub {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .admin-app .tap-kiosk__body {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .admin-app .tap-kiosk__profile {
+    width: 100%;
+    max-width: 240px;
+  }
+
+  .admin-app .tap-kiosk__details {
+    width: 100%;
+  }
+
+  .admin-app .tap-kiosk__status {
+    text-align: center;
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-app.admin-app--tap-mode .admin-main {
+    padding: 12px;
+  }
+
+  .admin-app .tap-kiosk__panel {
+    padding: 18px 16px 16px;
+    gap: 18px;
+  }
+
+  .admin-app .tap-kiosk__table {
+    font-size: 13px;
+  }
+
+  .admin-app .tap-kiosk__table th,
+  .admin-app .tap-kiosk__table td {
+    padding: 10px 8px;
+  }
+}

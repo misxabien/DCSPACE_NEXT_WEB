@@ -23,6 +23,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.1.0",
+    "kill-port": "^2.0.1",
     "typescript": "^5"
   }
 }
