@@ -5,14 +5,19 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
+<<<<<<< HEAD
 import { loginUser, saveAuthSession } from '@/lib/user-api';
 import { syncProfileToLegacyStorage } from '@/lib/user-mappers';
+=======
+import { signInAttendanceUser } from '@/lib/attendance';
+>>>>>>> origin/frontend-user
 
 export function LoginForm() {
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<'student' | 'faculty'>('student');
 
+<<<<<<< HEAD
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -41,6 +46,16 @@ export function LoginForm() {
     } finally {
       setIsSubmitting(false);
     }
+=======
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get('email');
+
+    window.localStorage.setItem('dcspaceAccountType', role);
+    signInAttendanceUser(typeof email === 'string' ? email : '');
+    router.push('/home');
+>>>>>>> origin/frontend-user
   };
 
   return (

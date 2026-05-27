@@ -3,9 +3,14 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+<<<<<<< HEAD
 import { type RegisteredEvent } from '@/lib/attendance';
 import { type FrontendEvent, setSelectedBrowseEventId } from '@/lib/dc-events';
 import { loadOrganizedEventsForUser, loadRegisteredEvents } from '@/lib/user-data';
+=======
+import { type RegisteredEvent, readRegisteredEvents } from '@/lib/attendance';
+import { type FrontendEvent, readOrganizedEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
+>>>>>>> origin/frontend-user
 
 type StatusKey = 'upcoming' | 'ongoing' | 'completed' | 'pending';
 
@@ -69,6 +74,7 @@ export function EventsOrganizedPageContent() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
+<<<<<<< HEAD
     let cancelled = false;
 
     const refreshEvents = async () => {
@@ -97,6 +103,24 @@ export function EventsOrganizedPageContent() {
 
     return () => {
       cancelled = true;
+=======
+    const refreshEvents = () => {
+      setEvents(readOrganizedEvents());
+      setRegisteredEvents(readRegisteredEvents());
+    };
+
+    refreshEvents();
+    window.addEventListener('pageshow', refreshEvents);
+    window.addEventListener('storage', refreshEvents);
+    window.addEventListener('dcspace-events-updated', refreshEvents);
+    window.addEventListener('dcspace-registered-events-updated', refreshEvents);
+
+    return () => {
+      window.removeEventListener('pageshow', refreshEvents);
+      window.removeEventListener('storage', refreshEvents);
+      window.removeEventListener('dcspace-events-updated', refreshEvents);
+      window.removeEventListener('dcspace-registered-events-updated', refreshEvents);
+>>>>>>> origin/frontend-user
     };
   }, []);
 

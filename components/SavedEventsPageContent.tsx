@@ -4,11 +4,27 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { DateRangeCalendarPicker } from '@/components/DateRangeCalendarPicker';
+<<<<<<< HEAD
 import { type FrontendEvent, setSelectedBrowseEventId } from '@/lib/dc-events';
 import { loadBookmarkedEvents, toggleEventBookmark } from '@/lib/user-data';
 
 const filters = ['All', 'Today', 'Tomorrow', 'This Weekend', 'Pick a date'];
 
+=======
+import { type FrontendEvent, readBrowseEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
+
+const HOME_SAVED_EVENTS_KEY = 'dcspaceHomeSavedEvents';
+const filters = ['All', 'Today', 'Tomorrow', 'This Weekend', 'Pick a date'];
+
+function readSavedEventIds() {
+  try {
+    return JSON.parse(window.localStorage.getItem(HOME_SAVED_EVENTS_KEY) || '[]') as string[];
+  } catch {
+    return [];
+  }
+}
+
+>>>>>>> origin/frontend-user
 function getEventDate(event: FrontendEvent) {
   const parsedDate = new Date(`${event.month} ${event.day}, ${event.year}`);
 
@@ -103,6 +119,7 @@ export function SavedEventsPageContent() {
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
   useEffect(() => {
+<<<<<<< HEAD
     let cancelled = false;
 
     const refreshEvents = async () => {
@@ -119,6 +136,22 @@ export function SavedEventsPageContent() {
 
     return () => {
       cancelled = true;
+=======
+    const refreshEvents = () => {
+      setEvents(readBrowseEvents());
+      setSavedEventIds(readSavedEventIds());
+    };
+
+    refreshEvents();
+    window.addEventListener('pageshow', refreshEvents);
+    window.addEventListener('storage', refreshEvents);
+    window.addEventListener('dcspace-events-updated', refreshEvents);
+
+    return () => {
+      window.removeEventListener('pageshow', refreshEvents);
+      window.removeEventListener('storage', refreshEvents);
+      window.removeEventListener('dcspace-events-updated', refreshEvents);
+>>>>>>> origin/frontend-user
     };
   }, []);
 
@@ -151,9 +184,17 @@ export function SavedEventsPageContent() {
   }, [events, savedEventIds]);
 
   const removeSavedEvent = (eventId: string) => {
+<<<<<<< HEAD
     void toggleEventBookmark(eventId, savedEventIds).then((nextIds) => {
       setSavedEventIds(nextIds);
       setEvents((current) => current.filter((event) => nextIds.includes(event.id)));
+=======
+    setSavedEventIds((current) => {
+      const nextSavedEventIds = current.filter((savedEventId) => savedEventId !== eventId);
+
+      window.localStorage.setItem(HOME_SAVED_EVENTS_KEY, JSON.stringify(nextSavedEventIds));
+      return nextSavedEventIds;
+>>>>>>> origin/frontend-user
     });
   };
 

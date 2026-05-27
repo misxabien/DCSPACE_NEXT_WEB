@@ -2,12 +2,64 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+<<<<<<< HEAD
 import { type FrontendEvent, setSelectedBrowseEventId } from '@/lib/dc-events';
 import { loadBookmarkedEvents } from '@/lib/user-data';
 
 function getEventTimeDisplay(dateTime: string) {
   const timePart = dateTime.split(',').at(-1)?.trim();
   return timePart || dateTime;
+=======
+import { DC_SAVED_EVENTS_KEY } from '@/lib/dc-storage';
+
+const CATALOG: Record<
+  string,
+  { month: string; day: string; year: string; title: string; meta: string }
+> = {
+  evt1: {
+    month: 'MAR',
+    day: '15',
+    year: '2026',
+    title: 'Event Name',
+    meta: 'Event Time Start and End<br />Event Venue<br />Event Organizer',
+  },
+  evt2: {
+    month: 'MAR',
+    day: '20',
+    year: '2026',
+    title: 'Event Name',
+    meta: 'Event Time Start and End<br />Event Venue<br />Event Organizer',
+  },
+  evt3: {
+    month: 'APR',
+    day: '02',
+    year: '2026',
+    title: 'Event Name',
+    meta: 'Event Time Start and End<br />Event Venue<br />Event Organizer',
+  },
+  evt4: {
+    month: 'APR',
+    day: '10',
+    year: '2026',
+    title: 'Event Name',
+    meta: 'Event Time Start and End<br />Event Venue<br />Event Organizer',
+  },
+};
+
+function catalogKey(id: string) {
+  return id.includes('-') ? id.replace('-', '') : id;
+}
+
+function readIds(): string[] {
+  try {
+    const raw = localStorage.getItem(DC_SAVED_EVENTS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? (parsed as string[]) : [];
+  } catch {
+    return [];
+  }
+>>>>>>> origin/frontend-user
 }
 
 export function DashboardSavedEvents() {
@@ -22,6 +74,7 @@ export function DashboardSavedEvents() {
     const onShow = () => refresh();
     const onLocalRefresh = () => refresh();
     window.addEventListener('pageshow', onShow);
+<<<<<<< HEAD
     window.addEventListener('storage', onLocalRefresh);
     window.addEventListener('dcspace-events-updated', onLocalRefresh);
     window.addEventListener('dc-refresh-saved', onLocalRefresh);
@@ -29,6 +82,13 @@ export function DashboardSavedEvents() {
       window.removeEventListener('pageshow', onShow);
       window.removeEventListener('storage', onLocalRefresh);
       window.removeEventListener('dcspace-events-updated', onLocalRefresh);
+=======
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('dc-refresh-saved', onLocalRefresh);
+    return () => {
+      window.removeEventListener('pageshow', onShow);
+      window.removeEventListener('storage', onStorage);
+>>>>>>> origin/frontend-user
       window.removeEventListener('dc-refresh-saved', onLocalRefresh);
     };
   }, [refresh]);

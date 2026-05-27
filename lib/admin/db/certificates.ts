@@ -1,13 +1,28 @@
+<<<<<<< HEAD
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MongoClient, ObjectId } from "mongodb";
 
 const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
 const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
+=======
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { MongoClient, ObjectId } from 'mongodb';
+import { promises as fs } from 'fs';
+import path from 'path';
+
+const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
+const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
+>>>>>>> origin/frontend-user
 
 const globalForMongo = globalThis as unknown as {
   adminCertificatesMongoClient?: MongoClient;
   adminCertificatesMongoPromise?: Promise<MongoClient>;
 };
+<<<<<<< HEAD
+=======
+import { generateCertificatePdf } from '@/lib/admin/certificates/generate';
+import type { CertificateData } from '@/lib/admin/certificates/generate';
+>>>>>>> origin/frontend-user
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -37,22 +52,34 @@ async function getDatabase() {
 
 async function getEventsCollection() {
   const db = await getDatabase();
+<<<<<<< HEAD
   return db.collection<any>("events");
+=======
+  return db.collection<any>('events');
+>>>>>>> origin/frontend-user
 }
 
 async function getUsersCollection() {
   const db = await getDatabase();
+<<<<<<< HEAD
   return db.collection<any>("users");
+=======
+  return db.collection<any>('users');
+>>>>>>> origin/frontend-user
 }
 
 async function getAttendanceCollection() {
   const db = await getDatabase();
+<<<<<<< HEAD
   return db.collection<any>("attendance");
+=======
+  return db.collection<any>('attendance');
+>>>>>>> origin/frontend-user
 }
 
 function toObjectId(id: string, label: string) {
   if (!ObjectId.isValid(id)) {
-    throw createAppError("ValidationError", `Invalid ${label} id`, 400);
+    throw createAppError('ValidationError', `Invalid ${label} id`, 400);
   }
 
   return new ObjectId(id);
@@ -60,41 +87,41 @@ function toObjectId(id: string, label: string) {
 
 function formatDateLabel(value: Date | string | null | undefined) {
   if (!value) {
-    return "TBA";
+    return 'TBA';
   }
 
   const date = value instanceof Date ? value : new Date(value);
 
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
   }).format(date);
 }
 
 function formatTimeLabel(value: Date | string | null | undefined) {
   if (!value) {
-    return "TBA";
+    return 'TBA';
   }
 
   const date = value instanceof Date ? value : new Date(value);
 
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
   }).format(date);
 }
 
 function formatRelativeUpdate(value: Date | string | null | undefined) {
   if (!value) {
-    return "Just now";
+    return 'Just now';
   }
 
   const date = value instanceof Date ? value : new Date(value);
   const diffMs = Date.now() - date.getTime();
 
   if (Number.isNaN(diffMs) || diffMs < 60_000) {
-    return "Just now";
+    return 'Just now';
   }
 
   const diffMinutes = Math.floor(diffMs / 60_000);
@@ -122,12 +149,12 @@ function formatTimestamp(value: Date | string | null | undefined) {
 
   return {
     iso: date.toISOString(),
-    display: new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
+    display: new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
     }).format(date),
     relative: formatRelativeUpdate(date),
   };
@@ -137,7 +164,7 @@ function normalizeRegistrationStatus(user: any, attendance: any) {
   return (
     attendance.registrationStatus ??
     user.registrationStatus ??
-    (user.rfid ? "Registered" : "Not Registered")
+    (user.rfid ? 'Registered' : 'Not Registered')
   );
 }
 
@@ -147,14 +174,14 @@ function mapEventSummary(event: any) {
 
   return {
     id: String(event._id),
-    title: event.title ?? event.name ?? "Untitled event",
+    title: event.title ?? event.name ?? 'Untitled event',
     date: formatDateLabel(start),
-    venue: event.venue ?? event.location ?? "TBA",
+    venue: event.venue ?? event.location ?? 'TBA',
     startTime: formatTimeLabel(start),
     endTime: formatTimeLabel(end),
-    organizer: event.organizerName ?? event.organizer?.name ?? "Unknown organizer",
-    course: event.course ?? "N/A",
-    organization: event.organizationName ?? event.organization?.name ?? "N/A",
+    organizer: event.organizerName ?? event.organizer?.name ?? 'Unknown organizer',
+    course: event.course ?? 'N/A',
+    organization: event.organizationName ?? event.organization?.name ?? 'N/A',
   };
 }
 
@@ -167,27 +194,27 @@ function mapAttendeeRow(user: any, attendance: any) {
   return {
     attendeeId: attendance?._id ? String(attendance._id) : userId,
     userId,
-    name: user.name ?? user.fullName ?? "",
-    email: user.email ?? "",
+    name: user.name ?? user.fullName ?? '',
+    email: user.email ?? '',
     id: String(user.studentId ?? user.idNumber ?? userId),
-    organization: user.organizationName ?? user.organization?.name ?? "Unassigned",
+    organization: user.organizationName ?? user.organization?.name ?? 'Unassigned',
     rfid: user.rfid ?? null,
     status: normalizeRegistrationStatus(user, attendance),
-    attendanceStatus: attendance.attendanceStatus ?? "Pending",
-    certificateStatus: attendance.certificateStatus ?? "Pending",
+    attendanceStatus: attendance.attendanceStatus ?? 'Pending',
+    certificateStatus: attendance.certificateStatus ?? 'Pending',
     toggleActive: attendance.isActive ?? true,
-    lastUpdated: timestamp?.relative ?? "Just now",
+    lastUpdated: timestamp?.relative ?? 'Just now',
     timestamp,
   };
 }
 
 async function findEventById(eventId: string) {
   const events = await getEventsCollection();
-  const objectId = toObjectId(eventId, "event");
+  const objectId = toObjectId(eventId, 'event');
   const event = await events.findOne({ _id: objectId });
 
   if (!event) {
-    throw createAppError("NotFoundError", "Event not found", 404);
+    throw createAppError('NotFoundError', 'Event not found', 404);
   }
 
   return event;
@@ -200,7 +227,7 @@ export async function getAttendeesByEvent(eventId: string, search?: string | nul
   const trimmedEventId = eventId?.trim();
 
   if (!trimmedEventId) {
-    throw createAppError("ValidationError", "eventId is required", 400);
+    throw createAppError('ValidationError', 'eventId is required', 400);
   }
 
   const [event, attendance, users] = await Promise.all([
@@ -209,7 +236,7 @@ export async function getAttendeesByEvent(eventId: string, search?: string | nul
     getUsersCollection(),
   ]);
 
-  const eventObjectId = toObjectId(trimmedEventId, "event");
+  const eventObjectId = toObjectId(trimmedEventId, 'event');
   const attendanceRows = await attendance
     .find({
       $or: [{ eventId: trimmedEventId }, { eventId: eventObjectId }],
@@ -266,8 +293,8 @@ export async function getAttendeesByEvent(eventId: string, search?: string | nul
       mapAttendeeRow(user, {
         _id: String(user._id),
         isActive: true,
-        attendanceStatus: "Pending",
-        certificateStatus: "Pending",
+        attendanceStatus: 'Pending',
+        certificateStatus: 'Pending',
         updatedAt: user.updatedAt ?? user.createdAt ?? null,
       }),
     );
@@ -297,15 +324,15 @@ export async function toggleAttendeeStatus(id: string, eventId: string, nextStat
   const trimmedEventId = eventId?.trim();
 
   if (!trimmedEventId) {
-    throw createAppError("ValidationError", "eventId is required", 400);
+    throw createAppError('ValidationError', 'eventId is required', 400);
   }
 
   await findEventById(trimmedEventId);
 
   const attendance = await getAttendanceCollection();
   const users = await getUsersCollection();
-  const eventObjectId = toObjectId(trimmedEventId, "event");
-  const userObjectId = toObjectId(id, "attendee");
+  const eventObjectId = toObjectId(trimmedEventId, 'event');
+  const userObjectId = toObjectId(id, 'attendee');
 
   const existingAttendance = await attendance.findOne({
     $or: [
@@ -323,7 +350,7 @@ export async function toggleAttendeeStatus(id: string, eventId: string, nextStat
       : await users.findOne({ _id: userObjectId });
 
   if (!userRecord) {
-    throw createAppError("NotFoundError", "Attendee not found", 404);
+    throw createAppError('NotFoundError', 'Attendee not found', 404);
   }
 
   const resolvedIsActive = nextStatus ?? !(existingAttendance?.isActive ?? true);
@@ -344,8 +371,8 @@ export async function toggleAttendeeStatus(id: string, eventId: string, nextStat
       eventId: eventObjectId,
       userId: userRecord._id,
       isActive: resolvedIsActive,
-      attendanceStatus: "Pending",
-      certificateStatus: "Pending",
+      attendanceStatus: 'Pending',
+      certificateStatus: 'Pending',
       registrationStatus: normalizeRegistrationStatus(userRecord, {}),
       createdAt: now,
       updatedAt: now,
@@ -368,11 +395,302 @@ export async function toggleAttendeeStatus(id: string, eventId: string, nextStat
       refreshedAttendance ?? {
         _id: userRecord._id,
         isActive: resolvedIsActive,
-        attendanceStatus: "Pending",
-        certificateStatus: "Pending",
+        attendanceStatus: 'Pending',
+        certificateStatus: 'Pending',
         updatedAt: now,
       },
     ),
   };
+<<<<<<< HEAD
 }
 
+=======
+}
+
+/* ------------------------------------------------------------------ */
+/*  V2 — Cert-Attendance mapping for /api/admin/cert-attendance       */
+/* ------------------------------------------------------------------ */
+
+function formatTapTime(value: Date | string | null | undefined) {
+  if (!value) return '00:00';
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '00:00';
+
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+function deriveAttendanceStatus(record: any) {
+  const tapIn = record.tapIn ?? record.attendance?.tapIn ?? null;
+  const tapOut = record.tapOut ?? record.attendance?.tapOut ?? null;
+
+  if (!tapIn && !tapOut) return 'Pending';
+
+  const normalized = (
+    record.attendanceStatus ??
+    record.attendance?.status ??
+    ''
+  ).toString().trim().toLowerCase();
+
+  if (['completed', 'complete', 'present', 'attended'].includes(normalized)) {
+    return 'Completed';
+  }
+
+  if (tapIn && tapOut) return 'Completed';
+  if (tapIn && !tapOut) return 'Incomplete';
+
+  return 'Pending';
+}
+
+function mapCertAttendanceRecord(user: any, attendance: any) {
+  const attendanceStatus = deriveAttendanceStatus(attendance);
+
+  return {
+    studentNumber: String(user.studentId ?? user.idNumber ?? user._id),
+    date: attendance.createdAt
+      ? new Intl.DateTimeFormat('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        }).format(
+          attendance.createdAt instanceof Date
+            ? attendance.createdAt
+            : new Date(attendance.createdAt),
+        )
+      : 'N/A',
+    registration: user.rfid ? 'Registered' : 'Not Registered',
+    tapIn: formatTapTime(attendance.tapIn ?? attendance.attendance?.tapIn),
+    tapOut: formatTapTime(attendance.tapOut ?? attendance.attendance?.tapOut),
+    attendance: attendanceStatus,
+    certificateStatus: attendance.certificateId ? 'issued' : (attendanceStatus === 'Completed' ? 'available' : 'pending'),
+    certificateId: attendance.certificateId ?? null,
+    canGenerate: attendanceStatus === 'Completed',
+    canDownload: !!attendance.certificateId,
+  };
+}
+
+/**
+ * Returns per-student attendance and certificate records in the v2 response
+ * shape for the cert-attendance screen.
+ */
+export async function getCertAttendanceByEvent(
+  eventId: string,
+  search?: string | null,
+) {
+  const trimmedEventId = eventId?.trim();
+
+  if (!trimmedEventId) {
+    throw createAppError('ValidationError', 'eventId is required', 400);
+  }
+
+  const [event, attendance, users] = await Promise.all([
+    findEventById(trimmedEventId),
+    getAttendanceCollection(),
+    getUsersCollection(),
+  ]);
+
+  const eventObjectId = toObjectId(trimmedEventId, 'event');
+  const attendanceRows = await attendance
+    .find({
+      $or: [{ eventId: trimmedEventId }, { eventId: eventObjectId }],
+    })
+    .sort({ updatedAt: -1, createdAt: -1 })
+    .toArray();
+
+  const participantIds = new Set<string>();
+
+  for (const row of attendanceRows) {
+    if (row.userId) participantIds.add(String(row.userId));
+  }
+
+  if (Array.isArray(event.participantIds)) {
+    for (const pid of event.participantIds) {
+      if (pid) participantIds.add(String(pid));
+    }
+  }
+
+  const validIds = Array.from(participantIds)
+    .filter((id) => ObjectId.isValid(id))
+    .map((id) => new ObjectId(id));
+
+  const userRows = await users
+    .find(validIds.length > 0 ? { _id: { $in: validIds } } : { _id: { $in: [] } })
+    .toArray();
+
+  const usersById = new Map(userRows.map((u: any) => [String(u._id), u]));
+
+  const records: ReturnType<typeof mapCertAttendanceRecord>[] = [];
+
+  for (const row of attendanceRows) {
+    const user = usersById.get(String(row.userId));
+    if (!user) continue;
+
+    if (
+      search &&
+      !String(user.studentId ?? user.idNumber ?? '')
+        .toLowerCase()
+        .includes(search.trim().toLowerCase())
+    ) {
+      continue;
+    }
+
+    records.push(mapCertAttendanceRecord(user, row));
+  }
+
+  const start = event.startTime ?? event.startDate ?? event.eventDate ?? null;
+  const end = event.endTime ?? event.endDate ?? null;
+
+  return {
+    event: {
+      id: String(event._id),
+      name: event.title ?? event.name ?? 'Untitled event',
+      date: formatDateLabel(start),
+      venue: event.venue ?? event.location ?? 'TBA',
+      startTime: formatTimeLabel(start),
+      endTime: formatTimeLabel(end),
+      organizer: event.organizerName ?? event.organizer?.name ?? 'Unknown organizer',
+      course: event.course ?? 'N/A',
+      organization: event.organizationName ?? event.organization?.name ?? 'N/A',
+      sheetsUrl: event.sheetsUrl ?? event.googleSheetsUrl ?? null,
+    },
+    records,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Certificate template resolution                                   */
+/* ------------------------------------------------------------------ */
+
+const CERTIFICATES_DIR = path.join(process.cwd(), 'public', 'certificates');
+const DEFAULT_TEMPLATE = path.join(CERTIFICATES_DIR, 'default-template.png');
+
+/**
+ * Resolves the absolute file path to the certificate template for an event.
+ * Checks for a custom upload first, then falls back to the default.
+ */
+export async function getEventTemplatePath(eventId: string): Promise<string> {
+  const pngPath = path.join(CERTIFICATES_DIR, `${eventId}.png`);
+  const jpgPath = path.join(CERTIFICATES_DIR, `${eventId}.jpg`);
+
+  try {
+    await fs.access(pngPath);
+    return pngPath;
+  } catch {
+    /* not found — try jpg */
+  }
+
+  try {
+    await fs.access(jpgPath);
+    return jpgPath;
+  } catch {
+    /* not found — use default */
+  }
+
+  return DEFAULT_TEMPLATE;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Certificate generation + persistence                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Generates a PDF certificate for a student who has completed attendance
+ * at the given event, persists the certificate metadata to the attendance
+ * record, and returns the PDF bytes.
+ */
+export async function generateAndSaveCertificate(
+  eventId: string,
+  userId: string,
+) {
+  const trimmedEventId = eventId?.trim();
+  const trimmedUserId = userId?.trim();
+
+  if (!trimmedEventId) {
+    throw createAppError('ValidationError', 'eventId is required', 400);
+  }
+
+  if (!trimmedUserId) {
+    throw createAppError('ValidationError', 'userId is required', 400);
+  }
+
+  /* Fetch event, user, and attendance data. */
+  const event = await findEventById(trimmedEventId);
+  const users = await getUsersCollection();
+  const userObjectId = toObjectId(trimmedUserId, 'user');
+  const user = await users.findOne({ _id: userObjectId });
+
+  if (!user) {
+    throw createAppError('NotFoundError', 'User not found', 404);
+  }
+
+  const attendance = await getAttendanceCollection();
+  const eventObjectId = toObjectId(trimmedEventId, 'event');
+
+  const attendanceRecord = await attendance.findOne({
+    $or: [
+      { userId: trimmedUserId, eventId: trimmedEventId },
+      { userId: userObjectId, eventId: trimmedEventId },
+      { userId: trimmedUserId, eventId: eventObjectId },
+      { userId: userObjectId, eventId: eventObjectId },
+    ],
+  });
+
+  if (!attendanceRecord) {
+    throw createAppError('NotFoundError', 'Attendance record not found', 404);
+  }
+
+  const status = deriveAttendanceStatus(attendanceRecord);
+
+  if (status !== 'Completed') {
+    throw createAppError(
+      'ValidationError',
+      'Cannot generate certificate — attendance is not completed',
+      400,
+    );
+  }
+
+  /* Resolve template. */
+  const templatePath = await getEventTemplatePath(trimmedEventId);
+
+  /* Build certificate data. */
+  const now = new Date();
+  const shortEventId = trimmedEventId.slice(-4).toUpperCase();
+  const shortUserId = trimmedUserId.slice(-4).toUpperCase();
+  const timestamp = now.getTime().toString(36).toUpperCase();
+  const certificateId = `DC-${shortEventId}-${shortUserId}-${timestamp}`;
+
+  const eventStart = event.startTime ?? event.startDate ?? event.eventDate ?? null;
+
+  const certData: CertificateData = {
+    studentName: user.name ?? user.fullName ?? 'Student',
+    eventTitle: event.title ?? event.name ?? 'Untitled Event',
+    eventDate: formatDateLabel(eventStart),
+    organizer: event.organizerName ?? event.organizer?.name ?? 'Unknown organizer',
+    organization: event.organizationName ?? event.organization?.name ?? '',
+    certificateId,
+  };
+
+  /* Generate the PDF. */
+  const pdfBytes = await generateCertificatePdf(certData, templatePath);
+
+  /* Persist certificate metadata to the attendance record. */
+  await attendance.updateOne(
+    { _id: attendanceRecord._id },
+    {
+      $set: {
+        certificateId,
+        certificateStatus: 'issued',
+        certificateGeneratedAt: now,
+        updatedAt: now,
+      },
+    },
+  );
+
+  return {
+    pdfBytes,
+    certificateId,
+    studentName: certData.studentName,
+    eventTitle: certData.eventTitle,
+  };
+}
+>>>>>>> origin/frontend-user

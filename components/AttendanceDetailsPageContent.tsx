@@ -14,9 +14,16 @@ import {
   getEventStatus,
   getRegisteredEventId,
   getSelectedAttendanceEventId,
+<<<<<<< HEAD
   recordRfidAttendanceTap,
 } from '@/lib/attendance';
 import { loadAttendanceRecords, loadRegisteredEvents } from '@/lib/user-data';
+=======
+  readRegisteredEvents,
+  readUserAttendanceRecords,
+  recordRfidAttendanceTap,
+} from '@/lib/attendance';
+>>>>>>> origin/frontend-user
 
 function getTimeMinutes(time?: string) {
   if (!time) return null;
@@ -73,19 +80,36 @@ type AttendanceDetail = {
   user: AttendanceUser;
 };
 
+<<<<<<< HEAD
 async function readSelectedAttendanceDetail(): Promise<AttendanceDetail | null> {
   const user = getCurrentAttendanceUser();
   const [registeredEvents, records] = await Promise.all([loadRegisteredEvents(), loadAttendanceRecords()]);
+=======
+const placeholderEvent: RegisteredEvent = {
+  name: 'Event Name',
+};
+
+function readSelectedAttendanceDetail(): AttendanceDetail {
+  const user = getCurrentAttendanceUser();
+  const registeredEvents = readRegisteredEvents();
+>>>>>>> origin/frontend-user
   const selectedEventId = getSelectedAttendanceEventId();
 
   const event =
     registeredEvents.find((registeredEvent) => getRegisteredEventId(registeredEvent) === selectedEventId) ||
+<<<<<<< HEAD
     registeredEvents[0];
 
   if (!event) {
     return null;
   }
 
+=======
+    registeredEvents[0] ||
+    placeholderEvent;
+
+  const records = readUserAttendanceRecords(user);
+>>>>>>> origin/frontend-user
   const record = records[getRegisteredEventId(event)];
 
   return { event, record, user };
@@ -99,7 +123,11 @@ export function AttendanceDetailsPageContent() {
   const [detail, setDetail] = useState<AttendanceDetail | null>(null);
 
   const refreshDetail = useCallback(() => {
+<<<<<<< HEAD
     void readSelectedAttendanceDetail().then(setDetail);
+=======
+    setDetail(readSelectedAttendanceDetail());
+>>>>>>> origin/frontend-user
   }, []);
 
   const focusScanner = useCallback(() => {
@@ -133,6 +161,7 @@ export function AttendanceDetailsPageContent() {
     };
   }, [refreshDetail, focusScanner]);
 
+<<<<<<< HEAD
   if (!detail) {
     return (
       <div className="details-wrap">
@@ -144,6 +173,11 @@ export function AttendanceDetailsPageContent() {
   }
 
   const { event, record, user } = detail;
+=======
+  const event = detail?.event || placeholderEvent;
+  const record = detail?.record;
+  const user = detail?.user;
+>>>>>>> origin/frontend-user
   const progressPercent = getProgressPercent(record, event);
   const isPassedEvent = getEventStatus(event) === 'Passed';
   const certificateStatus = getCertificateStatus(record, event);
@@ -167,6 +201,7 @@ export function AttendanceDetailsPageContent() {
       return;
     }
 
+<<<<<<< HEAD
     void loadRegisteredEvents().then((registeredEvents) => {
       const result = recordRfidAttendanceTap(scannedRfid, registeredEvents);
       setScanMessage(result.message);
@@ -174,6 +209,15 @@ export function AttendanceDetailsPageContent() {
       refreshDetail();
       focusScanner();
     });
+=======
+    const registeredEvents = readRegisteredEvents();
+    const result = recordRfidAttendanceTap(scannedRfid, registeredEvents);
+
+    setScanMessage(result.message);
+    setRfidInput('');
+    refreshDetail();
+    focusScanner();
+>>>>>>> origin/frontend-user
   };
 
   const handleCertificateDownload = () => {

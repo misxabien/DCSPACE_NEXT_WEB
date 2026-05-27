@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import {
   getCertificateStatus,
+<<<<<<< HEAD
   getEventStatus,
   getRegisteredEventId,
   type AttendanceRecord,
@@ -22,6 +23,29 @@ import {
 
 const filters = ['All', 'Today', 'Tomorrow', 'This Weekend', 'Pick a date'];
 
+=======
+  getCurrentAttendanceUser,
+  getEventStatus,
+  getRegisteredEventId,
+  readRegisteredEvents,
+  readUserAttendanceRecords,
+  type RegisteredEvent,
+} from '@/lib/attendance';
+import { DateRangeCalendarPicker } from '@/components/DateRangeCalendarPicker';
+import { type FrontendEvent, readBrowseEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
+
+const HOME_SAVED_EVENTS_KEY = 'dcspaceHomeSavedEvents';
+const filters = ['All', 'Today', 'Tomorrow', 'This Weekend', 'Pick a date'];
+
+function readSavedHomeEvents() {
+  try {
+    return JSON.parse(window.localStorage.getItem(HOME_SAVED_EVENTS_KEY) || '[]') as string[];
+  } catch {
+    return [];
+  }
+}
+
+>>>>>>> origin/frontend-user
 function getEventDate(event: FrontendEvent) {
   const parsedDate = new Date(`${event.month} ${event.day}, ${event.year}`);
 
@@ -113,11 +137,16 @@ export function HomePageContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
+<<<<<<< HEAD
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
+=======
+  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, ReturnType<typeof readUserAttendanceRecords>[string]>>({});
+>>>>>>> origin/frontend-user
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
   useEffect(() => {
+<<<<<<< HEAD
     let cancelled = false;
 
     const refreshEvents = async () => {
@@ -156,6 +185,26 @@ export function HomePageContent() {
       window.removeEventListener('storage', () => void refreshEvents());
       window.removeEventListener('dcspace-events-updated', () => void refreshEvents());
       window.removeEventListener('dcspace-registered-events-updated', () => void refreshEvents());
+=======
+    const refreshEvents = () => {
+      setEvents(readBrowseEvents());
+      setSavedEventIds(readSavedHomeEvents());
+      setRegisteredEvents(readRegisteredEvents());
+      setAttendanceRecords(readUserAttendanceRecords(getCurrentAttendanceUser()));
+    };
+
+    refreshEvents();
+    window.addEventListener('pageshow', refreshEvents);
+    window.addEventListener('storage', refreshEvents);
+    window.addEventListener('dcspace-events-updated', refreshEvents);
+    window.addEventListener('dcspace-registered-events-updated', refreshEvents);
+
+    return () => {
+      window.removeEventListener('pageshow', refreshEvents);
+      window.removeEventListener('storage', refreshEvents);
+      window.removeEventListener('dcspace-events-updated', refreshEvents);
+      window.removeEventListener('dcspace-registered-events-updated', refreshEvents);
+>>>>>>> origin/frontend-user
     };
   }, []);
 
@@ -186,7 +235,18 @@ export function HomePageContent() {
   );
 
   const toggleSavedEvent = (eventId: string) => {
+<<<<<<< HEAD
     void toggleEventBookmark(eventId, savedEventIds).then(setSavedEventIds);
+=======
+    setSavedEventIds((current) => {
+      const nextSavedEventIds = current.includes(eventId)
+        ? current.filter((savedEventId) => savedEventId !== eventId)
+        : [...current, eventId];
+
+      window.localStorage.setItem(HOME_SAVED_EVENTS_KEY, JSON.stringify(nextSavedEventIds));
+      return nextSavedEventIds;
+    });
+>>>>>>> origin/frontend-user
   };
 
   const handleFilterClick = (filter: string) => {
