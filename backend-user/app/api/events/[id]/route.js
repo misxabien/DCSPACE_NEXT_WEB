@@ -16,17 +16,6 @@ export async function OPTIONS() {
   return withCors(new NextResponse(null, { status: 204 }));
 }
 
-function withCors(response) {
-  response.headers.set("Access-Control-Allow-Origin", "*");
-  response.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
-  response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  return response;
-}
-
-export async function OPTIONS() {
-  return withCors(new NextResponse(null, { status: 204 }));
-}
-
 export async function GET(_request, { params }) {
   try {
     const { id } = await params;
@@ -44,7 +33,6 @@ export async function GET(_request, { params }) {
       { error: "Failed to fetch event details.", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 },
     ));
-<<<<<<< HEAD
   }
 }
 
@@ -90,7 +78,5 @@ export async function DELETE(request, { params }) {
         { status: 500 },
       ),
     );
-=======
->>>>>>> backup/backend-user
   }
 }

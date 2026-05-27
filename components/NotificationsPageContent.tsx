@@ -8,11 +8,7 @@ import {
   formatNotificationDate,
   formatNotificationTimeAgo,
   markNotificationsAsRead,
-<<<<<<< HEAD
-  loadNotifications,
-=======
   readNotifications,
->>>>>>> origin/frontend-user
 } from '@/lib/notifications';
 
 const categories: Array<{ key: 'all' | NotificationCategory; label: string }> = [
@@ -31,17 +27,9 @@ export function NotificationsPageContent() {
   const activeCategoryIndex = categories.findIndex((category) => category.key === activeCategory);
 
   useEffect(() => {
-<<<<<<< HEAD
-    const refreshNotifications = () => {
-      void loadNotifications().then(setNotifications);
-    };
-
-    void refreshNotifications();
-=======
     const refreshNotifications = () => setNotifications(readNotifications());
 
     refreshNotifications();
->>>>>>> origin/frontend-user
     window.addEventListener('pageshow', refreshNotifications);
     window.addEventListener('storage', refreshNotifications);
     window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, refreshNotifications);
@@ -68,20 +56,12 @@ export function NotificationsPageContent() {
 
   const handleNotificationClick = (notificationId: string) => {
     markNotificationsAsRead([notificationId]);
-<<<<<<< HEAD
-    void loadNotifications().then(setNotifications);
-=======
     setNotifications(readNotifications());
->>>>>>> origin/frontend-user
   };
 
   const handleMarkAllRead = () => {
     markNotificationsAsRead(notifications.map((notification) => notification.id));
-<<<<<<< HEAD
-    void loadNotifications().then(setNotifications);
-=======
     setNotifications(readNotifications());
->>>>>>> origin/frontend-user
   };
 
   return (

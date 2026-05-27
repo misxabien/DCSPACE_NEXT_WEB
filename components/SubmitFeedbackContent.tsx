@@ -2,12 +2,7 @@
 
 import { type FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-<<<<<<< HEAD
-import { getRegisteredEventId, type RegisteredEvent } from '@/lib/attendance';
-import { loadRegisteredEvents } from '@/lib/user-data';
-=======
 import { getRegisteredEventId, readRegisteredEvents, type RegisteredEvent } from '@/lib/attendance';
->>>>>>> origin/frontend-user
 
 type FeedbackType = 'event' | 'general' | 'issue';
 
@@ -27,15 +22,6 @@ export function SubmitFeedbackContent() {
 
   useEffect(() => {
     const refreshJoinedEvents = () => {
-<<<<<<< HEAD
-      void loadRegisteredEvents().then((events) => {
-        setJoinedEvents(events);
-        setSelectedEventId((currentEventId) => currentEventId || (events[0] ? getRegisteredEventId(events[0]) : ''));
-      });
-    };
-
-    void refreshJoinedEvents();
-=======
       const events = readRegisteredEvents();
 
       setJoinedEvents(events);
@@ -43,7 +29,6 @@ export function SubmitFeedbackContent() {
     };
 
     refreshJoinedEvents();
->>>>>>> origin/frontend-user
     window.addEventListener('pageshow', refreshJoinedEvents);
     window.addEventListener('storage', refreshJoinedEvents);
     window.addEventListener('dcspace-registered-events-updated', refreshJoinedEvents);

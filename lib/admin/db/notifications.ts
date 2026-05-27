@@ -1,21 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> backup/backend-user
-import { MongoClient } from "mongodb";
-
-const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
-const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
-<<<<<<< HEAD
-=======
 import { MongoClient } from 'mongodb';
 
 const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
 const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
->>>>>>> origin/frontend-user
-=======
->>>>>>> backup/backend-user
 
 const globalForMongo = globalThis as unknown as {
   adminNotificationsMongoClient?: MongoClient;
@@ -46,18 +33,8 @@ async function getDatabase() {
  */
 export async function getNotifications() {
   const db = await getDatabase();
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const events = db.collection<any>("events");
-  const reports = db.collection<any>("reports");
-=======
   const events = db.collection<any>('events');
   const reports = db.collection<any>('reports');
->>>>>>> origin/frontend-user
-=======
-  const events = db.collection<any>("events");
-  const reports = db.collection<any>("reports");
->>>>>>> backup/backend-user
 
   const [eventItems, reportItems] = await Promise.all([
     events

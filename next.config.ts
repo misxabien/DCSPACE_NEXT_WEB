@@ -1,6 +1,6 @@
 import type { NextConfig } from 'next';
 
-const backendUserUrl = process.env.BACKEND_USER_URL || "http://127.0.0.1:4001";
+const backendUserUrl = process.env.BACKEND_USER_URL || 'http://127.0.0.1:4001';
 
 const nextConfig: NextConfig = {
   images: {
@@ -15,11 +15,11 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/user/auth/:path*",
+        source: '/api/user/auth/:path*',
         destination: `${backendUserUrl}/api/auth/:path*`,
       },
       {
-        source: "/api/user/:path*",
+        source: '/api/user/:path*',
         destination: `${backendUserUrl}/api/:path*`,
       },
     ];

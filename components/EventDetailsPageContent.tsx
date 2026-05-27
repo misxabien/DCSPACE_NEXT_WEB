@@ -10,24 +10,6 @@ import {
   getCurrentAttendanceUser,
   getEventStatus,
   getRegisteredEventId,
-<<<<<<< HEAD
-  type AttendanceRecord,
-  type RegisteredEvent,
-  type UploadedRequirementFile,
-} from '@/lib/attendance';
-import { type FrontendEvent, SELECTED_BROWSE_EVENT_KEY } from '@/lib/dc-events';
-import {
-  deleteOrganizedEventFromBackend,
-  HOME_SAVED_EVENTS_KEY,
-  loadAttendanceRecords,
-  loadBookmarkedEventIds,
-  loadEventById,
-  loadRegisteredEvents,
-  registerEventForCurrentUser,
-  toggleEventBookmark,
-  userCanOrganize,
-} from '@/lib/user-data';
-=======
   readRegisteredEvents,
   readUserAttendanceRecords,
   type RegisteredEvent,
@@ -42,7 +24,6 @@ import {
 } from '@/lib/dc-events';
 
 const HOME_SAVED_EVENTS_KEY = 'dcspaceHomeSavedEvents';
->>>>>>> origin/frontend-user
 const createEventIconBase = '/svg icons organized events page/svg icons create event form page';
 const detailIcons = {
   date: `${createEventIconBase}/event-date-icon.svg`,
@@ -54,23 +35,6 @@ const detailIcons = {
   attendance: `${createEventIconBase}/clock-fill-icon.svg`,
   grace: `${createEventIconBase}/grace-period-icon.svg`,
   files: `${createEventIconBase}/required-file-icon.svg`,
-<<<<<<< HEAD
-};
-
-const emptyEventDetails: FrontendEvent = {
-  id: '',
-  name: '',
-  month: '',
-  day: '',
-  year: '',
-  dateTime: '',
-  venue: '',
-  organizer: '',
-  overview: '',
-  requirements: [],
-};
-
-=======
 };
 
 const fallbackEventDetails: FrontendEvent = {
@@ -87,7 +51,6 @@ const fallbackEventDetails: FrontendEvent = {
   requirements: ["Parent's Consent Form"],
 };
 
->>>>>>> origin/frontend-user
 type EventDetailsSource = 'events' | 'dashboard' | 'organized';
 type RegistrationDecision = 'accepted' | 'rejected';
 
@@ -100,23 +63,7 @@ type EventDetailsPageContentProps = {
   };
 };
 
-<<<<<<< HEAD
 function getRegisteredEventStatusLabel(eventDate?: EventDetailsPageContentProps['eventDate']) {
-=======
-type StoredRegisteredEvent = {
-  id: string;
-  month: string;
-  day: string;
-  year: string;
-  name: string;
-  dateTime: string;
-  venue: string;
-  organizer: string;
-  posterImage?: string;
-};
-
-function getRegisteredEventStatusLabel(eventDate?: EventDetailsPageContentProps["eventDate"]) {
->>>>>>> backup/backend-user
   if (!eventDate?.month || !eventDate.day || !eventDate.year) {
     return 'Upcoming Event';
   }
@@ -160,8 +107,6 @@ function readRequirementFile(file: File): Promise<UploadedRequirementFile> {
   });
 }
 
-<<<<<<< HEAD
-=======
 function readSavedHomeEvents() {
   try {
     return JSON.parse(window.localStorage.getItem(HOME_SAVED_EVENTS_KEY) || '[]') as string[];
@@ -170,7 +115,6 @@ function readSavedHomeEvents() {
   }
 }
 
->>>>>>> origin/frontend-user
 function writeSavedHomeEvents(eventIds: string[]) {
   window.localStorage.setItem(HOME_SAVED_EVENTS_KEY, JSON.stringify(eventIds));
   window.dispatchEvent(new CustomEvent('dcspace-events-updated'));
@@ -222,13 +166,8 @@ function getAdminChangeRequest(event: FrontendEvent) {
   );
 }
 
-<<<<<<< HEAD
-function isEventRegistered(eventId: string, registrations: RegisteredEvent[]) {
-  return registrations.some((event) => getRegisteredEventId(event) === eventId || event.id === eventId);
-=======
 function getCurrentEventRegistered(eventId: string) {
   return readRegisteredEvents().some((event) => getRegisteredEventId(event) === eventId || event.id === eventId);
->>>>>>> origin/frontend-user
 }
 
 function DetailRow({
@@ -310,85 +249,17 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [organizedEventSection, setOrganizedEventSection] = useState('all');
   const [organizedEventFilter, setOrganizedEventFilter] = useState('All');
-<<<<<<< HEAD
-  const [selectedEvent, setSelectedEvent] = useState<FrontendEvent>(emptyEventDetails);
-  const [isLoadingEvent, setIsLoadingEvent] = useState(true);
-=======
   const [selectedEvent, setSelectedEvent] = useState<FrontendEvent>(fallbackEventDetails);
->>>>>>> origin/frontend-user
   const [savedEventIds, setSavedEventIds] = useState<string[]>([]);
   const [isJoined, setIsJoined] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState('');
   const [canCurrentUserOrganize, setCanCurrentUserOrganize] = useState(false);
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
-<<<<<<< HEAD
-  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
-=======
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, ReturnType<typeof readUserAttendanceRecords>[string]>>({});
->>>>>>> origin/frontend-user
   const [registrationDecisions, setRegistrationDecisions] = useState<Record<string, RegistrationDecision>>({});
   const eventRequirements = selectedEvent.requirements || [];
 
   useEffect(() => {
-<<<<<<< HEAD
-    let cancelled = false;
-
-    const loadDetails = async () => {
-      setIsLoadingEvent(true);
-      const selectedId = window.localStorage.getItem(SELECTED_BROWSE_EVENT_KEY);
-      const browseEvent = selectedId ? (await loadEventById(selectedId)) : null;
-      const studentEmail = window.localStorage.getItem('dcspaceStudentEmail')?.trim().toLowerCase() || '';
-      const currentRegisteredEvents = await loadRegisteredEvents();
-      const attendance = await loadAttendanceRecords();
-      const bookmarks = await loadBookmarkedEventIds();
-
-      if (cancelled) return;
-
-      setCurrentUserEmail(studentEmail);
-      setCanCurrentUserOrganize(userCanOrganize());
-      setRegisteredEvents(currentRegisteredEvents);
-      setAttendanceRecords(attendance);
-      setOrganizedEventSection(window.sessionStorage.getItem('dcspaceOrganizedEventSection') || 'all');
-      setOrganizedEventFilter(window.sessionStorage.getItem('dcspaceOrganizedEventFilter') || 'All');
-
-      if (!browseEvent) {
-        setSelectedEvent(emptyEventDetails);
-        setIsLoadingEvent(false);
-        return;
-      }
-<<<<<<< HEAD
-
-      if (!isDashboardSource) {
-        setSelectedEvent(browseEvent);
-        setSavedEventIds(bookmarks);
-        setIsJoined(isEventRegistered(browseEvent.id, currentRegisteredEvents));
-        setIsLoadingEvent(false);
-        return;
-      }
-
-      const registeredEvent =
-        currentRegisteredEvents.find((event) => event.id && event.id === browseEvent.id) ||
-        currentRegisteredEvents.find((event) => registeredEventMatchesDate(event, eventDate));
-
-      const resolvedEvent = registeredEvent ? toEventDetails(registeredEvent, browseEvent) : browseEvent;
-      setSelectedEvent(resolvedEvent);
-      setSavedEventIds(bookmarks);
-      setIsJoined(isEventRegistered(resolvedEvent.id, currentRegisteredEvents));
-      setIsLoadingEvent(false);
-    };
-
-    void loadDetails();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [eventDate, isDashboardSource, source]);
-
-  const toggleSavedEvent = () => {
-    void toggleEventBookmark(selectedEvent.id, savedEventIds).then((nextIds) => {
-      setSavedEventIds(nextIds);
-      writeSavedHomeEvents(nextIds);
-=======
     const browseEvent = readSelectedBrowseEvent();
     const studentEmail = window.localStorage.getItem('dcspaceStudentEmail')?.trim().toLowerCase() || '';
     const currentUser = getCurrentAttendanceUser();
@@ -405,49 +276,12 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
       setSavedEventIds(readSavedHomeEvents());
       setIsJoined(getCurrentEventRegistered(browseEvent.id));
       return;
-=======
-    : {
-        name: fallbackFromQuery.title || eventDetails.name,
-        dateTime: fallbackFromQuery.date || eventDetails.dateTime,
-        venue: fallbackFromQuery.venue || eventDetails.venue,
-        organizer: fallbackFromQuery.organizer || eventDetails.organizer,
-        overview: eventDetails.overview,
-        requirements: eventDetails.requirements,
-      };
-  const posterImage = apiEvent?.posterImage || "";
-
-  const handleConfirm = () => {
-    if (!fileAdded) return;
-
-    const newEvent = {
-      month: "March",
-      day: "15",
-      year: "2026",
-      name: eventDetails.name,
-      dateTime: eventDetails.dateTime,
-      venue: eventDetails.venue,
-      organizer: eventDetails.organizer,
-      status: "Registered",
-      certificate: "Pending",
-    };
-
-    const existing = JSON.parse(localStorage.getItem("dcspaceRegisteredEvents") || "[]");
-
-    const alreadyExists = existing.some(
-      (event: typeof newEvent) =>
-        event.name === newEvent.name && event.dateTime === newEvent.dateTime,
-    );
-
-    if (!alreadyExists) {
-      localStorage.setItem("dcspaceRegisteredEvents", JSON.stringify([...existing, newEvent]));
->>>>>>> backup/backend-user
     }
 
     const registeredEvent =
       currentRegisteredEvents.find((event) => event.id && event.id === browseEvent.id) ||
       currentRegisteredEvents.find((event) => registeredEventMatchesDate(event, eventDate));
 
-<<<<<<< HEAD
     setSelectedEvent(registeredEvent ? toEventDetails(registeredEvent, browseEvent) : browseEvent);
     setSavedEventIds(readSavedHomeEvents());
     setIsJoined(getCurrentEventRegistered((registeredEvent ? toEventDetails(registeredEvent, browseEvent) : browseEvent).id));
@@ -461,7 +295,6 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
 
       writeSavedHomeEvents(nextSavedEventIds);
       return nextSavedEventIds;
->>>>>>> origin/frontend-user
     });
   };
 
@@ -486,25 +319,6 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
       return;
     }
 
-<<<<<<< HEAD
-    void registerEventForCurrentUser(selectedEvent, [])
-      .then(() => setIsJoined(true))
-      .catch((error) => {
-        window.alert(error instanceof Error ? error.message : 'Failed to register for this event.');
-      });
-  };
-
-  const handleDeleteEvent = () => {
-    void deleteOrganizedEventFromBackend(selectedEvent.id)
-      .then(() => {
-        setShowDeleteConfirm(false);
-        window.sessionStorage.setItem('dcspaceDashboardView', 'organized');
-        router.push('/dashboard');
-      })
-      .catch((error) => {
-        window.alert(error instanceof Error ? error.message : 'Failed to delete event.');
-      });
-=======
     registerEventForCurrentUser(selectedEvent, []);
     setIsJoined(true);
   };
@@ -514,7 +328,6 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
     setShowDeleteConfirm(false);
     window.sessionStorage.setItem('dcspaceDashboardView', 'organized');
     router.push('/dashboard');
->>>>>>> origin/frontend-user
   };
 
   const handleConfirm = async () => {
@@ -538,35 +351,15 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
         })),
     );
 
-<<<<<<< HEAD
-    try {
-      await registerEventForCurrentUser(selectedEvent, requirementFiles);
-      setIsJoined(true);
-      const [registered, attendance] = await Promise.all([
-        loadRegisteredEvents(),
-        loadAttendanceRecords(),
-      ]);
-      setRegisteredEvents(registered);
-      setAttendanceRecords(attendance);
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'Failed to register for this event.');
-      return;
-    }
-=======
     registerEventForCurrentUser(selectedEvent, requirementFiles);
     setIsJoined(true);
     setRegisteredEvents(readRegisteredEvents());
     setAttendanceRecords(readUserAttendanceRecords(getCurrentAttendanceUser()));
->>>>>>> origin/frontend-user
 
     if (!isDashboardSource && !isOrganizedSource) {
       setShowRequirementSuccess(true);
       window.setTimeout(() => {
-<<<<<<< HEAD
-        void loadRegisteredEvents().then(setRegisteredEvents);
-=======
         setRegisteredEvents(readRegisteredEvents());
->>>>>>> origin/frontend-user
         setShowRequirements(false);
         setShowRequirementSuccess(false);
         startTransition(() => {
@@ -574,32 +367,9 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
         });
       }, 2200);
       return;
-=======
-      const resolvedDate = apiEvent?.date || fallbackFromQuery.date;
-      const dateParts = toDateParts(resolvedDate);
-      const eventIdForStorage = apiEvent?.id || eventId || `${details.name}-${details.dateTime}`.replace(/\s+/g, "-").toLowerCase();
-      const newEvent = {
-        id: eventIdForStorage,
-        month: dateParts.month,
-        day: dateParts.day,
-        year: dateParts.year,
-        name: details.name,
-        dateTime: details.dateTime,
-        venue: details.venue || "Event Venue",
-        organizer: details.organizer || "Event Organizer",
-        posterImage: apiEvent?.posterImage || "",
-      };
-
-      const dedupedEvents = [
-        newEvent,
-        ...existingEvents.filter((event) => String(event.id || "") !== newEvent.id),
-      ];
-      window.localStorage.setItem(registeredEventsStorageKey, JSON.stringify(dedupedEvents as StoredRegisteredEvent[]));
->>>>>>> backup/backend-user
     }
 
     setIsRedirecting(true);
-
     window.setTimeout(() => {
       startTransition(() => {
         router.push('/dashboard');
@@ -682,28 +452,6 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
     }));
   };
 
-<<<<<<< HEAD
-  if (isLoadingEvent) {
-    return (
-      <section className="event-details-page">
-        <p className="event-details-loading">Loading event details…</p>
-      </section>
-    );
-  }
-
-  if (!eventDetails.id) {
-    return (
-      <section className="event-details-page">
-        <p className="event-details-loading">Event not found. Go back to Browse Events and select an event.</p>
-        <Link href="/events" className="btn primary">
-          Browse Events
-        </Link>
-      </section>
-    );
-  }
-
-=======
->>>>>>> origin/frontend-user
   if (isOrganizedSource && hasRequestedChanges) {
     return (
       <section className="event-details-page event-details-page--change-request">
@@ -1292,13 +1040,9 @@ export function EventDetailsPageContent({ source = 'events', eventDate }: EventD
 
       <section className="event-hero">
         <div className="event-hero-image">
-          {posterImage ? (
-            <img src={posterImage} alt={`${details.name} poster`} />
-          ) : (
-            <svg viewBox="0 0 7 7" fill="none" aria-hidden="true">
-              <path d="M1.38831 4.72105L2.63783 3.05502L3.60967 4.30454L4.30385 3.47153L5.2757 4.72105H1.38831ZM5.55337 1.66667H3.332L2.77666 1.11133H1.11064C0.963353 1.11133 0.8221 1.16984 0.717954 1.27398C0.613807 1.37813 0.555298 1.51938 0.555298 1.66667V4.99872C0.555298 5.146 0.613807 5.28726 0.717954 5.3914C0.8221 5.49555 0.963353 5.55406 1.11064 5.55406H5.55337C5.70066 5.55406 5.84191 5.49555 5.94605 5.3914C6.0502 5.28726 6.10871 5.146 6.10871 4.99872V2.22201C6.10871 2.07473 6.0502 1.93347 5.94605 1.82933C5.84191 1.72518 5.70066 1.66667 5.55337 1.66667Z" fill="currentColor" />
-            </svg>
-          )}
+          <svg viewBox="0 0 7 7" fill="none" aria-hidden="true">
+            <path d="M1.38831 4.72105L2.63783 3.05502L3.60967 4.30454L4.30385 3.47153L5.2757 4.72105H1.38831ZM5.55337 1.66667H3.332L2.77666 1.11133H1.11064C0.963353 1.11133 0.8221 1.16984 0.717954 1.27398C0.613807 1.37813 0.555298 1.51938 0.555298 1.66667V4.99872C0.555298 5.146 0.613807 5.28726 0.717954 5.3914C0.8221 5.49555 0.963353 5.55406 1.11064 5.55406H5.55337C5.70066 5.55406 5.84191 5.49555 5.94605 5.3914C6.0502 5.28726 6.10871 5.146 6.10871 4.99872V2.22201C6.10871 2.07473 6.0502 1.93347 5.94605 1.82933C5.84191 1.72518 5.70066 1.66667 5.55337 1.66667Z" fill="currentColor" />
+          </svg>
         </div>
 
         <div className="event-summary">
@@ -1520,15 +1264,3 @@ function OrganizerIcon() {
     </svg>
   );
 }
-<<<<<<< HEAD
-=======
-
-function FileIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-      <path d="M14 2V8H20" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-    </svg>
-  );
-}
->>>>>>> backup/backend-user

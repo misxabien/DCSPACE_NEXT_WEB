@@ -24,7 +24,6 @@ export async function POST(request) {
       return withCors(NextResponse.json({ error: validationError }, { status: 400 }));
     }
 
-<<<<<<< HEAD
     const verification = await verifyRegistrationCode(body.email, body.verificationCode);
     if (!verification.ok) {
       return withCors(NextResponse.json({ error: verification.error }, { status: 400 }));
@@ -32,18 +31,12 @@ export async function POST(request) {
 
     const rfidNumber = String(body.rfidNumber || "").trim();
     const photoUrl = String(body.photoUrl || "").trim();
-=======
-    const rfidNumber = String(body.rfidNumber || "").trim();
->>>>>>> backup/backend-user
     const newUser = {
       firstName: String(body.firstName).trim(),
       lastName: String(body.lastName).trim(),
       studentNumber: String(body.studentNumber).trim(),
       email: String(body.email).trim().toLowerCase(),
-<<<<<<< HEAD
       ...(photoUrl ? { photoUrl } : {}),
-=======
->>>>>>> backup/backend-user
       ...(rfidNumber ? { rfidNumber } : {}),
       organizationPart: String(body.organizationPart || "").trim(),
       organizationRole: String(body.organizationRole || "").trim(),

@@ -3,17 +3,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { type CSSProperties, useEffect, useMemo, useState } from 'react';
-<<<<<<< HEAD
 import type { FrontendEvent } from '@/lib/dc-events';
-=======
-import { canOrganizeEvents, readOrganizedEvents } from '@/lib/dc-events';
->>>>>>> origin/frontend-user
 import {
   getCertificateStatus,
   getCurrentAttendanceUser,
   getRegisteredEventId,
   getRequirementStatus,
-<<<<<<< HEAD
   type AttendanceRecord,
   type RegisteredEvent,
 } from '@/lib/attendance';
@@ -37,11 +32,6 @@ import {
   userCanOrganize,
 } from '@/lib/user-data';
 import { readAuthSession } from '@/lib/user-api';
-=======
-  readRegisteredEvents,
-  readUserAttendanceRecords,
-} from '@/lib/attendance';
->>>>>>> origin/frontend-user
 
 const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
 
@@ -89,13 +79,8 @@ function dispatchProfileUpdate() {
   window.dispatchEvent(new CustomEvent('dcspace-profile-updated'));
 }
 
-<<<<<<< HEAD
 function getEventName(event: RegisteredEvent) {
   return event.name || 'Event';
-=======
-function getEventName(event: ReturnType<typeof readRegisteredEvents>[number]) {
-  return event.name || 'Event Name';
->>>>>>> origin/frontend-user
 }
 
 function isFacultyUser(user: ReturnType<typeof getCurrentAttendanceUser> | null) {
@@ -104,7 +89,6 @@ function isFacultyUser(user: ReturnType<typeof getCurrentAttendanceUser> | null)
 
   return values.some((value) => value?.toLowerCase().includes('faculty'));
 }
-<<<<<<< HEAD
 
 function resolveProfileUser() {
   const attendanceUser = getCurrentAttendanceUser();
@@ -133,14 +117,6 @@ export function MyProfileContent() {
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
   const [organizedEvents, setOrganizedEvents] = useState<FrontendEvent[]>([]);
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
-=======
-
-export function MyProfileContent() {
-  const [user, setUser] = useState<ReturnType<typeof getCurrentAttendanceUser> | null>(null);
-  const [registeredEvents, setRegisteredEvents] = useState<ReturnType<typeof readRegisteredEvents>>([]);
-  const [organizedEvents, setOrganizedEvents] = useState<ReturnType<typeof readOrganizedEvents>>([]);
-  const [attendanceRecords, setAttendanceRecords] = useState<Record<string, ReturnType<typeof readUserAttendanceRecords>[string]>>({});
->>>>>>> origin/frontend-user
   const [canViewOrganizedEvents, setCanViewOrganizedEvents] = useState(false);
   const [profilePhotoImage, setProfilePhotoImage] = useState('');
   const [profilePhotoFit, setProfilePhotoFit] = useState<ProfileImageFit>({ zoom: 1, x: 0, y: 0 });
@@ -150,7 +126,6 @@ export function MyProfileContent() {
   const [draftPhotoFit, setDraftPhotoFit] = useState<ProfileImageFit>({ zoom: 1, x: 0, y: 0 });
   const [draftCoverImage, setDraftCoverImage] = useState('');
   const [draftCoverFit, setDraftCoverFit] = useState<ProfileImageFit>({ zoom: 1, x: 0, y: 0 });
-<<<<<<< HEAD
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState('');
   const [photoNotice, setPhotoNotice] = useState('');
@@ -198,39 +173,6 @@ export function MyProfileContent() {
 
     return () => {
       cancelled = true;
-=======
-
-  useEffect(() => {
-    const refreshProfile = () => {
-      const currentUser = getCurrentAttendanceUser();
-      const canOrganize = canOrganizeEvents();
-      const canViewOrganizedStatistics = canOrganize || isFacultyUser(currentUser);
-
-      setUser(currentUser);
-      setRegisteredEvents(readRegisteredEvents());
-      setAttendanceRecords(readUserAttendanceRecords(currentUser));
-      setCanViewOrganizedEvents(canViewOrganizedStatistics);
-      setOrganizedEvents(canViewOrganizedStatistics ? readOrganizedEvents() : []);
-      setProfilePhotoImage(window.localStorage.getItem('dcspaceProfilePhotoImage') || '');
-      setProfilePhotoFit(readImageFit('dcspaceProfilePhotoFit'));
-      setProfileCoverImage(window.localStorage.getItem('dcspaceProfileCoverImage') || '');
-      setProfileCoverFit(readImageFit('dcspaceProfileCoverFit'));
-    };
-
-    refreshProfile();
-    window.addEventListener('pageshow', refreshProfile);
-    window.addEventListener('storage', refreshProfile);
-    window.addEventListener('dcspace-events-updated', refreshProfile);
-    window.addEventListener('dcspace-registered-events-updated', refreshProfile);
-    window.addEventListener('dcspace-profile-updated', refreshProfile);
-
-    return () => {
-      window.removeEventListener('pageshow', refreshProfile);
-      window.removeEventListener('storage', refreshProfile);
-      window.removeEventListener('dcspace-events-updated', refreshProfile);
-      window.removeEventListener('dcspace-registered-events-updated', refreshProfile);
-      window.removeEventListener('dcspace-profile-updated', refreshProfile);
->>>>>>> origin/frontend-user
     };
   }, []);
 
@@ -271,7 +213,6 @@ export function MyProfileContent() {
   const initials = getInitials(user?.firstName, user?.lastName, user?.studentEmail);
   const hasOrganizedStatisticsAccess = canViewOrganizedEvents || isFacultyUser(user);
 
-<<<<<<< HEAD
   const saveProfilePhotoHandler = () => {
     if (!draftPhotoImage || isSavingPhoto) return;
 
@@ -296,29 +237,13 @@ export function MyProfileContent() {
       .finally(() => {
         setIsSavingPhoto(false);
       });
-=======
-  const saveProfilePhoto = () => {
-    if (!draftPhotoImage) return;
-
-    window.localStorage.setItem('dcspaceProfilePhotoImage', draftPhotoImage);
-    window.localStorage.setItem('dcspaceProfilePhotoFit', JSON.stringify(draftPhotoFit));
-    setProfilePhotoImage(draftPhotoImage);
-    setProfilePhotoFit(draftPhotoFit);
-    setDraftPhotoImage('');
-    dispatchProfileUpdate();
->>>>>>> origin/frontend-user
   };
 
   const saveProfileCover = () => {
     if (!draftCoverImage) return;
 
-<<<<<<< HEAD
     safeSetLocalStorage(getProfileCoverStorageKey(), draftCoverImage);
     safeSetLocalStorage(getProfileCoverFitStorageKey(), JSON.stringify(draftCoverFit));
-=======
-    window.localStorage.setItem('dcspaceProfileCoverImage', draftCoverImage);
-    window.localStorage.setItem('dcspaceProfileCoverFit', JSON.stringify(draftCoverFit));
->>>>>>> origin/frontend-user
     setProfileCoverImage(draftCoverImage);
     setProfileCoverFit(draftCoverFit);
     setDraftCoverImage('');
@@ -328,7 +253,6 @@ export function MyProfileContent() {
   const handleImageUpload = (file: File | undefined, target: 'photo' | 'cover') => {
     if (!file || !ACCEPTED_IMAGE_TYPES.includes(file.type)) return;
 
-<<<<<<< HEAD
     setPhotoError('');
     const prepare = target === 'photo' ? prepareProfilePhotoForStorage : prepareCoverImageForStorage;
 
@@ -347,23 +271,6 @@ export function MyProfileContent() {
       .catch((error) => {
         setPhotoError(error instanceof Error ? error.message : 'Unable to process image.');
       });
-=======
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== 'string') return;
-
-      const defaultFit = { zoom: 1, x: 0, y: 0 };
-
-      if (target === 'photo') {
-        setDraftPhotoImage(reader.result);
-        setDraftPhotoFit(defaultFit);
-      } else {
-        setDraftCoverImage(reader.result);
-        setDraftCoverFit(defaultFit);
-      }
-    };
-    reader.readAsDataURL(file);
->>>>>>> origin/frontend-user
   };
 
   const displayedPhotoImage = draftPhotoImage || profilePhotoImage;
@@ -408,7 +315,6 @@ export function MyProfileContent() {
               )}
             </div>
 
-<<<<<<< HEAD
             {photoError ? (
               <p className="profile-upload-error" role="alert">
                 {photoError}
@@ -424,11 +330,6 @@ export function MyProfileContent() {
             {draftPhotoImage ? (
               <button className="profile-upload" type="button" onClick={saveProfilePhotoHandler} disabled={isSavingPhoto}>
                 {isSavingPhoto ? 'Saving…' : 'Save'}
-=======
-            {draftPhotoImage ? (
-              <button className="profile-upload" type="button" onClick={saveProfilePhoto}>
-                Save
->>>>>>> origin/frontend-user
               </button>
             ) : (
               <label className="profile-upload">
@@ -441,7 +342,6 @@ export function MyProfileContent() {
               </label>
             )}
           </div>
-<<<<<<< HEAD
 
           {draftPhotoImage && <ImageAdjustControls fit={draftPhotoFit} onChange={setDraftPhotoFit} target="profile photo" />}
 
@@ -457,35 +357,6 @@ export function MyProfileContent() {
             <ProfileField label="School/Department" value={getDisplayValue(user?.school)} />
             <ProfileField label="Organization" value={getDisplayValue(user?.organizationPart)} />
             <ProfileField label="Organization Role" value={getDisplayValue(user?.organizationRole)} />
-=======
-          <div className="profile-summary__fields">
-            <p className="profile-summary__name">{profile?.fullName || "Full Name"}</p>
-            <p className="profile-summary__line">
-              <span>Student Number:</span> {profile?.studentNumber || "2024-01452"}
-            </p>
-            <p className="profile-summary__line">
-              <span>RFID Tag No.:</span> {profile?.rfidNumber || "Not provided"}
-            </p>
-            <p className="profile-summary__line">
-              <span>Email:</span> {profile?.email || "No email on file"}
-            </p>
-            <p className="profile-summary__line">
-              <span>Course:</span> {profile?.course || "Not provided"}
-            </p>
-            <p className="profile-summary__line">
-              <span>School:</span> {profile?.school || "Not provided"}
-            </p>
-            <p className="profile-summary__line">
-              <span>Organization/Club:</span> {profile?.organizationPart || "Not provided"}
-            </p>
-            <p className="profile-summary__line">
-              <span>Position:</span> {profile?.organizationRole || "Not provided"}
-            </p>
-            <p className="profile-summary__line">
-              <span>Account Type:</span> {profile?.role ? `${profile.role} account` : "student account"}
-            </p>
-            {profileError && <p className="auth-field-error">{profileError}</p>}
->>>>>>> backup/backend-user
           </div>
         </section>
 

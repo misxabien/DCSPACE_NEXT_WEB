@@ -41,10 +41,7 @@ export type RegisteredEvent = {
   surveyFormLink?: string;
   announcements?: string;
   requirements?: string[];
-<<<<<<< HEAD
   bannerDataUrl?: string;
-=======
->>>>>>> origin/frontend-user
   requirementFile?: UploadedRequirementFile;
   requirementFiles?: UploadedRequirementFile[];
 };
@@ -107,7 +104,6 @@ function normalizeRfid(value: string) {
   return value.replace(/\s+/g, '').toLowerCase();
 }
 
-<<<<<<< HEAD
 function isBrowser() {
   return typeof window !== 'undefined';
 }
@@ -128,9 +124,6 @@ const emptyAttendanceUser = (): AttendanceUser => ({
 
 export function readRegisteredEvents() {
   if (!isBrowser()) return [];
-=======
-export function readRegisteredEvents() {
->>>>>>> origin/frontend-user
   return readJson<RegisteredEvent[]>(window.localStorage, REGISTERED_EVENTS_KEY, []);
 }
 
@@ -176,11 +169,8 @@ export function signOutAttendanceUser() {
 }
 
 export function getCurrentAttendanceUser(): AttendanceUser {
-<<<<<<< HEAD
   if (!isBrowser()) return emptyAttendanceUser();
 
-=======
->>>>>>> origin/frontend-user
   const sessionUser = readJson<Partial<AttendanceUser>>(window.sessionStorage, CURRENT_USER_KEY, {});
   const studentEmail =
     present(sessionUser.studentEmail) || present(window.localStorage.getItem('dcspaceStudentEmail'));
@@ -270,10 +260,7 @@ export function getAttendanceStorageKey(user: AttendanceUser) {
 }
 
 export function readUserAttendanceRecords(user: AttendanceUser) {
-<<<<<<< HEAD
   if (!isBrowser()) return {};
-=======
->>>>>>> origin/frontend-user
   return readJson<Record<string, AttendanceRecord>>(window.localStorage, getAttendanceStorageKey(user), {});
 }
 
@@ -456,7 +443,6 @@ export function recordRfidAttendanceTap(scannedRfid: string, events: RegisteredE
 
   const tapType = lastTapPair && !lastTapPair.tapOut ? 'tap out' : 'tap in';
 
-<<<<<<< HEAD
   if (typeof window !== 'undefined') {
     void import('@/lib/user-api')
       .then(({ readAuthSession, recordAttendanceTap }) => {
@@ -472,8 +458,6 @@ export function recordRfidAttendanceTap(scannedRfid: string, events: RegisteredE
       .catch(() => undefined);
   }
 
-=======
->>>>>>> origin/frontend-user
   return {
     ok: true,
     message: `${nextRecord.eventName} ${tapType} recorded at ${currentTime}.`,
