@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
-import { fetchEventById, readAuthSession, type UserEvent } from "@/lib/user-api";
+import { fetchEventById, readAuthSession, registerForEvent, type UserEvent } from "@/lib/user-api";
 
 const registeredEventsStorageKey = "dcspace_registered_events";
 
@@ -148,8 +148,9 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
 
   const handleConfirm = () => {
     if (!fileAdded) return;
+    const session = readAuthSession();
     const ownerEmail = (
-      readAuthSession()?.user?.email ||
+      session?.user?.email ||
       window.localStorage.getItem("dcspaceStudentEmail") ||
       ""
     ).trim().toLowerCase();
@@ -219,6 +220,12 @@ export function EventDetailsPageContent({ source = "events", eventDate }: EventD
         }),
       ];
       window.localStorage.setItem(registeredEventsStorageKey, JSON.stringify(dedupedEvents as StoredRegisteredEvent[]));
+
+      if (session?.token && apiEvent?.id) {
+        registerForEvent(session.token, apiEvent.id).catch(() => {
+          /* Local registration still works; admin sync can retry on next confirmation. */
+        });
+      }
     }
 
     setIsRedirecting(true);

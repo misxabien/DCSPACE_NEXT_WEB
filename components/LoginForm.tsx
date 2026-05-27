@@ -3,10 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { signInAttendanceUser } from "@/lib/attendance";
-import { loginUser, saveAuthSession } from "@/lib/user-api";
+import { loginUser, saveAuthSession, saveUserProfileDetails } from "@/lib/user-api";
 
 export function LoginForm() {
   const router = useRouter();
@@ -15,8 +16,13 @@ export function LoginForm() {
   const [role, setRole] = useState<"student" | "faculty">("student");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const isRegistered = searchParams.get("registered") === "1";
   const prefilledEmail = searchParams.get("email") || "";
+  const nextAuthError = searchParams.get("error");
+  const googleSignInError = nextAuthError
+    ? "Google login failed. Please use a registered SDCA Gmail account."
+    : "";
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -29,16 +35,7 @@ export function LoginForm() {
       setIsLoading(true);
       const result = await loginUser(email, password);
       saveAuthSession(result.token, result.user);
-      window.localStorage.setItem("dcspaceFirstName", result.user.firstName || "");
-      window.localStorage.setItem("dcspaceLastName", result.user.lastName || "");
-      window.localStorage.setItem("dcspaceStudentNumber", result.user.studentNumber || "");
-      window.localStorage.setItem("dcspaceStudentEmail", result.user.email || email);
-      window.localStorage.setItem("dcspacePhotoUrl", result.user.photoUrl || "");
-      window.localStorage.setItem("dcspaceRfidNumber", result.user.rfidNumber || "");
-      window.localStorage.setItem("dcspaceCourse", result.user.course || "");
-      window.localStorage.setItem("dcspaceSchool", result.user.school || "");
-      window.localStorage.setItem("dcspaceOrganizationPart", result.user.organizationPart || "");
-      window.localStorage.setItem("dcspaceOrganizationRole", result.user.organizationRole || "");
+      saveUserProfileDetails(result.user);
       signInAttendanceUser(result.user.email || email);
       router.push("/dashboard");
     } catch (loginError) {
@@ -48,6 +45,16 @@ export function LoginForm() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      setError("");
+      setIsGoogleLoading(true);
+      await signIn("google", { callbackUrl: "/auth/google/callback" });
+    } catch (googleError) {
+      setIsGoogleLoading(false);
+      setError(googleError instanceof Error ? googleError.message : "Failed to start Google login.");
+    }
+  };
 
   return (
     <main className="page">
@@ -71,7 +78,13 @@ export function LoginForm() {
         </aside>
 
         <section className="card" aria-label="Login card">
-          <button className="btn google" type="button" aria-label="Continue with Google">
+          <button
+            className="btn google"
+            type="button"
+            aria-label="Continue with Google"
+            onClick={handleGoogleLogin}
+            disabled={isLoading || isGoogleLoading}
+          >
             <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden>
               <path
                 fill="#FFC107"
@@ -90,7 +103,7 @@ export function LoginForm() {
                 d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.1 5.615h.001l6.174 5.227C36.941 39.243 44 34 44 24c0-1.341-.138-2.651-.389-3.917z"
               />
             </svg>
-            <span>Continue with SDCA Gmail Account</span>
+            <span>{isGoogleLoading ? "CONNECTING..." : "Continue with SDCA Gmail Account"}</span>
           </button>
 
           <div className="divider" aria-hidden>
@@ -183,7 +196,7 @@ export function LoginForm() {
             <button className="btn primary" type="submit" disabled={isLoading}>
               {isLoading ? "SIGNING IN..." : "SIGN IN"}
             </button>
-            {error && <p className="auth-field-error">{error}</p>}
+            {(error || googleSignInError) && <p className="auth-field-error">{error || googleSignInError}</p>}
           </form>
 
           <div className="below">

@@ -52,7 +52,7 @@ function toHourLabel(value: Date | string | null | undefined) {
 export async function getDashboardStats() {
   const db = await getDatabase();
   const events = db.collection<any>('events');
-  const attendance = db.collection<any>('attendance');
+  const attendance = db.collection<any>('attendance_logs');
 
   const [totalEvents, totalAttendees] = await Promise.all([
     events.countDocuments({}),
@@ -70,17 +70,17 @@ export async function getDashboardStats() {
  */
 export async function getDashboardAttendanceData() {
   const db = await getDatabase();
-  const attendance = db.collection<any>('attendance');
+  const attendance = db.collection<any>('attendance_logs');
   const records = await attendance.find({}).sort({ createdAt: -1 }).limit(500).toArray();
 
   return records.map((record) => ({
     eventId: record.eventId ?? null,
     eventTitle: record.eventTitle ?? record.eventName ?? 'Untitled event',
-    attendedAt: record.attendedAt ?? record.tapIn ?? record.createdAt ?? null,
+    attendedAt: record.attendedAt ?? record.updatedAt ?? record.createdAt ?? null,
     tapOut: record.tapOut ?? null,
     attendeeId: record.attendeeId ?? record.userId ?? null,
-    attendeeName: record.attendeeName ?? record.name ?? 'Unknown attendee',
-    status: record.status ?? 'Present',
+    attendeeName: record.attendeeName ?? record.fullName ?? record.name ?? 'Unknown attendee',
+    status: record.status ?? record.attendanceStatus ?? 'Present',
   }));
 }
 
