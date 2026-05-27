@@ -89,16 +89,25 @@
   background: #ead8a6;
   color: #604d18;
   overflow: hidden;
+<<<<<<< HEAD
 }
 
 .event-image img {
   object-fit: cover;
+=======
+>>>>>>> backup/backend-user
 }
 
 .folder-icon {
   width: 34px;
   height: 34px;
   color: rgba(99, 75, 5, 0.65);
+}
+
+.event-image__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .event-card-body {

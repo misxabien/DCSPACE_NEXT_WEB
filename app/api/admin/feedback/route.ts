@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 <<<<<<< HEAD
 import { requireAdmin } from "../../../../lib/admin/auth/roleGuard";
 import { getFeedbackOverview } from "../../../../lib/admin/db/feedback";
+<<<<<<< HEAD
 =======
 import { requireAdmin } from "@/lib/admin/auth/roleGuard";
 import { getFeedbackOverview } from "@/lib/admin/db/feedback";
 >>>>>>> origin/frontend-user
+=======
+>>>>>>> backup/backend-user
 
 function toErrorResponse(error: unknown) {
   if (error instanceof Error && error.name === "AdminAuthorizationError") {

@@ -9,6 +9,7 @@ export async function middleware(request: NextRequest) {
   });
 
   if (!token) {
+<<<<<<< HEAD
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
@@ -16,14 +17,27 @@ export async function middleware(request: NextRequest) {
 
   if (token.role !== 'admin') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+=======
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (token.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+>>>>>>> backup/backend-user
   }
 
   return NextResponse.next();
 }
 
 export const config = {
+<<<<<<< HEAD
   matcher: [
     '/admin/:path*',
     '/api/admin/((?!auth/).+)',
   ],
+=======
+  matcher: ["/admin/:path*"],
+>>>>>>> backup/backend-user
 };

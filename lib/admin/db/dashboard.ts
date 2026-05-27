@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> backup/backend-user
 import { MongoClient } from "mongodb";
 
 const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
 const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
+<<<<<<< HEAD
 =======
 import { MongoClient } from 'mongodb';
 
@@ -21,6 +25,19 @@ async function getMongoClient() {
     return globalForMongo.adminDashboardMongoClient;
   }
 
+=======
+
+const globalForMongo = globalThis as unknown as {
+  adminDashboardMongoClient?: MongoClient;
+  adminDashboardMongoPromise?: Promise<MongoClient>;
+};
+
+async function getMongoClient() {
+  if (globalForMongo.adminDashboardMongoClient) {
+    return globalForMongo.adminDashboardMongoClient;
+  }
+
+>>>>>>> backup/backend-user
   if (!globalForMongo.adminDashboardMongoPromise) {
     const client = new MongoClient(mongoUri);
     globalForMongo.adminDashboardMongoPromise = client.connect();
@@ -59,12 +76,17 @@ function toHourLabel(value: Date | string | null | undefined) {
 export async function getDashboardStats() {
   const db = await getDatabase();
 <<<<<<< HEAD
+<<<<<<< HEAD
   const events = db.collection<any>("events");
   const attendance = db.collection<any>("attendance");
 =======
   const events = db.collection<any>('events');
   const attendance = db.collection<any>('attendance');
 >>>>>>> origin/frontend-user
+=======
+  const events = db.collection<any>("events");
+  const attendance = db.collection<any>("attendance");
+>>>>>>> backup/backend-user
 
   const [totalEvents, totalAttendees] = await Promise.all([
     events.countDocuments({}),
@@ -83,10 +105,14 @@ export async function getDashboardStats() {
 export async function getDashboardAttendanceData() {
   const db = await getDatabase();
 <<<<<<< HEAD
+<<<<<<< HEAD
   const attendance = db.collection<any>("attendance");
 =======
   const attendance = db.collection<any>('attendance');
 >>>>>>> origin/frontend-user
+=======
+  const attendance = db.collection<any>("attendance");
+>>>>>>> backup/backend-user
   const records = await attendance.find({}).sort({ createdAt: -1 }).limit(500).toArray();
 
   return records.map((record) => ({
@@ -98,10 +124,13 @@ export async function getDashboardAttendanceData() {
 <<<<<<< HEAD
     attendeeName: record.attendeeName ?? record.name ?? "Unknown attendee",
     status: record.status ?? "Present",
+<<<<<<< HEAD
 =======
     attendeeName: record.attendeeName ?? record.name ?? 'Unknown attendee',
     status: record.status ?? 'Present',
 >>>>>>> origin/frontend-user
+=======
+>>>>>>> backup/backend-user
   }));
 }
 
@@ -114,10 +143,14 @@ export function getDashboardCharts(attendanceData: Array<Record<string, unknown>
 
   for (const record of attendanceData) {
 <<<<<<< HEAD
+<<<<<<< HEAD
     const attendedAt = typeof record.attendedAt === "string" || record.attendedAt instanceof Date
 =======
     const attendedAt = typeof record.attendedAt === 'string' || record.attendedAt instanceof Date
 >>>>>>> origin/frontend-user
+=======
+    const attendedAt = typeof record.attendedAt === "string" || record.attendedAt instanceof Date
+>>>>>>> backup/backend-user
       ? record.attendedAt
       : null;
 
