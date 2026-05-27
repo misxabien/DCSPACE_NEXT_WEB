@@ -1,6 +1,10 @@
 import { AppShell } from '@/components/AppShell';
 import '@/styles/pages/dashboard.css';
 
-export default async function MainLayout({ children }: { children: React.ReactNode }) {
+interface MainLayoutProps {
+  children: React.ReactNode;
+}
+
+export default function MainLayout({ children }: Readonly<MainLayoutProps>) {
   return <AppShell>{children}</AppShell>;
 }

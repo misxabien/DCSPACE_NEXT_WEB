@@ -3,7 +3,7 @@ import { RegisterAccountContent } from '@/components/RegisterAccountContent';
 import '@/app/login/login.css';
 
 export const metadata: Metadata = {
-  title: 'Register | DC Space',
+  title: 'Register',
 };
 
 export default function RegisterPage() {

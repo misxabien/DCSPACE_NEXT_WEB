@@ -3,7 +3,7 @@ import { CertificatesPageContent } from "@/components/CertificatesPageContent";
 import "@/styles/pages/certificates.css";
 
 export const metadata: Metadata = {
-  title: 'Certificates - DC Space',
+  title: 'Certificates',
 };
 
 export default function CertificatesPage() {

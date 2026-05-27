@@ -3,7 +3,7 @@ import { EventDetailsPageContent } from '@/components/EventDetailsPageContent';
 import '@/styles/pages/event-details.css';
 
 export const metadata: Metadata = {
-  title: 'Event Details - DC Space',
+  title: 'Event Details',
 };
 
 export default function EventDetailsPage() {
