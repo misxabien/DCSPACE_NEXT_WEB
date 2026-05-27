@@ -1,9 +1,13 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> backup/backend-user
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MongoClient, ObjectId } from "mongodb";
 
 const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
 const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
+<<<<<<< HEAD
 =======
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MongoClient, ObjectId } from 'mongodb';
@@ -13,16 +17,21 @@ import path from 'path';
 const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
 const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
 >>>>>>> origin/frontend-user
+=======
+>>>>>>> backup/backend-user
 
 const globalForMongo = globalThis as unknown as {
   adminCertificatesMongoClient?: MongoClient;
   adminCertificatesMongoPromise?: Promise<MongoClient>;
 };
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 import { generateCertificatePdf } from '@/lib/admin/certificates/generate';
 import type { CertificateData } from '@/lib/admin/certificates/generate';
 >>>>>>> origin/frontend-user
+=======
+>>>>>>> backup/backend-user
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -53,28 +62,40 @@ async function getDatabase() {
 async function getEventsCollection() {
   const db = await getDatabase();
 <<<<<<< HEAD
+<<<<<<< HEAD
   return db.collection<any>("events");
 =======
   return db.collection<any>('events');
 >>>>>>> origin/frontend-user
+=======
+  return db.collection<any>("events");
+>>>>>>> backup/backend-user
 }
 
 async function getUsersCollection() {
   const db = await getDatabase();
 <<<<<<< HEAD
+<<<<<<< HEAD
   return db.collection<any>("users");
 =======
   return db.collection<any>('users');
 >>>>>>> origin/frontend-user
+=======
+  return db.collection<any>("users");
+>>>>>>> backup/backend-user
 }
 
 async function getAttendanceCollection() {
   const db = await getDatabase();
 <<<<<<< HEAD
+<<<<<<< HEAD
   return db.collection<any>("attendance");
 =======
   return db.collection<any>('attendance');
 >>>>>>> origin/frontend-user
+=======
+  return db.collection<any>("attendance");
+>>>>>>> backup/backend-user
 }
 
 function toObjectId(id: string, label: string) {
@@ -402,6 +423,7 @@ export async function toggleAttendeeStatus(id: string, eventId: string, nextStat
     ),
   };
 <<<<<<< HEAD
+<<<<<<< HEAD
 }
 
 =======
@@ -694,3 +716,7 @@ export async function generateAndSaveCertificate(
   };
 }
 >>>>>>> origin/frontend-user
+=======
+}
+
+>>>>>>> backup/backend-user

@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> backup/backend-user
 import { MongoClient } from "mongodb";
 
 const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
 const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
+<<<<<<< HEAD
 =======
 import { MongoClient } from 'mongodb';
 
@@ -16,6 +20,14 @@ const globalForMongo = globalThis as unknown as {
   adminFeedbackMongoPromise?: Promise<MongoClient>;
 };
 
+=======
+
+const globalForMongo = globalThis as unknown as {
+  adminFeedbackMongoClient?: MongoClient;
+  adminFeedbackMongoPromise?: Promise<MongoClient>;
+};
+
+>>>>>>> backup/backend-user
 async function getMongoClient() {
   if (globalForMongo.adminFeedbackMongoClient) {
     return globalForMongo.adminFeedbackMongoClient;
@@ -103,9 +115,12 @@ function normalizeCertificateStatus(value: unknown) {
 
 <<<<<<< HEAD
   return value?.toString() ?? "-";
+<<<<<<< HEAD
 =======
   return value?.toString() ?? '-';
 >>>>>>> origin/frontend-user
+=======
+>>>>>>> backup/backend-user
 }
 
 function getEventRating(record: any) {
@@ -148,10 +163,14 @@ function mapFeedbackRow(record: any) {
 export async function getFeedbackOverview() {
   const db = await getDatabase();
 <<<<<<< HEAD
+<<<<<<< HEAD
   const feedback = db.collection<any>("feedback");
 =======
   const feedback = db.collection<any>('feedback');
 >>>>>>> origin/frontend-user
+=======
+  const feedback = db.collection<any>("feedback");
+>>>>>>> backup/backend-user
   const records = await feedback.find({}).sort({ createdAt: -1, updatedAt: -1 }).limit(500).toArray();
 
   const eventRatings: number[] = [];

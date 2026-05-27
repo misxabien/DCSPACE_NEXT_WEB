@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "next dev",
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> backup/backend-user
     "dev:backend-user": "npm run dev --prefix ./backend-user",
     "dev:all": "npm run dev:backend-user & npm run dev",
 =======

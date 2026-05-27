@@ -441,6 +441,7 @@ export function MyProfileContent() {
               </label>
             )}
           </div>
+<<<<<<< HEAD
 
           {draftPhotoImage && <ImageAdjustControls fit={draftPhotoFit} onChange={setDraftPhotoFit} target="profile photo" />}
 
@@ -456,6 +457,35 @@ export function MyProfileContent() {
             <ProfileField label="School/Department" value={getDisplayValue(user?.school)} />
             <ProfileField label="Organization" value={getDisplayValue(user?.organizationPart)} />
             <ProfileField label="Organization Role" value={getDisplayValue(user?.organizationRole)} />
+=======
+          <div className="profile-summary__fields">
+            <p className="profile-summary__name">{profile?.fullName || "Full Name"}</p>
+            <p className="profile-summary__line">
+              <span>Student Number:</span> {profile?.studentNumber || "2024-01452"}
+            </p>
+            <p className="profile-summary__line">
+              <span>RFID Tag No.:</span> {profile?.rfidNumber || "Not provided"}
+            </p>
+            <p className="profile-summary__line">
+              <span>Email:</span> {profile?.email || "No email on file"}
+            </p>
+            <p className="profile-summary__line">
+              <span>Course:</span> {profile?.course || "Not provided"}
+            </p>
+            <p className="profile-summary__line">
+              <span>School:</span> {profile?.school || "Not provided"}
+            </p>
+            <p className="profile-summary__line">
+              <span>Organization/Club:</span> {profile?.organizationPart || "Not provided"}
+            </p>
+            <p className="profile-summary__line">
+              <span>Position:</span> {profile?.organizationRole || "Not provided"}
+            </p>
+            <p className="profile-summary__line">
+              <span>Account Type:</span> {profile?.role ? `${profile.role} account` : "student account"}
+            </p>
+            {profileError && <p className="auth-field-error">{profileError}</p>}
+>>>>>>> backup/backend-user
           </div>
         </section>
 
