@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { buildSessionPayload } from "@/lib/admin/auth/authOptions";
 import { loginUser } from "@/lib/admin/db/users";
+import { buildHardcodedAdminUser, isHardcodedAdminLogin } from "@/lib/admin/auth/devAdmin";
 
 function toErrorResponse(error: unknown) {
   if (error instanceof Error && error.name === "AuthenticationError") {
@@ -16,7 +17,7 @@ function toErrorResponse(error: unknown) {
 }
 
 /**
- * Handles admin email and password login against MongoDB.
+ * Handles MongoDB admin email/password login, with the local dev admin as a fallback.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -29,11 +30,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await loginUser({
-      email: body.email,
-      password: body.password,
-      requireAdmin: true,
-    });
+    let user;
+
+    try {
+      user = await loginUser({
+        email: body.email,
+        password: body.password,
+        requireAdmin: true,
+      });
+    } catch (error) {
+      if (!isHardcodedAdminLogin(body.email, body.password)) {
+        throw error;
+      }
+      user = buildHardcodedAdminUser();
+    }
 
     return NextResponse.json(buildSessionPayload(user, typeof body.callbackUrl === "string" ? body.callbackUrl : undefined), {
       status: 200,

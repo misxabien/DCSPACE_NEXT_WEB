@@ -86,8 +86,10 @@ export function EventsView() {
               Approved Events
             </button>
           </div>
-          <div className="events-searchbar">
-            <span>Filter: All</span>
+        </div>
+
+        <div className={`event-list-view${detailOpen ? " hidden" : ""}`} id="eventListView">
+          <div className="events-search-row">
             <label className="search-wrap">
               <span aria-hidden="true">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -111,9 +113,7 @@ export function EventsView() {
               />
             </label>
           </div>
-        </div>
 
-        <div className={`event-list-view${detailOpen ? " hidden" : ""}`} id="eventListView">
           <div className="events-list" id="eventsList">
             {visibleCards.map((ev) => (
               <article key={ev.name} className="event-card" data-event-name={ev.name}>

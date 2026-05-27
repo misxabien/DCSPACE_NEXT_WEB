@@ -10,23 +10,35 @@ function csvEscape(value) {
   return s;
 }
 
-function positionMenu(menuEl, triggerEl) {
-  const rect = triggerEl.getBoundingClientRect();
-  const menuWidth = 168;
-  const menuHeight = 150;
-  const margin = 8;
-  let left = rect.right - menuWidth;
-  let top = rect.bottom + 6;
-  if (left < margin) left = margin;
-  if (left + menuWidth > window.innerWidth - margin) {
-    left = window.innerWidth - menuWidth - margin;
-  }
-  if (top + menuHeight > window.innerHeight - margin) {
-    top = rect.top - menuHeight - 6;
-  }
-  if (top < margin) top = margin;
-  menuEl.style.left = `${left}px`;
-  menuEl.style.top = `${top}px`;
+function roleLabel(role) {
+  if (role === "organizer") return "Student Organizer";
+  if (role === "admin") return "Admin";
+  return "Student";
+}
+
+function normalizeUser(user) {
+  const role = String(user.role || "student").toLowerCase();
+  const registrationStatus = String(user.registrationStatus || user.status || "").toLowerCase();
+  const hasRfid = Boolean(user.rfid) || registrationStatus === "registered";
+
+  return {
+    id: user.id,
+    name: user.name || user.fullName || user.email || "Unnamed user",
+    email: user.email || "",
+    role,
+    roleLabel: user.roleLabel || roleLabel(role),
+    status: user.isActive === false || user.status === "inactive" ? "inactive" : "active",
+    org: user.organization || user.org || "Unassigned",
+    course: user.course || user.department || "",
+    rfid: hasRfid ? "registered" : "not-registered",
+    rfidValue: user.rfid || "",
+    studentId: user.studentId || "",
+    lastActive: user.timestamp?.display || "Just now",
+  };
+}
+
+function getErrorMessage(data, fallback) {
+  return data?.error || data?.message || fallback;
 }
 
 export function UsersView() {
@@ -38,6 +50,10 @@ export function UsersView() {
   const [org, setOrg] = useState("all");
   const [openMenuEmail, setOpenMenuEmail] = useState(null);
   const [selectedEmails, setSelectedEmails] = useState([]);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addError, setAddError] = useState("");
+  const [savingUser, setSavingUser] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const skipStatusToast = useRef(true);
   const headerCheckboxRef = useRef(null);
 
@@ -47,7 +63,8 @@ export function UsersView() {
       const okKw =
         !k ||
         r.name.toLowerCase().includes(k) ||
-        r.email.toLowerCase().includes(k);
+        r.email.toLowerCase().includes(k) ||
+        (r.course ?? "").toLowerCase().includes(k);
       const okRole = role === "all" || r.role === role;
       const okSt = statusFilter === "all" || r.status === statusFilter;
       const okOrg = org === "all" || r.org === org;
@@ -58,6 +75,10 @@ export function UsersView() {
   const filteredSet = useMemo(
     () => new Set(filtered.map((u) => u.email)),
     [filtered]
+  );
+  const orgOptions = useMemo(
+    () => [...new Set(rows.map((u) => u.org).filter(Boolean))].sort(),
+    [rows]
   );
 
   /** Selection limited to rows visible with the current filter (bulk actions). */
@@ -83,6 +104,33 @@ export function UsersView() {
       el.indeterminate = someFilteredSelected && !allFilteredSelected;
     }
   }, [someFilteredSelected, allFilteredSelected]);
+
+  useEffect(() => {
+    async function loadUsers() {
+      setLoadingUsers(true);
+
+      try {
+        const response = await fetch("/api/admin/users?limit=100", {
+          credentials: "same-origin",
+        });
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(getErrorMessage(data, "Unable to load users"));
+        }
+
+        if (Array.isArray(data?.users)) {
+          setRows(data.users.map(normalizeUser));
+        }
+      } catch (error) {
+        showStatus(error instanceof Error ? error.message : "Unable to load users");
+      } finally {
+        setLoadingUsers(false);
+      }
+    }
+
+    loadUsers();
+  }, [showStatus]);
 
   useEffect(() => {
     if (skipStatusToast.current) {
@@ -111,12 +159,7 @@ export function UsersView() {
 
   function onDotsClick(e, email) {
     e.stopPropagation();
-    const menu = e.currentTarget.nextElementSibling;
-    const willOpen = openMenuEmail !== email;
-    setOpenMenuEmail(willOpen ? email : null);
-    if (willOpen) {
-      requestAnimationFrame(() => positionMenu(menu, e.currentTarget));
-    }
+    setOpenMenuEmail((prev) => (prev === email ? null : email));
   }
 
   function toggleSelect(email) {
@@ -153,6 +196,7 @@ export function UsersView() {
       "Organization",
       "RFID",
       "Status",
+      "Course",
       "Last Active",
     ];
     const lines = [
@@ -163,8 +207,9 @@ export function UsersView() {
           csvEscape(u.email),
           csvEscape(u.roleLabel),
           csvEscape(u.org),
-          csvEscape(u.rfid === "registered" ? "Registered" : "Not Registered"),
+          csvEscape(u.rfid === "registered" ? "Active" : "Inactive"),
           csvEscape(u.status),
+          csvEscape(u.course ?? ""),
           csvEscape(u.lastActive),
         ].join(",")
       ),
@@ -200,6 +245,60 @@ export function UsersView() {
     showStatus(`Deleted ${n} user(s)`);
   }
 
+  async function createAdminUser(event) {
+    event.preventDefault();
+    setAddError("");
+    setSavingUser(true);
+
+    const formData = new FormData(event.currentTarget);
+    const password = String(formData.get("password") || "").trim();
+    const payload = {
+      name: String(formData.get("name") || "").trim(),
+      email: String(formData.get("email") || "").trim(),
+      role: String(formData.get("role") || "student"),
+      organization: String(formData.get("organization") || "").trim(),
+      studentId: String(formData.get("studentId") || "").trim(),
+      rfid: String(formData.get("rfid") || "").trim(),
+      password: password || undefined,
+      isActive: formData.get("isActive") === "on",
+    };
+
+    if (!payload.name || !payload.email || !payload.role) {
+      setAddError("Name, email, and role are required.");
+      setSavingUser(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(getErrorMessage(data, "Unable to add user"));
+      }
+
+      const createdUser = normalizeUser(data);
+      setRows((currentRows) => [
+        createdUser,
+        ...currentRows.filter((row) => row.email !== createdUser.email),
+      ]);
+      setAddOpen(false);
+      event.currentTarget.reset();
+      showStatus("User added");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to add user";
+      setAddError(message);
+      showStatus(message);
+    } finally {
+      setSavingUser(false);
+    }
+  }
+
   return (
     <section className="view" id="usersView">
       <div className="header-row">
@@ -223,7 +322,11 @@ export function UsersView() {
               className="btn-primary"
               id="addUserBtn"
               type="button"
-              onClick={() => showStatus("Add User clicked")}
+              onClick={() => {
+                setAddError("");
+                setAddOpen(true);
+                showStatus("Add User opened");
+              }}
             >
               + Add User
             </button>
@@ -239,6 +342,7 @@ export function UsersView() {
               <option value="all">Role: All Roles</option>
               <option value="student">Student</option>
               <option value="organizer">Student Organizer</option>
+              <option value="admin">Admin</option>
             </select>
             <select
               className="users-select"
@@ -258,9 +362,11 @@ export function UsersView() {
               onChange={(e) => setOrg(e.target.value)}
             >
               <option value="all">Organization: All</option>
-              <option value="Dormcode">Dormcode</option>
-              <option value="Dormkcode">Dormkcode</option>
-              <option value="Dormxcode">Dormxcode</option>
+              {orgOptions.map((orgName) => (
+                <option key={orgName} value={orgName}>
+                  {orgName}
+                </option>
+              ))}
             </select>
             <button
               className="btn-soft"
@@ -273,6 +379,10 @@ export function UsersView() {
               Filter
             </button>
           </div>
+
+          {loadingUsers ? (
+            <p className="users-helper-text">Loading users from database...</p>
+          ) : null}
 
           {effectiveSelected.length > 0 ? (
             <div
@@ -324,11 +434,126 @@ export function UsersView() {
           ) : null}
         </div>
 
-        <div className="table-wrap">
+        {addOpen ? (
+          <div className="admin-form-overlay" role="presentation">
+            <section
+              className="admin-form-modal"
+              aria-modal="true"
+              role="dialog"
+              aria-labelledby="add-user-title"
+            >
+              <header className="admin-form-modal__header">
+                <div>
+                  <p className="admin-form-modal__eyebrow">User Management</p>
+                  <h2 id="add-user-title">Add User</h2>
+                </div>
+                <button
+                  className="admin-form-modal__close"
+                  type="button"
+                  aria-label="Close add user form"
+                  onClick={() => {
+                    setAddOpen(false);
+                    setAddError("");
+                  }}
+                  disabled={savingUser}
+                >
+                  x
+                </button>
+              </header>
+
+              <form className="admin-user-form" onSubmit={createAdminUser}>
+                <label>
+                  <span>Name</span>
+                  <input name="name" type="text" required disabled={savingUser} />
+                </label>
+
+                <label>
+                  <span>Email</span>
+                  <input name="email" type="email" required disabled={savingUser} />
+                </label>
+
+                <label>
+                  <span>Role</span>
+                  <select name="role" defaultValue="student" required disabled={savingUser}>
+                    <option value="student">Student</option>
+                    <option value="organizer">Student Organizer</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Organization</span>
+                  <input name="organization" type="text" placeholder="Optional" disabled={savingUser} />
+                </label>
+
+                <label>
+                  <span>Student ID</span>
+                  <input name="studentId" type="text" placeholder="Optional" disabled={savingUser} />
+                </label>
+
+                <label>
+                  <span>RFID</span>
+                  <input name="rfid" type="text" placeholder="Optional" disabled={savingUser} />
+                </label>
+
+                <label className="admin-user-form__wide">
+                  <span>Password</span>
+                  <input
+                    name="password"
+                    type="password"
+                    placeholder="Leave blank to use default temporary password"
+                    disabled={savingUser}
+                  />
+                </label>
+
+                <label className="admin-user-form__check">
+                  <input name="isActive" type="checkbox" defaultChecked disabled={savingUser} />
+                  <span>Active account</span>
+                </label>
+
+                {addError ? (
+                  <p className="auth-field-error admin-user-form__wide" role="alert">
+                    {addError}
+                  </p>
+                ) : null}
+
+                <div className="admin-user-form__actions">
+                  <button
+                    className="btn-soft"
+                    type="button"
+                    onClick={() => {
+                      setAddOpen(false);
+                      setAddError("");
+                    }}
+                    disabled={savingUser}
+                  >
+                    Cancel
+                  </button>
+                  <button className="btn-primary" type="submit" disabled={savingUser}>
+                    {savingUser ? "Saving..." : "Save User"}
+                  </button>
+                </div>
+              </form>
+            </section>
+          </div>
+        ) : null}
+
+        <div className="table-wrap users-table-wrap">
           <table className="users-table">
+            <colgroup>
+              <col className="users-col-check" />
+              <col className="users-col-name" />
+              <col className="users-col-role" />
+              <col className="users-col-org" />
+              <col className="users-col-rfid" />
+              <col className="users-col-status" />
+              <col className="users-col-course" />
+              <col className="users-col-actions" />
+              <col className="users-col-options" />
+            </colgroup>
             <thead>
               <tr>
-                <th>
+                <th className="users-col-check">
                   <input
                     ref={headerCheckboxRef}
                     type="checkbox"
@@ -337,13 +562,14 @@ export function UsersView() {
                     onChange={selectAllVisible}
                   />
                 </th>
-                <th>Name / Email</th>
-                <th>Role</th>
-                <th>Organization</th>
-                <th>RFID</th>
-                <th>Status</th>
-                <th>Actions</th>
-                <th>Options</th>
+                <th className="users-col-name">Name / Email</th>
+                <th className="users-col-role">Role</th>
+                <th className="users-col-org">Organization</th>
+                <th className="users-col-rfid">RFID</th>
+                <th className="users-col-status">Status</th>
+                <th className="users-col-course">Course</th>
+                <th className="users-col-actions">Actions</th>
+                <th className="users-col-options">Options</th>
               </tr>
             </thead>
             <tbody id="usersTableBody">
@@ -356,7 +582,7 @@ export function UsersView() {
                   data-status={u.status}
                   data-org={u.org}
                 >
-                  <td>
+                  <td className="users-col-check">
                     <input
                       type="checkbox"
                       aria-label={`Select user ${u.name}`}
@@ -364,27 +590,24 @@ export function UsersView() {
                       onChange={() => toggleSelect(u.email)}
                     />
                   </td>
-                  <td>
-                    {u.name}
-                    <br />
-                    <small>{u.email}</small>
+                  <td className="users-col-name">
+                    <div className="users-name-email">
+                      <span className="users-name">{u.name}</span>
+                      <span className="users-email">{u.email}</span>
+                    </div>
                   </td>
-                  <td>{u.roleLabel}</td>
-                  <td>{u.org}</td>
-                  <td>
+                  <td className="users-col-role">{u.roleLabel}</td>
+                  <td className="users-col-org">{u.org}</td>
+                  <td className="users-col-rfid">
                     <span
                       className={`rfid-tag ${
-                        u.rfid === "registered"
-                          ? "registered"
-                          : "not-registered"
+                        u.rfid === "registered" ? "active" : "inactive"
                       }`}
                     >
-                      {u.rfid === "registered"
-                        ? "Registered"
-                        : "Not Registered"}
+                      {u.rfid === "registered" ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td>
+                  <td className="users-col-status">
                     <button
                       className={`switch${u.status === "active" ? " on" : ""}`}
                       type="button"
@@ -406,10 +629,11 @@ export function UsersView() {
                       }}
                     />
                   </td>
-                  <td>
+                  <td className="users-col-course">{u.course ?? "—"}</td>
+                  <td className="users-col-actions">
                     <span className="last-active">{u.lastActive}</span>
                   </td>
-                  <td className="action-cell">
+                  <td className="users-col-options action-cell">
                     <button
                       className="dots-btn"
                       type="button"
@@ -460,21 +684,12 @@ export function UsersView() {
             </tbody>
           </table>
         </div>
-        <div
-          className="users-toolbar"
-          style={{ borderTop: "1px solid var(--border)", borderBottom: 0 }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 10,
-              fontSize: 12,
-              color: "#9d7a3a",
-            }}
-          >
-            <span>Showing 1 to 5 of 5 entries</span>
+        <div className="users-toolbar users-footer">
+          <div className="users-footer-inner">
+            <span>
+              Showing {filtered.length === 0 ? 0 : 1} to {filtered.length} of{" "}
+              {filtered.length} entries
+            </span>
             <span>Previous &nbsp; 10 &nbsp; Next</span>
           </div>
         </div>

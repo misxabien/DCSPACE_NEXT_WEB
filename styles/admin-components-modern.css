@@ -166,9 +166,230 @@
   overflow: hidden;
 }
 
+.admin-app .users-shell {
+  background: #fff;
+  border-radius: 24px;
+  overflow: visible;
+  box-shadow: 0 10px 32px rgba(47, 111, 205, 0.08);
+}
+
 .admin-app .users-toolbar {
-  background: var(--surface-alt);
+  background: #fff;
   border-bottom: 1px solid var(--glass-border-subtle);
+  padding: 16px 18px;
+}
+
+.admin-app .users-toolbar.users-footer {
+  border-top: 1px solid var(--glass-border-subtle);
+  border-bottom: 0;
+  border-radius: 0 0 24px 24px;
+}
+
+.admin-app .users-footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.admin-app .users-shell .users-table-wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.admin-app .users-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 1040px;
+  font-size: 13px;
+}
+
+.admin-app .users-table col.users-col-check {
+  width: 44px;
+}
+
+.admin-app .users-table col.users-col-name {
+  width: 22%;
+}
+
+.admin-app .users-table col.users-col-role {
+  width: 14%;
+}
+
+.admin-app .users-table col.users-col-org {
+  width: 12%;
+}
+
+.admin-app .users-table col.users-col-rfid {
+  width: 9%;
+}
+
+.admin-app .users-table col.users-col-status {
+  width: 8%;
+}
+
+.admin-app .users-table col.users-col-course {
+  width: 8%;
+}
+
+.admin-app .users-table col.users-col-actions {
+  width: 10%;
+}
+
+.admin-app .users-table col.users-col-options {
+  width: 56px;
+}
+
+.admin-app .users-table th,
+.admin-app .users-table td {
+  padding: 14px 12px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--glass-border-subtle);
+  white-space: nowrap;
+  text-align: left;
+}
+
+.admin-app .users-table thead th {
+  padding: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: #fafbfc;
+  border-bottom: 1px solid var(--glass-border-subtle);
+}
+
+.admin-app .users-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-app .users-table .users-col-check {
+  text-align: center;
+  padding-left: 14px;
+  padding-right: 8px;
+}
+
+.admin-app .users-table .users-col-name {
+  white-space: normal;
+  padding-left: 4px;
+  padding-right: 16px;
+}
+
+.admin-app .users-name-email {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  line-height: 1.35;
+}
+
+.admin-app .users-name {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.admin-app .users-email {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.admin-app .users-table .users-col-role,
+.admin-app .users-table .users-col-org,
+.admin-app .users-table .users-col-course {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.admin-app .users-table .users-col-rfid,
+.admin-app .users-table .users-col-status,
+.admin-app .users-table .users-col-actions,
+.admin-app .users-table .users-col-options {
+  text-align: center;
+}
+
+.admin-app .users-table .users-col-rfid .rfid-tag,
+.admin-app .users-table .users-col-status .switch {
+  margin-inline: auto;
+}
+
+.admin-app .users-table .users-col-actions .last-active {
+  display: inline-block;
+}
+
+.admin-app .users-table tr:hover td {
+  background: var(--primary-soft);
+}
+
+.admin-app .rfid-tag.active {
+  color: #fff;
+  background: #45a844;
+  border-color: #3a9839;
+}
+
+.admin-app .rfid-tag.inactive {
+  color: #fff;
+  background: #f0be2e;
+  border-color: #d7a71d;
+}
+
+.admin-app .action-cell {
+  position: relative;
+  overflow: visible;
+  text-align: center;
+}
+
+.admin-app .actions-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: auto;
+  width: 168px;
+  margin: 0;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border-subtle);
+  background: #fff;
+  box-shadow: 0 12px 24px rgba(47, 111, 205, 0.14);
+  padding: 6px;
+  display: none;
+  z-index: 120;
+}
+
+.admin-app .actions-menu.open {
+  display: block;
+}
+
+.admin-app .actions-menu .menu-action {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  border-radius: 7px;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.admin-app .actions-menu .menu-action:hover {
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
+.admin-app .actions-menu .menu-action.delete {
+  color: #9f2f2f;
+}
+
+.admin-app .actions-menu .menu-action.delete:hover {
+  background: #ffe4e4;
+  color: #8e1d1d;
 }
 
 .admin-app .search-wrap {
@@ -205,7 +426,6 @@
   font-weight: 600;
 }
 
-.admin-app .users-table th,
 .admin-app .ecert-table th,
 .admin-app .feedback-table th {
   background: rgba(252, 247, 239, 0.95);
@@ -214,10 +434,146 @@
   letter-spacing: 0.06em;
 }
 
-.admin-app .users-table tr:hover td,
 .admin-app .ecert-table tr:hover td,
 .admin-app .feedback-table tr:hover td {
   background: var(--primary-soft);
+}
+
+/* ——— Profile / Settings ——— */
+
+.admin-app .profile-card {
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: #fff;
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+  display: grid;
+  gap: 18px;
+}
+
+.admin-app .profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-app .profile-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary-strong);
+  background: linear-gradient(145deg, #fff, #deebff);
+  border: 2px solid rgba(74, 141, 255, 0.25);
+}
+
+.admin-app .profile-identity h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.admin-app .profile-identity p {
+  margin: 3px 0 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-app .profile-role {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.admin-app .profile-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-app .profile-field {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-app .profile-field span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.admin-app .profile-field input {
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: var(--radius-md);
+  height: 42px;
+  padding: 0 12px;
+  font-size: 13px;
+  color: var(--text);
+  background: #fff;
+}
+
+.admin-app .profile-field input:focus {
+  outline: none;
+  border-color: rgba(74, 141, 255, 0.45);
+  box-shadow: 0 0 0 3px rgba(74, 141, 255, 0.15);
+}
+
+.admin-app .profile-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.admin-app .profile-actions--logout {
+  justify-content: stretch;
+  width: 100%;
+  padding-top: 4px;
+}
+
+.admin-app .profile-logout-btn {
+  width: 100%;
+  height: 44px;
+  padding: 0 32px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-app .btn-soft-danger {
+  border-color: #f0c4c4;
+  color: #9f2f2f;
+  background: #fff5f5;
+}
+
+.admin-app .btn-soft-danger:hover {
+  background: #ffeaea;
+}
+
+.admin-app .settings-block {
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.admin-app .settings-block h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.admin-app .settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
 }
 
 /* ——— Event Management (dashboard-aligned) ——— */
@@ -271,23 +627,22 @@
   box-shadow: 0 2px 10px var(--primary-glow);
 }
 
-.admin-app .events-searchbar {
+.admin-app .event-list-view {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-app .events-search-row {
+  border-top: none;
+  padding-top: 0;
+}
+
+.admin-app .events-search-row .search-wrap {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  justify-content: flex-end;
-}
-
-.admin-app .events-searchbar > span {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.admin-app .events-searchbar .search-wrap {
-  min-width: 200px;
-  height: 42px;
+  min-height: 42px;
+  max-width: 420px;
   padding: 0 14px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--glass-border-subtle);
@@ -295,19 +650,28 @@
   box-shadow: 0 2px 8px rgba(47, 111, 205, 0.06);
 }
 
-.admin-app .events-searchbar .search-wrap span {
+.admin-app .events-search-row .search-wrap span {
   color: var(--primary-strong);
   display: grid;
   place-items: center;
+  flex-shrink: 0;
 }
 
-.admin-app .events-searchbar .search-wrap input {
+.admin-app .events-search-row .search-wrap input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
   font-size: 13px;
   color: var(--text);
 }
 
-.admin-app .events-searchbar .search-wrap input::placeholder {
+.admin-app .events-search-row .search-wrap input::placeholder {
   color: var(--muted);
+}
+
+.admin-app .events-search-row .search-wrap input:focus {
+  outline: none;
 }
 
 .admin-app .events-list {
@@ -738,23 +1102,6 @@
   box-shadow: none;
 }
 
-.admin-app .ecert-detail-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.admin-app .ecert-state-tabs {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  background: rgba(255, 255, 255, 0.55);
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--glass-border-subtle);
-}
-
 .admin-app .ecert-state-tab {
   border: 1px solid transparent;
   background: transparent;
@@ -825,13 +1172,16 @@
 }
 
 .admin-app .ecert-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 12px;
   margin: 0;
 }
 
 .admin-app .ecert-meta-field {
+  flex: 0 0 auto;
+  min-width: 140px;
   margin: 0;
   padding: 12px 14px;
   border-radius: var(--radius-md);
@@ -859,6 +1209,52 @@
 .admin-app .ecert-table-section {
   display: grid;
   gap: 0;
+}
+
+.admin-app .ecert-attendance-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.admin-app .ecert-attendance-toolbar .search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  min-width: 320px;
+  max-width: 480px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--glass-border-subtle);
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(47, 111, 205, 0.06);
+}
+
+.admin-app .ecert-attendance-toolbar .search-wrap span {
+  color: var(--primary-strong);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.admin-app .ecert-attendance-toolbar .search-wrap input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.admin-app .ecert-attendance-toolbar .search-wrap input::placeholder {
+  color: var(--muted);
+}
+
+.admin-app .ecert-attendance-toolbar .search-wrap input:focus {
+  outline: none;
 }
 
 .admin-app .ecert-table-wrap {
@@ -1617,15 +2013,6 @@
     align-items: stretch;
   }
 
-  .admin-app .events-searchbar {
-    justify-content: stretch;
-  }
-
-  .admin-app .events-searchbar .search-wrap {
-    min-width: 0;
-    flex: 1;
-  }
-
   .admin-app .detail-grid {
     grid-template-columns: 1fr;
   }
@@ -1643,26 +2030,36 @@
     flex: 1 1 auto;
   }
 
-  .admin-app .ecert-search-row .search-wrap {
+  .admin-app .ecert-search-row .search-wrap,
+  .admin-app .events-search-row .search-wrap {
     max-width: none;
   }
 
-  .admin-app .ecert-detail-head {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .admin-app .ecert-state-tabs {
+  .admin-app .ecert-attendance-toolbar .search-wrap {
+    min-width: 0;
+    max-width: 100%;
     width: 100%;
-    justify-content: center;
   }
 
-  .admin-app .ecert-meta-grid {
-    grid-template-columns: 1fr 1fr;
+  .admin-app .ecert-meta-field {
+    min-width: min(140px, calc(50% - 6px));
   }
 
   .admin-app .feedback-summary {
     grid-template-columns: 1fr;
+  }
+
+  .admin-app .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-app .profile-actions {
+    justify-content: stretch;
+  }
+
+  .admin-app .profile-actions .btn-soft,
+  .admin-app .profile-actions .btn-primary {
+    flex: 1 1 auto;
   }
 
 }
