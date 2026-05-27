@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { AdminSidebar } from "./AdminSidebar";
@@ -31,7 +32,26 @@ function AdminChrome({ children }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [desktopSidebarCollapsed, setDesktopSidebarCollapsed] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const notifications = [
+    {
+      id: "reg-approval",
+      text: "New event registration approval",
+      isNew: true,
+      time: "3 min ago",
+    },
+    {
+      id: "event-conflict",
+      text: "New event registration approval",
+      isNew: true,
+      time: "5 min ago",
+    },
+    {
+      id: "batch-export",
+      text: "Certificates ready to export",
+      isNew: false,
+      time: "Yesterday",
+    },
+  ];
 
   const closeSidebar = useCallback(() => {
     setMobileSidebarOpen(false);
@@ -39,7 +59,6 @@ function AdminChrome({ children }) {
 
   const closeMenus = useCallback(() => {
     setNotifOpen(false);
-    setProfileOpen(false);
   }, []);
 
   useEffect(() => {
@@ -133,14 +152,6 @@ function AdminChrome({ children }) {
             </div>
           </div>
 
-          <label className="admin-search" aria-label="Search admin">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-              <path d="M20 20l-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <input type="search" placeholder="Search users, events, certificates…" />
-          </label>
-
           <div className="admin-topbar__right" id="adminTopRight">
             <button
               className="admin-icon-btn"
@@ -148,7 +159,6 @@ function AdminChrome({ children }) {
               aria-label="Notifications"
               onClick={(e) => {
                 e.stopPropagation();
-                setProfileOpen(false);
                 setNotifOpen((v) => !v);
               }}
             >
@@ -161,38 +171,31 @@ function AdminChrome({ children }) {
                 />
               </svg>
             </button>
-            <button
+            <Link
+              href="/admin/profile"
               className="admin-avatar"
-              type="button"
-              aria-label="Profile menu"
-              onClick={(e) => {
-                e.stopPropagation();
-                setNotifOpen(false);
-                setProfileOpen((v) => !v);
-              }}
+              aria-label="My profile"
+              onClick={() => setNotifOpen(false)}
             >
               AD
-            </button>
+            </Link>
 
-            <div className={`admin-menu-pop${notifOpen ? " open" : ""}`} id="notifMenu">
-              <button type="button">2 new registrations waiting approval</button>
-              <button type="button">Event conflict detected on April 25</button>
-              <button type="button">Certificate batch export finished</button>
-            </div>
-
-            <div className={`admin-menu-pop${profileOpen ? " open" : ""}`} id="profileMenu">
-              <a href="#">My Profile</a>
-              <a href="#">Account Settings</a>
-              <button
-                type="button"
-                id="logoutBtn"
-                onClick={() => {
-                  showStatus("Logged out");
-                  closeMenus();
-                }}
-              >
-                Log Out
-              </button>
+            <div className={`admin-menu-pop admin-menu-pop--notif${notifOpen ? " open" : ""}`} id="notifMenu">
+              <div className="notif-menu__head">
+                <strong>Notifications</strong>
+              </div>
+              <div className="notif-menu__list">
+                {notifications.map((item) => (
+                  <button key={item.id} className="notif-item" type="button">
+                    <span
+                      className={`notif-dot${item.isNew ? " is-new" : " is-old"}`}
+                      aria-label={item.isNew ? "New notification" : "Yesterday notification"}
+                    />
+                    <span className="notif-item__text">{item.text}</span>
+                    <span className="notif-item__status">{item.isNew ? "New" : "Yesterday"}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </header>

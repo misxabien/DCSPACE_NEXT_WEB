@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { buildSessionPayload } from "../../../../../lib/admin/auth/authOptions";
-import { loginUser } from "../../../../../lib/admin/db/users";
+import { buildHardcodedAdminUser, isHardcodedAdminLogin } from "../../../../../lib/admin/auth/devAdmin";
 
 function toErrorResponse(error: unknown) {
   if (error instanceof Error && error.name === "AuthenticationError") {
@@ -16,7 +16,7 @@ function toErrorResponse(error: unknown) {
 }
 
 /**
- * Handles admin email and password login against MongoDB.
+ * Handles hardcoded admin email/password login for local development.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -29,11 +29,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await loginUser({
-      email: body.email,
-      password: body.password,
-      requireAdmin: true,
-    });
+    if (!isHardcodedAdminLogin(body.email, body.password)) {
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+    }
+
+    const user = buildHardcodedAdminUser();
 
     return NextResponse.json(buildSessionPayload(user, typeof body.callbackUrl === "string" ? body.callbackUrl : undefined), {
       status: 200,

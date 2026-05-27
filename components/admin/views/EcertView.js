@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { preAttendanceRows, postAttendanceRows } from "@/lib/admin/ecertRows";
+import { postAttendanceRows } from "@/lib/admin/ecertRows";
 import { useShowStatus } from "@/contexts/ShowStatusContext";
 
 const ECERT_EVENTS = [
@@ -35,8 +35,20 @@ const EVENT_META = [
   { label: "Organization", value: "Domini Xode" },
 ];
 
-function EcertTableBody({ state, onDownload }) {
-  const rows = state === "post" ? postAttendanceRows : preAttendanceRows;
+const STUDENT_LOOKUP = {
+  "2023000": { name: "Misxa Bien Germino", course: "BSIT" },
+  "2023001": { name: "Gwyneth Mucio", course: "BSIT" },
+  "2023002": { name: "Paul Cielo", course: "BSIT" },
+  "2023003": { name: "Amira Marqueses", course: "BSIT" },
+  "2023004": { name: "Khrystelle Esplana", course: "BSIT" },
+  "2023005": { name: "Janelle Cruz", course: "BSCS" },
+  "2023006": { name: "Miguel Ramos", course: "BSCS" },
+  "2023007": { name: "Nicole Tan", course: "BSEMC" },
+  "2023008": { name: "Daniel Reyes", course: "BSEMC" },
+  "2023009": { name: "Catherine Lim", course: "BSIT" },
+};
+
+function EcertTableBody({ rows, onDownload }) {
   return (
     <>
       {rows.map((row, idx) => {
@@ -50,7 +62,7 @@ function EcertTableBody({ state, onDownload }) {
             <span className="dash-placeholder">—</span>
           );
         return (
-          <tr key={`${state}-${row[0]}-${idx}`}>
+          <tr key={`${row[0]}-${idx}`}>
             <td>{row[0]}</td>
             <td>{row[1]}</td>
             <td>
@@ -77,14 +89,13 @@ export function EcertView({ openAttendance = false }) {
   const showStatus = useShowStatus();
   const [query, setQuery] = useState("");
   const [detailOpen, setDetailOpen] = useState(false);
-  const [ecertState, setEcertState] = useState("pre");
+  const [attendanceQuery, setAttendanceQuery] = useState("");
   const [selectedEvent, setSelectedEvent] = useState(ECERT_EVENTS[0]);
 
   useEffect(() => {
     if (!openAttendance) return;
     setDetailOpen(true);
-    setEcertState("post");
-    showStatus("Post attendance records");
+    showStatus("Attendance records");
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when opened from Events
   }, [openAttendance]);
 
@@ -96,16 +107,27 @@ export function EcertView({ openAttendance = false }) {
   function openEvent(ev) {
     setSelectedEvent(ev);
     setDetailOpen(true);
-    setEcertState("pre");
-    showStatus("Viewing pre-event attendance");
+    setAttendanceQuery("");
+    showStatus("Viewing attendance");
   }
+
+  const filteredAttendanceRows = useMemo(() => {
+    const q = attendanceQuery.trim().toLowerCase();
+    if (!q) return postAttendanceRows;
+
+    return postAttendanceRows.filter((row) => {
+      const studentNumber = row[0];
+      const profile = STUDENT_LOOKUP[studentNumber] ?? { name: "", course: "" };
+      return (
+        studentNumber.toLowerCase().includes(q) ||
+        profile.name.toLowerCase().includes(q) ||
+        profile.course.toLowerCase().includes(q)
+      );
+    });
+  }, [attendanceQuery]);
 
   return (
     <section className="view ecert-view" id="ecertView">
-      <div className="header-row">
-        <h1>E-Certificate and Attendance Management</h1>
-      </div>
-
       <section className="ecert-wrap">
         <div
           className={`ecert-list-view${detailOpen ? " hidden" : ""}`}
@@ -167,46 +189,6 @@ export function EcertView({ openAttendance = false }) {
           className={`ecert-detail-view${detailOpen ? "" : " hidden"}`}
           id="ecertDetailView"
         >
-          <div className="ecert-detail-head">
-            <div className="ecert-state-tabs" role="tablist" aria-label="Attendance phase">
-              <button
-                className={`ecert-state-tab${ecertState === "pre" ? " active" : ""}`}
-                type="button"
-                role="tab"
-                aria-selected={ecertState === "pre"}
-                onClick={() => {
-                  setEcertState("pre");
-                  showStatus("Pre-event attendance");
-                }}
-              >
-                Pre-event attendance
-              </button>
-              <button
-                className={`ecert-state-tab${ecertState === "post" ? " active" : ""}`}
-                type="button"
-                role="tab"
-                aria-selected={ecertState === "post"}
-                onClick={() => {
-                  setEcertState("post");
-                  showStatus("Post attendance");
-                }}
-              >
-                Post attendance
-              </button>
-            </div>
-            <button
-              className="btn-soft"
-              id="backToEcertListBtn"
-              type="button"
-              onClick={() => {
-                setDetailOpen(false);
-                showStatus("Back to e-certificate list");
-              }}
-            >
-              Back
-            </button>
-          </div>
-
           <article className="ecert-detail-card">
             <header className="ecert-detail-card__header">
               <p className="ecert-detail-card__eyebrow">Event attendance</p>
@@ -232,6 +214,37 @@ export function EcertView({ openAttendance = false }) {
             </dl>
 
             <section className="ecert-table-section" aria-label="Attendee records">
+              <div className="ecert-attendance-toolbar">
+                <label className="search-wrap">
+                  <span aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                      <path d="M20 20l-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  <input
+                    id="ecertAttendanceSearch"
+                    type="search"
+                    placeholder="Search name, course, or student number"
+                    value={attendanceQuery}
+                    onChange={(e) => {
+                      setAttendanceQuery(e.target.value);
+                      const q = e.target.value.trim().toLowerCase();
+                      const count = postAttendanceRows.filter((row) => {
+                        const profile = STUDENT_LOOKUP[row[0]] ?? { name: "", course: "" };
+                        return (
+                          !q ||
+                          row[0].toLowerCase().includes(q) ||
+                          profile.name.toLowerCase().includes(q) ||
+                          profile.course.toLowerCase().includes(q)
+                        );
+                      }).length;
+                      showStatus(`${count} attendee(s) shown`);
+                    }}
+                  />
+                </label>
+              </div>
+
               <div className="ecert-table-wrap">
                 <table className="ecert-table">
                   <thead>
@@ -247,7 +260,7 @@ export function EcertView({ openAttendance = false }) {
                   </thead>
                   <tbody id="ecertTableBody">
                     <EcertTableBody
-                      state={ecertState}
+                      rows={filteredAttendanceRows}
                       onDownload={() => showStatus("E-certificate downloaded")}
                     />
                   </tbody>

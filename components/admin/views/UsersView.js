@@ -10,25 +10,6 @@ function csvEscape(value) {
   return s;
 }
 
-function positionMenu(menuEl, triggerEl) {
-  const rect = triggerEl.getBoundingClientRect();
-  const menuWidth = 168;
-  const menuHeight = 150;
-  const margin = 8;
-  let left = rect.right - menuWidth;
-  let top = rect.bottom + 6;
-  if (left < margin) left = margin;
-  if (left + menuWidth > window.innerWidth - margin) {
-    left = window.innerWidth - menuWidth - margin;
-  }
-  if (top + menuHeight > window.innerHeight - margin) {
-    top = rect.top - menuHeight - 6;
-  }
-  if (top < margin) top = margin;
-  menuEl.style.left = `${left}px`;
-  menuEl.style.top = `${top}px`;
-}
-
 export function UsersView() {
   const showStatus = useShowStatus();
   const [rows, setRows] = useState(USERS);
@@ -47,7 +28,8 @@ export function UsersView() {
       const okKw =
         !k ||
         r.name.toLowerCase().includes(k) ||
-        r.email.toLowerCase().includes(k);
+        r.email.toLowerCase().includes(k) ||
+        (r.course ?? "").toLowerCase().includes(k);
       const okRole = role === "all" || r.role === role;
       const okSt = statusFilter === "all" || r.status === statusFilter;
       const okOrg = org === "all" || r.org === org;
@@ -111,12 +93,7 @@ export function UsersView() {
 
   function onDotsClick(e, email) {
     e.stopPropagation();
-    const menu = e.currentTarget.nextElementSibling;
-    const willOpen = openMenuEmail !== email;
-    setOpenMenuEmail(willOpen ? email : null);
-    if (willOpen) {
-      requestAnimationFrame(() => positionMenu(menu, e.currentTarget));
-    }
+    setOpenMenuEmail((prev) => (prev === email ? null : email));
   }
 
   function toggleSelect(email) {
@@ -153,6 +130,7 @@ export function UsersView() {
       "Organization",
       "RFID",
       "Status",
+      "Course",
       "Last Active",
     ];
     const lines = [
@@ -163,8 +141,9 @@ export function UsersView() {
           csvEscape(u.email),
           csvEscape(u.roleLabel),
           csvEscape(u.org),
-          csvEscape(u.rfid === "registered" ? "Registered" : "Not Registered"),
+          csvEscape(u.rfid === "registered" ? "Active" : "Inactive"),
           csvEscape(u.status),
+          csvEscape(u.course ?? ""),
           csvEscape(u.lastActive),
         ].join(",")
       ),
@@ -324,11 +303,22 @@ export function UsersView() {
           ) : null}
         </div>
 
-        <div className="table-wrap">
+        <div className="table-wrap users-table-wrap">
           <table className="users-table">
+            <colgroup>
+              <col className="users-col-check" />
+              <col className="users-col-name" />
+              <col className="users-col-role" />
+              <col className="users-col-org" />
+              <col className="users-col-rfid" />
+              <col className="users-col-status" />
+              <col className="users-col-course" />
+              <col className="users-col-actions" />
+              <col className="users-col-options" />
+            </colgroup>
             <thead>
               <tr>
-                <th>
+                <th className="users-col-check">
                   <input
                     ref={headerCheckboxRef}
                     type="checkbox"
@@ -337,13 +327,14 @@ export function UsersView() {
                     onChange={selectAllVisible}
                   />
                 </th>
-                <th>Name / Email</th>
-                <th>Role</th>
-                <th>Organization</th>
-                <th>RFID</th>
-                <th>Status</th>
-                <th>Actions</th>
-                <th>Options</th>
+                <th className="users-col-name">Name / Email</th>
+                <th className="users-col-role">Role</th>
+                <th className="users-col-org">Organization</th>
+                <th className="users-col-rfid">RFID</th>
+                <th className="users-col-status">Status</th>
+                <th className="users-col-course">Course</th>
+                <th className="users-col-actions">Actions</th>
+                <th className="users-col-options">Options</th>
               </tr>
             </thead>
             <tbody id="usersTableBody">
@@ -356,7 +347,7 @@ export function UsersView() {
                   data-status={u.status}
                   data-org={u.org}
                 >
-                  <td>
+                  <td className="users-col-check">
                     <input
                       type="checkbox"
                       aria-label={`Select user ${u.name}`}
@@ -364,27 +355,24 @@ export function UsersView() {
                       onChange={() => toggleSelect(u.email)}
                     />
                   </td>
-                  <td>
-                    {u.name}
-                    <br />
-                    <small>{u.email}</small>
+                  <td className="users-col-name">
+                    <div className="users-name-email">
+                      <span className="users-name">{u.name}</span>
+                      <span className="users-email">{u.email}</span>
+                    </div>
                   </td>
-                  <td>{u.roleLabel}</td>
-                  <td>{u.org}</td>
-                  <td>
+                  <td className="users-col-role">{u.roleLabel}</td>
+                  <td className="users-col-org">{u.org}</td>
+                  <td className="users-col-rfid">
                     <span
                       className={`rfid-tag ${
-                        u.rfid === "registered"
-                          ? "registered"
-                          : "not-registered"
+                        u.rfid === "registered" ? "active" : "inactive"
                       }`}
                     >
-                      {u.rfid === "registered"
-                        ? "Registered"
-                        : "Not Registered"}
+                      {u.rfid === "registered" ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td>
+                  <td className="users-col-status">
                     <button
                       className={`switch${u.status === "active" ? " on" : ""}`}
                       type="button"
@@ -406,10 +394,11 @@ export function UsersView() {
                       }}
                     />
                   </td>
-                  <td>
+                  <td className="users-col-course">{u.course ?? "—"}</td>
+                  <td className="users-col-actions">
                     <span className="last-active">{u.lastActive}</span>
                   </td>
-                  <td className="action-cell">
+                  <td className="users-col-options action-cell">
                     <button
                       className="dots-btn"
                       type="button"
@@ -460,21 +449,12 @@ export function UsersView() {
             </tbody>
           </table>
         </div>
-        <div
-          className="users-toolbar"
-          style={{ borderTop: "1px solid var(--border)", borderBottom: 0 }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 10,
-              fontSize: 12,
-              color: "#9d7a3a",
-            }}
-          >
-            <span>Showing 1 to 5 of 5 entries</span>
+        <div className="users-toolbar users-footer">
+          <div className="users-footer-inner">
+            <span>
+              Showing {filtered.length === 0 ? 0 : 1} to {filtered.length} of{" "}
+              {filtered.length} entries
+            </span>
             <span>Previous &nbsp; 10 &nbsp; Next</span>
           </div>
         </div>

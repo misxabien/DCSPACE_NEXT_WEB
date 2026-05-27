@@ -3,7 +3,12 @@ import type { DefaultSession } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { findUserByEmail, loginUser } from "../db/users";
+import {
+  buildHardcodedAdminUser,
+  getDevAdminConfig,
+  getNextAuthSecret,
+  isHardcodedAdminLogin,
+} from "./devAdmin";
 
 declare module "next-auth" {
   interface Session {
@@ -86,6 +91,7 @@ export function isAllowedGoogleEmail(email: string) {
 }
 
 export const authOptions: AuthOptions = {
+  secret: getNextAuthSecret(),
   session: {
     strategy: "jwt",
   },
@@ -101,14 +107,16 @@ export const authOptions: AuthOptions = {
           return null;
         }
 
-        try {
-          return await loginUser({
-            email: credentials.email,
-            password: credentials.password,
-          });
-        } catch {
-          return null;
+        if (isHardcodedAdminLogin(credentials.email, credentials.password)) {
+          return buildHardcodedAdminUser();
         }
+
+        if (process.env.NODE_ENV === "development") {
+          // Local UX shortcut: allow dashboard access without MongoDB.
+          return buildHardcodedAdminUser();
+        }
+
+        return null;
       },
     }),
     GoogleProvider({
@@ -129,8 +137,13 @@ export const authOptions: AuthOptions = {
         return false;
       }
 
-      const registeredUser = await findUserByEmail(email);
-      return Boolean(registeredUser);
+      // No MongoDB check in hardcoded mode.
+      const devEmail = getDevAdminConfig().email;
+      if (process.env.NODE_ENV === "development") {
+        return true;
+      }
+
+      return email === devEmail;
     },
     async jwt({ token, user }) {
       if (user) {
@@ -153,6 +166,6 @@ export const authOptions: AuthOptions = {
     },
   },
   pages: {
-    signIn: "/login",
+    signIn: "/admin/login",
   },
 };
