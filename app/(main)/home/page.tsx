@@ -3,7 +3,7 @@ import { HomePageContent } from '@/components/HomePageContent';
 import '@/styles/pages/home.css';
 
 export const metadata: Metadata = {
-  title: 'Home | DC Space',
+  title: 'Home',
 };
 
 export default function HomePage() {
