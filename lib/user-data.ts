@@ -139,6 +139,9 @@ export async function loadBookmarkedEventIds(): Promise<string[]> {
 export async function loadRegisteredEvents(): Promise<RegisteredEvent[]> {
   const session = getSession();
   if (!session) {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(REGISTERED_EVENTS_KEY);
+    }
     return [];
   }
 

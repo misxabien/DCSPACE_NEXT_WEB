@@ -46,15 +46,24 @@ function createTransport() {
 
 function smtpNotConfiguredError() {
   return new Error(
-    "Email is not set up. In backend-user/.env, set SMTP_USER to your @sdca.edu.ph address and SMTP_PASS to a Gmail App Password, then restart the server.",
+    "Email is not set up. Set SMTP_USER to your @sdca.edu.ph Gmail address and SMTP_PASS to a Gmail App Password in .env.local and backend-user/.env, then restart the servers.",
   );
 }
 
+function shouldLogVerificationCodeInsteadOfEmail() {
+  return process.env.VERIFICATION_LOG_CODE === "true";
+}
+
 /**
- * Sends a registration verification email. Requires SMTP to be configured.
+ * Sends a registration verification email. Requires SMTP to be configured in production.
+ * In development, logs the code to the server console when SMTP is not set (see VERIFICATION_LOG_CODE).
  */
 export async function sendVerificationEmail({ email, code }) {
   if (!isSmtpConfigured()) {
+    if (shouldLogVerificationCodeInsteadOfEmail()) {
+      console.info(`[DC Space] Verification code for ${email}: ${code}`);
+      return { delivered: true, devMode: true };
+    }
     throw smtpNotConfiguredError();
   }
 

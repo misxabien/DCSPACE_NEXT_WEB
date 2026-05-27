@@ -1,21 +1,22 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { DC_SAVED_EVENTS_KEY } from '@/lib/dc-storage';
+import {
+  HOME_SAVED_EVENTS_KEY,
+  hasBackendSession,
+  loadBookmarkedEventIds,
+  toggleEventBookmark,
+} from '@/lib/user-data';
 
 function readIds(): string[] {
   try {
-    const raw = localStorage.getItem(DC_SAVED_EVENTS_KEY);
+    const raw = localStorage.getItem(HOME_SAVED_EVENTS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     return Array.isArray(parsed) ? (parsed as string[]) : [];
   } catch {
     return [];
   }
-}
-
-function writeIds(ids: string[]) {
-  localStorage.setItem(DC_SAVED_EVENTS_KEY, JSON.stringify(ids));
 }
 
 type Ctx = { saved: Set<string>; toggle: (id: string) => void };
@@ -31,20 +32,34 @@ export function useEventBookmark() {
 export function EventsBookmarks({ children }: { children: React.ReactNode }) {
   const [saved, setSaved] = useState<Set<string>>(new Set());
 
-  const sync = useCallback(() => setSaved(new Set(readIds())), []);
+  const sync = useCallback(() => {
+    if (hasBackendSession()) {
+      void loadBookmarkedEventIds().then((ids) => setSaved(new Set(ids)));
+      return;
+    }
+    setSaved(new Set(readIds()));
+  }, []);
 
   useEffect(() => {
     sync();
+    window.addEventListener('pageshow', sync);
+    window.addEventListener('storage', sync);
+    window.addEventListener('dcspace-events-updated', sync);
+    return () => {
+      window.removeEventListener('pageshow', sync);
+      window.removeEventListener('storage', sync);
+      window.removeEventListener('dcspace-events-updated', sync);
+    };
   }, [sync]);
 
   const toggle = useCallback((id: string) => {
-    const ids = readIds();
-    const i = ids.indexOf(id);
-    if (i === -1) ids.push(id);
-    else ids.splice(i, 1);
-    writeIds(ids);
-    setSaved(new Set(ids));
-  }, []);
+    const ids = Array.from(saved);
+    void toggleEventBookmark(id, ids)
+      .then((next) => setSaved(new Set(next)))
+      .catch((error) => {
+        window.alert(error instanceof Error ? error.message : 'Failed to update bookmark.');
+      });
+  }, [saved]);
 
   return (
     <EventsBookmarkContext.Provider value={{ saved, toggle }}>{children}</EventsBookmarkContext.Provider>

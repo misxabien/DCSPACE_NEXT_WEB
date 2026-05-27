@@ -3,13 +3,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  type RegisteredEvent,
-  getCurrentAttendanceUser,
-  getRegisteredEventId,
-  readRegisteredEvents,
-} from '@/lib/attendance';
-import { canOrganizeEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
+import { type RegisteredEvent, getRegisteredEventId } from '@/lib/attendance';
+import { getEventBanner, getEventTimeLabel, hasEventDateParts } from '@/lib/event-display';
+import { setSelectedBrowseEventId } from '@/lib/dc-events';
+import { readAuthSession } from '@/lib/user-api';
+import { loadRegisteredEvents, refreshProfile, userCanOrganize } from '@/lib/user-data';
 
 type JoinedFilter = 'all' | 'ongoing' | 'upcoming' | 'past';
 
@@ -40,11 +38,6 @@ function getDaysUntil(event: RegisteredEvent) {
   return Math.ceil((eventDate.getTime() - today.getTime()) / 86_400_000);
 }
 
-function getEventTime(event: RegisteredEvent) {
-  const parts = event.dateTime?.split(',') || [];
-
-  return parts.at(-1)?.trim() || 'Event Time';
-}
 
 function getJoinedFilterStatus(event: RegisteredEvent): Exclude<JoinedFilter, 'all'> {
   const daysUntil = getDaysUntil(event);
@@ -81,10 +74,6 @@ function formatFilterDateLabel(dateKey: string) {
   });
 }
 
-function getEventBanner(event: RegisteredEvent) {
-  return (event as RegisteredEvent & { bannerDataUrl?: string }).bannerDataUrl || '';
-}
-
 function getCalendarDays(anchorDate: Date) {
   const firstDay = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1);
   const startDate = new Date(firstDay);
@@ -98,9 +87,18 @@ function getCalendarDays(anchorDate: Date) {
   });
 }
 
-function isFacultyDashboardUser(user: ReturnType<typeof getCurrentAttendanceUser>) {
+function isFacultyDashboardUser(profile: { role?: string; organizationRole?: string; organizationPart?: string; school?: string; email?: string } | null) {
+  if (!profile) return false;
+
   const accountType = typeof window === 'undefined' ? '' : window.localStorage.getItem('dcspaceAccountType') || '';
-  const values = [accountType, user.organizationRole, user.organizationPart, user.school, user.studentEmail];
+  const values = [
+    accountType,
+    profile.role,
+    profile.organizationRole,
+    profile.organizationPart,
+    profile.school,
+    profile.email,
+  ];
 
   return values.some((value) => value?.toLowerCase().includes('faculty'));
 }
@@ -140,27 +138,41 @@ export function DashboardPageContent() {
   const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
 
   useEffect(() => {
-    const refreshDashboard = () => {
-      const user = getCurrentAttendanceUser();
+    let cancelled = false;
 
-      setFirstName(user.firstName || 'User');
-      setRegisteredEvents(readRegisteredEvents());
-      setHasQuickActionsAccess(canOrganizeEvents() || isFacultyDashboardUser(user));
+    const refreshDashboard = async () => {
+      setIsLoading(true);
+      const session = readAuthSession();
+      if (!session?.token) {
+        if (!cancelled) {
+          setFirstName('');
+          setRegisteredEvents([]);
+          setHasQuickActionsAccess(false);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      const profile = (await refreshProfile()) || session.user;
+      const registered = await loadRegisteredEvents();
+
+      if (cancelled) return;
+
+      setFirstName(profile.firstName || '');
+      setRegisteredEvents(registered);
+      setHasQuickActionsAccess(userCanOrganize() || isFacultyDashboardUser(profile));
+      setIsLoading(false);
     };
 
-    refreshDashboard();
-    window.addEventListener('pageshow', refreshDashboard);
-    window.addEventListener('storage', refreshDashboard);
-    window.addEventListener('dcspace-events-updated', refreshDashboard);
-    window.addEventListener('dcspace-registered-events-updated', refreshDashboard);
-    window.addEventListener('dcspace-attendance-updated', refreshDashboard);
+    void refreshDashboard();
+    window.addEventListener('pageshow', () => void refreshDashboard());
+    window.addEventListener('storage', () => void refreshDashboard());
+    window.addEventListener('dcspace-events-updated', () => void refreshDashboard());
+    window.addEventListener('dcspace-registered-events-updated', () => void refreshDashboard());
+    window.addEventListener('dcspace-attendance-updated', () => void refreshDashboard());
 
     return () => {
-      window.removeEventListener('pageshow', refreshDashboard);
-      window.removeEventListener('storage', refreshDashboard);
-      window.removeEventListener('dcspace-events-updated', refreshDashboard);
-      window.removeEventListener('dcspace-registered-events-updated', refreshDashboard);
-      window.removeEventListener('dcspace-attendance-updated', refreshDashboard);
+      cancelled = true;
     };
   }, []);
 
@@ -251,7 +263,7 @@ export function DashboardPageContent() {
     <section className="dashboard-page">
       <div className="dashboard-shell">
         <div className="dashboard-header">
-          <h2>Hello, {firstName}!</h2>
+          <h2>Hello, {firstName || 'there'}!</h2>
           <label className="dashboard-search">
             <Image src="/assets/searchbar-icon.svg" width={12} height={12} alt="" />
             <input
@@ -345,37 +357,48 @@ export function DashboardPageContent() {
               )}
             </div>
 
-            {filteredJoinedEvents.length ? (
+            {isLoading ? (
+              <p className="joined-events-empty dashboard-joined-empty">Loading your events…</p>
+            ) : filteredJoinedEvents.length ? (
               <div className="joined-events-grid dashboard-joined-grid">
-                {filteredJoinedEvents.map((event) => (
-                  <article className="joined-event-card" key={getRegisteredEventId(event)}>
-                    <Link
-                      className="joined-event-card__link"
-                      href="/dashboard/events-joined/details"
-                      onClick={() => setSelectedBrowseEventId(getRegisteredEventId(event))}
-                    >
-                      <span className="joined-event-card__media" aria-hidden="true">
-                        {getEventBanner(event) && (
-                          <Image src={getEventBanner(event)} alt="" fill unoptimized />
-                        )}
-                      </span>
-                      <span className="joined-event-card__content">
-                        <span className="joined-event-card__date">
-                          <span>{event.month || 'MAY'}</span>
-                          <strong>{event.day || '17'}</strong>
+                {filteredJoinedEvents.map((event) => {
+                  const eventTime = getEventTimeLabel(event.dateTime);
+                  const banner = getEventBanner(event);
+
+                  return (
+                    <article className="joined-event-card" key={getRegisteredEventId(event)}>
+                      <Link
+                        className="joined-event-card__link"
+                        href="/dashboard/events-joined/details"
+                        onClick={() => setSelectedBrowseEventId(getRegisteredEventId(event))}
+                      >
+                        <span className="joined-event-card__media" aria-hidden="true">
+                          {banner && <Image src={banner} alt="" fill unoptimized />}
                         </span>
-                        <span className="joined-event-card__details">
-                          <strong>{event.name || 'Event Name'}</strong>
-                          <span>{event.venue || 'Event Venue'}</span>
-                          <small>{getEventTime(event)}</small>
+                        <span className="joined-event-card__content">
+                          {hasEventDateParts(event) && (
+                            <span className="joined-event-card__date">
+                              <span>{event.month}</span>
+                              <strong>{event.day}</strong>
+                            </span>
+                          )}
+                          <span className="joined-event-card__details">
+                            {event.name && <strong>{event.name}</strong>}
+                            {event.venue && <span>{event.venue}</span>}
+                            {eventTime && <small>{eventTime}</small>}
+                          </span>
                         </span>
-                      </span>
-                    </Link>
-                  </article>
-                ))}
+                      </Link>
+                    </article>
+                  );
+                })}
               </div>
+            ) : registeredEvents.length === 0 ? (
+              <p className="joined-events-empty dashboard-joined-empty">
+                You haven&apos;t joined any events yet. Browse events and register to see them here.
+              </p>
             ) : (
-              <p className="joined-events-empty dashboard-joined-empty">No joined events found.</p>
+              <p className="joined-events-empty dashboard-joined-empty">No joined events match your filters.</p>
             )}
           </div>
 

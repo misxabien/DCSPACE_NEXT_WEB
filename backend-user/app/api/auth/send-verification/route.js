@@ -85,16 +85,19 @@ export async function POST(request) {
       );
     }
 
-    return withCors(
-      NextResponse.json(
-        {
-          message: "Verification code sent. Please check your school email inbox (and spam folder).",
-          email: result.email,
-          expiresAt: result.expiresAt,
-        },
-        { status: 200 },
-      ),
-    );
+    const payload = {
+      message: result.devMode
+        ? "Verification code generated. Check the backend-user terminal (SMTP is not configured)."
+        : "Verification code sent. Please check your school email inbox (and spam folder).",
+      email: result.email,
+      expiresAt: result.expiresAt,
+    };
+
+    if (result.devMode && process.env.VERIFICATION_EXPOSE_CODE_IN_RESPONSE === "true") {
+      payload.devCode = result.code;
+    }
+
+    return withCors(NextResponse.json(payload, { status: 200 }));
   } catch (error) {
     const formatted = formatSendError(error);
     return withCors(

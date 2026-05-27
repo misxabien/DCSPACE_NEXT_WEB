@@ -4,6 +4,8 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { registerUser, saveAuthSession, sendRegistrationVerificationEmail } from '@/lib/user-api';
+import { syncProfileToLegacyStorage } from '@/lib/user-mappers';
 
 type RegisterStep = 'personal' | 'school' | 'account' | 'verify';
 
@@ -52,6 +54,7 @@ export function RegisterAccountContent() {
   const [privacyModalClosing, setPrivacyModalClosing] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
 
   const passwordChecks = [
     formData.password.length >= 8,
@@ -112,7 +115,7 @@ export function RegisterAccountContent() {
     return !requiredValues.some((value) => !value.trim());
   };
 
-  const handleVerifyAccount = () => {
+  const handleVerifyAccount = async () => {
     if (requiredAccountDetailsAreFilled() && passwordStrength !== 'Strong') {
       showToast('Password is too weak');
       return;
@@ -123,7 +126,23 @@ export function RegisterAccountContent() {
       return;
     }
 
-    setStep('verify');
+    const schoolEmail = formData.schoolEmail.trim().toLowerCase();
+    if (!schoolEmail.endsWith('@sdca.edu.ph')) {
+      showToast('Please use your school email (@sdca.edu.ph)');
+      return;
+    }
+
+    setIsSendingVerification(true);
+    try {
+      const result = await sendRegistrationVerificationEmail(schoolEmail);
+      setStep('verify');
+      showToast(result.message || 'Verification code sent. Please check your school email.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to send verification email';
+      showToast(message);
+    } finally {
+      setIsSendingVerification(false);
+    }
   };
 
   const handleVerificationCreate = () => {
@@ -144,25 +163,40 @@ export function RegisterAccountContent() {
     }, 240);
   };
 
-  const handleCreateAccount = () => {
+  const handleCreateAccount = async () => {
     if (!privacyAgreed) {
       showToast('Please agree to the Data Privacy Policy');
       return;
     }
 
     setIsCreatingAccount(true);
-    window.localStorage.setItem('dcspaceFirstName', formData.firstName.trim());
-    window.localStorage.setItem('dcspaceLastName', formData.lastName.trim());
-    window.localStorage.setItem('dcspaceStudentNumber', formData.studentNumber.trim());
-    window.localStorage.setItem('dcspaceCourse', formData.course);
-    window.localStorage.setItem('dcspaceSchool', formData.school);
-    window.localStorage.setItem('dcspaceOrganizationPart', formData.organization.trim());
-    window.localStorage.setItem('dcspaceOrganizationRole', formData.role);
-    window.localStorage.setItem('dcspaceRfidNumber', formData.rfidTagNumber.trim());
-    window.localStorage.setItem('dcspaceStudentEmail', formData.schoolEmail.trim());
-    window.sessionStorage.removeItem('dcspacePrivacySeen');
+    try {
+      const result = await registerUser({
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        studentNumber: formData.studentNumber.trim(),
+        email: formData.schoolEmail.trim().toLowerCase(),
+        rfidNumber: formData.rfidTagNumber.trim(),
+        organizationPart: formData.organization.trim(),
+        organizationRole: formData.role,
+        course: formData.course,
+        school: formData.school,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        verificationCode: formData.verificationCode.trim(),
+        role: 'student',
+        dataPrivacyAccepted: true,
+      });
 
-    window.setTimeout(() => router.push('/login'), 900);
+      saveAuthSession(result.token, result.user);
+      syncProfileToLegacyStorage(result.user);
+      window.sessionStorage.removeItem('dcspacePrivacySeen');
+
+      window.setTimeout(() => router.push('/home'), 900);
+    } catch (error) {
+      setIsCreatingAccount(false);
+      showToast(error instanceof Error ? error.message : 'Failed to create account');
+    }
   };
 
   return (
@@ -170,13 +204,14 @@ export function RegisterAccountContent() {
       <main className={`register-shell register-shell--${step}${showPrivacyModal ? ' is-modal-open' : ''}`}>
         <aside className="register-side" aria-label="DC Space welcome panel">
           <div className="register-side__content">
-            <Image
+            <img
               className="register-side__logo"
               src="/dcspace-logos/dcspace-whitetext-transparent.svg"
               alt="DC Space logo"
               width={498}
               height={270}
-              priority
+              decoding="async"
+              fetchPriority="high"
             />
             <h2>Hello New Friend!</h2>
             {step === 'personal' && <p>Already have an account?</p>}
@@ -425,8 +460,13 @@ export function RegisterAccountContent() {
                   <button className="register-back-step" type="button" onClick={() => setStep('school')}>
                     Go back to School Details
                   </button>
-                  <button className="register-continue" type="button" onClick={handleVerifyAccount}>
-                    Verify Account
+                  <button
+                    className="register-continue"
+                    type="button"
+                    onClick={() => void handleVerifyAccount()}
+                    disabled={isSendingVerification}
+                  >
+                    {isSendingVerification ? 'Sending code…' : 'Verify Account'}
                   </button>
                 </div>
               </div>
@@ -450,6 +490,14 @@ export function RegisterAccountContent() {
                 <div className="register-controls">
                   <button className="register-back-step" type="button" onClick={() => setStep('account')}>
                     Go back to Account Setup
+                  </button>
+                  <button
+                    className="register-back-step"
+                    type="button"
+                    disabled={isSendingVerification}
+                    onClick={() => void handleVerifyAccount()}
+                  >
+                    Resend code
                   </button>
                   <button className="register-continue" type="button" onClick={handleVerificationCreate}>
                     Create Account
@@ -505,7 +553,7 @@ export function RegisterAccountContent() {
                   </span>
                 </label>
 
-                <button className="privacy-modal__submit" type="button" onClick={handleCreateAccount}>
+                <button className="privacy-modal__submit" type="button" onClick={() => void handleCreateAccount()}>
                   Create Account
                 </button>
               </div>
@@ -513,6 +561,7 @@ export function RegisterAccountContent() {
           </div>
         )}
       </main>
+      {isSendingVerification && <LoadingScreen context="register-send-verification" />}
       {isCreatingAccount && <LoadingScreen context="create-account-submit" />}
     </div>
   );

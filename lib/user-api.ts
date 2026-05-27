@@ -2,12 +2,16 @@ const configuredBackendUrl = process.env.NEXT_PUBLIC_BACKEND_USER_API_URL;
 const authStorageKey = "dcspace_auth";
 const requestTimeoutMs = 10000;
 
-function getCandidateBaseUrls() {
+function getCandidateBaseUrls(preferLocalOnly = false) {
   const urls = new Set<string>();
 
-  // Same-origin proxy (see next.config.ts rewrites) — works when frontend runs on :3000.
+  // Same-origin API routes on the main Next app (port 3000).
   if (typeof window !== "undefined") {
     urls.add(`${window.location.origin}/api/user`);
+  }
+
+  if (preferLocalOnly) {
+    return Array.from(urls);
   }
 
   // Prefer explicit environment first.
@@ -135,8 +139,9 @@ function extractErrorMessage(payload: unknown): string | null {
 async function apiRequest<T>(
   path: string | ((baseUrl: string) => string),
   options: ApiOptions = {},
+  preferLocalOnly = false,
 ): Promise<T> {
-  const candidateBaseUrls = getCandidateBaseUrls();
+  const candidateBaseUrls = getCandidateBaseUrls(preferLocalOnly);
   let lastError: Error | null = null;
 
   for (const baseUrl of candidateBaseUrls) {
@@ -161,7 +166,7 @@ async function apiRequest<T>(
         lastError = new Error("Request timed out. Please check the server and try again.");
       } else {
         lastError = new Error(
-          "Could not reach the server. In a second terminal run: npm run dev:backend-user (port 4001), then try again.",
+          "Could not reach the server. Run npm run dev and ensure .env.local has MONGODB_URI and JWT_SECRET.",
         );
       }
       continue;
@@ -173,14 +178,16 @@ async function apiRequest<T>(
     if (contentType.includes("application/json")) {
       const json = await response.json();
       if (!response.ok) {
+        const message = extractErrorMessage(json);
+        // Server responded with a real error — show it (do not fall through to :4001 and mask it).
+        if (message) {
+          throw new Error(message);
+        }
         if (response.status >= 500) {
-          lastError = new Error(
-            extractErrorMessage(json) ||
-              "Could not reach the server. In a second terminal run: npm run dev:backend-user (port 4001), then try again.",
-          );
+          lastError = new Error(`Server error (${response.status}). Please try again.`);
           continue;
         }
-        throw new Error(extractErrorMessage(json) || "Request failed.");
+        throw new Error("Request failed.");
       }
       return json as T;
     }
@@ -188,9 +195,7 @@ async function apiRequest<T>(
     const rawBody = await response.text();
     if (!response.ok) {
       if (response.status >= 500) {
-        lastError = new Error(
-          "Could not reach the server. In a second terminal run: npm run dev:backend-user (port 4001), then try again.",
-        );
+        lastError = new Error(rawBody.trim() || `Server error (${response.status}).`);
         continue;
       }
       throw new Error(`Request failed (${response.status}).`);
@@ -201,9 +206,7 @@ async function apiRequest<T>(
 
   throw (
     lastError ||
-    new Error(
-      "Could not reach the server. In a second terminal run: npm run dev:backend-user (port 4001), then try again.",
-    )
+    new Error("Could not reach the server. Run npm run dev on port 3000 and check the terminal for errors.")
   );
 }
 
@@ -212,10 +215,14 @@ export async function sendRegistrationVerificationEmail(email: string) {
     message: string;
     email: string;
     expiresAt: string;
-  }>( (baseUrl) => resolveUserAuthPath("send-verification", baseUrl), {
-    method: "POST",
-    body: { email },
-  });
+  }>(
+    (baseUrl) => resolveUserAuthPath("send-verification", baseUrl),
+    {
+      method: "POST",
+      body: { email },
+    },
+    true,
+  );
 }
 
 export async function registerUser(payload: {
@@ -241,6 +248,7 @@ export async function registerUser(payload: {
       method: "POST",
       body: payload,
     },
+    true,
   );
 }
 
@@ -251,6 +259,7 @@ export async function loginUser(email: string, password: string) {
       method: "POST",
       body: { email, password },
     },
+    true,
   );
 }
 

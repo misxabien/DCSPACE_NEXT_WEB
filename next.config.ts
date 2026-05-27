@@ -14,6 +14,35 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
+      // Local routes under app/api/user/* (events, profile, health) are served by Next.js first.
+      {
+        source: '/api/user/auth/send-verification',
+        destination: '/api/user/auth/send-verification',
+      },
+      {
+        source: '/api/user/auth/register',
+        destination: '/api/user/auth/register',
+      },
+      {
+        source: '/api/user/auth/login',
+        destination: '/api/user/auth/login',
+      },
+      {
+        source: '/api/user/health',
+        destination: '/api/user/health',
+      },
+      {
+        source: '/api/user/events',
+        destination: '/api/user/events',
+      },
+      {
+        source: '/api/user/profile',
+        destination: '/api/user/profile',
+      },
+      {
+        source: '/api/user/registrations',
+        destination: '/api/user/registrations',
+      },
       {
         source: '/api/user/auth/:path*',
         destination: `${backendUserUrl}/api/auth/:path*`,

@@ -163,6 +163,12 @@ export function syncProfileToLegacyStorage(profile: UserProfile) {
   window.localStorage.setItem('dcspaceOrganizationPart', profile.organizationPart || '');
   window.localStorage.setItem('dcspaceOrganizationRole', profile.organizationRole || '');
   window.localStorage.setItem('dcspaceRfidNumber', profile.rfidNumber || '');
+  if (profile.role) {
+    window.localStorage.setItem(
+      'dcspaceAccountType',
+      profile.role.toLowerCase() === 'faculty' ? 'faculty' : 'student',
+    );
+  }
   if (profile.photoUrl && profile.photoUrl.length <= 300_000) {
     try {
       window.localStorage.setItem(getProfilePhotoStorageKeyForProfile(profile), profile.photoUrl);
