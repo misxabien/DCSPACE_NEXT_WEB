@@ -11,12 +11,23 @@ import {
   type EventStatus,
   type RegisteredEvent,
   getRequirementStatus,
+<<<<<<< HEAD
   getEventStatus,
   getRegisteredEventId,
   recordRfidAttendanceTap,
   setSelectedAttendanceEvent,
 } from '@/lib/attendance';
 import { loadAttendanceRecords, loadRegisteredEvents } from '@/lib/user-data';
+=======
+  getCurrentAttendanceUser,
+  getEventStatus,
+  getRegisteredEventId,
+  readRegisteredEvents,
+  readUserAttendanceRecords,
+  recordRfidAttendanceTap,
+  setSelectedAttendanceEvent,
+} from '@/lib/attendance';
+>>>>>>> origin/frontend-user
 
 const attendanceFilters = ['All', 'Yesterday', 'This Week', 'Pick a date'];
 
@@ -163,6 +174,7 @@ export function AttendancePageContent() {
   const scanTimeoutRef = useRef<number | null>(null);
 
   const loadAttendanceEvents = useCallback(() => {
+<<<<<<< HEAD
     void (async () => {
       const registeredEvents = await loadRegisteredEvents();
       const records = await loadAttendanceRecords();
@@ -170,6 +182,14 @@ export function AttendancePageContent() {
       registeredEventsRef.current = registeredEvents;
       setAttendanceEvents(buildAttendanceEvents(registeredEvents, records));
     })();
+=======
+    const user = getCurrentAttendanceUser();
+    const registeredEvents = readRegisteredEvents();
+    const records = readUserAttendanceRecords(user);
+
+    registeredEventsRef.current = registeredEvents;
+    setAttendanceEvents(buildAttendanceEvents(registeredEvents, records));
+>>>>>>> origin/frontend-user
   }, []);
 
   useEffect(() => {

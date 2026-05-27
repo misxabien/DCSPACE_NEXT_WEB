@@ -4,8 +4,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { DateRangeCalendarPicker } from '@/components/DateRangeCalendarPicker';
+<<<<<<< HEAD
 import { getRegisteredEventId, type RegisteredEvent } from '@/lib/attendance';
 import { loadRegisteredEvents } from '@/lib/user-data';
+=======
+import { getRegisteredEventId, readRegisteredEvents, type RegisteredEvent } from '@/lib/attendance';
+>>>>>>> origin/frontend-user
 import { setSelectedBrowseEventId } from '@/lib/dc-events';
 
 const filters = ['All', 'Today', 'Tomorrow', 'This Weekend', 'Pick a date'];
@@ -95,11 +99,17 @@ export function JoinedEventsPageContent() {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
+<<<<<<< HEAD
     const refreshEvents = () => {
       void loadRegisteredEvents().then(setEvents);
     };
 
     void refreshEvents();
+=======
+    const refreshEvents = () => setEvents(readRegisteredEvents());
+
+    refreshEvents();
+>>>>>>> origin/frontend-user
     window.addEventListener('pageshow', refreshEvents);
     window.addEventListener('storage', refreshEvents);
     window.addEventListener('dcspace-registered-events-updated', refreshEvents);

@@ -1,12 +1,16 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+<<<<<<< HEAD
 import {
   HOME_SAVED_EVENTS_KEY,
   hasBackendSession,
   loadBookmarkedEventIds,
   toggleEventBookmark,
 } from '@/lib/user-data';
+=======
+import { DC_SAVED_EVENTS_KEY } from '@/lib/dc-storage';
+>>>>>>> origin/frontend-user
 
 function readIds(): string[] {
   try {

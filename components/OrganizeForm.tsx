@@ -5,7 +5,11 @@ import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { EmptyState } from '@/components/EmptyState';
 import { getCurrentAttendanceUser } from '@/lib/attendance';
+<<<<<<< HEAD
 import { submitOrganizedEventToBackend, userCanOrganize } from '@/lib/user-data';
+=======
+import { canOrganizeEvents, saveOrganizedEvent } from '@/lib/dc-events';
+>>>>>>> origin/frontend-user
 
 type ReviewDetails = {
   eventName: string;
@@ -172,7 +176,11 @@ export function OrganizeForm() {
   const hostDepartment = currentUser?.school || 'School/Department';
 
   useEffect(() => {
+<<<<<<< HEAD
     setCanCreate(userCanOrganize());
+=======
+    setCanCreate(canOrganizeEvents());
+>>>>>>> origin/frontend-user
   }, []);
 
   useEffect(() => {
@@ -357,6 +365,7 @@ export function OrganizeForm() {
     };
   };
 
+<<<<<<< HEAD
   const saveReviewEvent = async (status: 'Draft' | 'Pending') => {
     if (!canCreate || !formRef.current?.checkValidity()) return;
 
@@ -386,6 +395,13 @@ export function OrganizeForm() {
           : 'Failed to save the event. Make sure the backend is running (npm run dev:backend-user).',
       );
     }
+=======
+  const saveReviewEvent = (status: 'Draft' | 'Pending') => {
+    if (!canCreate || !formRef.current?.checkValidity()) return;
+
+    saveOrganizedEvent(getOrganizedEventPayload(status));
+    router.push('/events-organized');
+>>>>>>> origin/frontend-user
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {

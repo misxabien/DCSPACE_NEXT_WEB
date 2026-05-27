@@ -4,8 +4,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { EmptyState } from '@/components/EmptyState';
+<<<<<<< HEAD
 import { type FrontendEvent, setSelectedBrowseEventId } from '@/lib/dc-events';
 import { loadApprovedBrowseEvents } from '@/lib/user-data';
+=======
+import { type FrontendEvent, readBrowseEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
+>>>>>>> origin/frontend-user
 
 const today = new Date();
 const calendarYear = today.getFullYear();
@@ -23,6 +27,7 @@ export function EventsPageContent() {
   const [eventCards, setEventCards] = useState<FrontendEvent[]>([]);
 
   useEffect(() => {
+<<<<<<< HEAD
     let cancelled = false;
 
     const refreshEvents = async () => {
@@ -37,6 +42,19 @@ export function EventsPageContent() {
 
     return () => {
       cancelled = true;
+=======
+    const refreshEvents = () => setEventCards(readBrowseEvents());
+
+    refreshEvents();
+    window.addEventListener('pageshow', refreshEvents);
+    window.addEventListener('storage', refreshEvents);
+    window.addEventListener('dcspace-events-updated', refreshEvents);
+
+    return () => {
+      window.removeEventListener('pageshow', refreshEvents);
+      window.removeEventListener('storage', refreshEvents);
+      window.removeEventListener('dcspace-events-updated', refreshEvents);
+>>>>>>> origin/frontend-user
     };
   }, []);
 

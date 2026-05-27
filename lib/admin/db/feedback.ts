@@ -1,8 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+<<<<<<< HEAD
 import { MongoClient } from "mongodb";
 
 const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
 const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
+=======
+import { MongoClient } from 'mongodb';
+
+const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
+const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
+>>>>>>> origin/frontend-user
 
 const globalForMongo = globalThis as unknown as {
   adminFeedbackMongoClient?: MongoClient;
@@ -39,18 +46,18 @@ function roundAverage(value: number) {
 
 function formatTimeLabel(value: Date | string | null | undefined) {
   if (!value) {
-    return "-";
+    return '-';
   }
 
   const date = value instanceof Date ? value : new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "-";
+    return '-';
   }
 
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
   }).format(date);
 }
 
@@ -60,41 +67,45 @@ function normalizeRegistrationType(record: any) {
     record.feedbackType ??
     record.scope ??
     record.category ??
-    "event"
+    'event'
   )
     .toString()
     .trim()
     .toLowerCase();
 
-  return rawType.includes("system") ? "System" : "Event";
+  return rawType.includes('system') ? 'System' : 'Event';
 }
 
 function normalizeAttendanceStatus(value: unknown) {
-  const normalized = (value ?? "pending").toString().trim().toLowerCase();
+  const normalized = (value ?? 'pending').toString().trim().toLowerCase();
 
-  if (["completed", "complete", "present", "attended"].includes(normalized)) {
-    return "Completed";
+  if (['completed', 'complete', 'present', 'attended'].includes(normalized)) {
+    return 'Completed';
   }
 
-  return "Pending";
+  return 'Pending';
 }
 
 function normalizeCertificateStatus(value: unknown) {
-  if (typeof value === "boolean") {
-    return value ? "issued" : "-";
+  if (typeof value === 'boolean') {
+    return value ? 'issued' : '-';
   }
 
-  const normalized = (value ?? "").toString().trim().toLowerCase();
+  const normalized = (value ?? '').toString().trim().toLowerCase();
 
-  if (!normalized || normalized === "pending" || normalized === "-" || normalized === "none") {
-    return "-";
+  if (!normalized || normalized === 'pending' || normalized === '-' || normalized === 'none') {
+    return '-';
   }
 
-  if (normalized.includes("issued")) {
-    return "issued";
+  if (normalized.includes('issued')) {
+    return 'issued';
   }
 
+<<<<<<< HEAD
   return value?.toString() ?? "-";
+=======
+  return value?.toString() ?? '-';
+>>>>>>> origin/frontend-user
 }
 
 function getEventRating(record: any) {
@@ -116,7 +127,7 @@ function getAverage(values: number[]) {
 
 function mapFeedbackRow(record: any) {
   const registrationType = normalizeRegistrationType(record);
-  const rating = registrationType === "System" ? getSystemRating(record) : getEventRating(record);
+  const rating = registrationType === 'System' ? getSystemRating(record) : getEventRating(record);
 
   return {
     rating: rating ?? 0,
@@ -136,7 +147,11 @@ function mapFeedbackRow(record: any) {
  */
 export async function getFeedbackOverview() {
   const db = await getDatabase();
+<<<<<<< HEAD
   const feedback = db.collection<any>("feedback");
+=======
+  const feedback = db.collection<any>('feedback');
+>>>>>>> origin/frontend-user
   const records = await feedback.find({}).sort({ createdAt: -1, updatedAt: -1 }).limit(500).toArray();
 
   const eventRatings: number[] = [];
@@ -145,7 +160,7 @@ export async function getFeedbackOverview() {
   for (const record of records) {
     const registrationType = normalizeRegistrationType(record);
 
-    if (registrationType === "System") {
+    if (registrationType === 'System') {
       const systemRating = getSystemRating(record);
 
       if (systemRating !== null) {

@@ -7,9 +7,15 @@ import {
   type RegisteredEvent,
   getCurrentAttendanceUser,
   getRegisteredEventId,
+<<<<<<< HEAD
 } from '@/lib/attendance';
 import { setSelectedBrowseEventId } from '@/lib/dc-events';
 import { loadRegisteredEvents, userCanOrganize } from '@/lib/user-data';
+=======
+  readRegisteredEvents,
+} from '@/lib/attendance';
+import { canOrganizeEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
+>>>>>>> origin/frontend-user
 
 type JoinedFilter = 'all' | 'ongoing' | 'upcoming' | 'past';
 
@@ -140,6 +146,7 @@ export function DashboardPageContent() {
   const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
 
   useEffect(() => {
+<<<<<<< HEAD
     let cancelled = false;
 
     const refreshDashboard = async () => {
@@ -162,6 +169,29 @@ export function DashboardPageContent() {
 
     return () => {
       cancelled = true;
+=======
+    const refreshDashboard = () => {
+      const user = getCurrentAttendanceUser();
+
+      setFirstName(user.firstName || 'User');
+      setRegisteredEvents(readRegisteredEvents());
+      setHasQuickActionsAccess(canOrganizeEvents() || isFacultyDashboardUser(user));
+    };
+
+    refreshDashboard();
+    window.addEventListener('pageshow', refreshDashboard);
+    window.addEventListener('storage', refreshDashboard);
+    window.addEventListener('dcspace-events-updated', refreshDashboard);
+    window.addEventListener('dcspace-registered-events-updated', refreshDashboard);
+    window.addEventListener('dcspace-attendance-updated', refreshDashboard);
+
+    return () => {
+      window.removeEventListener('pageshow', refreshDashboard);
+      window.removeEventListener('storage', refreshDashboard);
+      window.removeEventListener('dcspace-events-updated', refreshDashboard);
+      window.removeEventListener('dcspace-registered-events-updated', refreshDashboard);
+      window.removeEventListener('dcspace-attendance-updated', refreshDashboard);
+>>>>>>> origin/frontend-user
     };
   }, []);
 

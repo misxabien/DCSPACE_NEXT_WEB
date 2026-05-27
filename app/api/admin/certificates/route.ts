@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { requireAdmin } from "../../../../lib/admin/auth/roleGuard";
-import { getAttendeesByEvent } from "../../../../lib/admin/db/certificates";
+import { requireAdmin } from "@/lib/admin/auth/roleGuard";
+import { getAttendeesByEvent } from "@/lib/admin/db/certificates";
 
 function toErrorResponse(error: unknown) {
   if (error instanceof Error && error.name === "AdminAuthorizationError") {

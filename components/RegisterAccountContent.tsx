@@ -4,8 +4,11 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { LoadingScreen } from '@/components/LoadingScreen';
+<<<<<<< HEAD
 import { registerUser, saveAuthSession, sendRegistrationVerificationEmail } from '@/lib/user-api';
 import { syncProfileToLegacyStorage } from '@/lib/user-mappers';
+=======
+>>>>>>> origin/frontend-user
 
 type RegisterStep = 'personal' | 'school' | 'account' | 'verify';
 
@@ -54,7 +57,10 @@ export function RegisterAccountContent() {
   const [privacyModalClosing, setPrivacyModalClosing] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+<<<<<<< HEAD
   const [isSendingVerification, setIsSendingVerification] = useState(false);
+=======
+>>>>>>> origin/frontend-user
 
   const passwordChecks = [
     formData.password.length >= 8,
@@ -115,7 +121,11 @@ export function RegisterAccountContent() {
     return !requiredValues.some((value) => !value.trim());
   };
 
+<<<<<<< HEAD
   const handleVerifyAccount = async () => {
+=======
+  const handleVerifyAccount = () => {
+>>>>>>> origin/frontend-user
     if (requiredAccountDetailsAreFilled() && passwordStrength !== 'Strong') {
       showToast('Password is too weak');
       return;
@@ -126,6 +136,7 @@ export function RegisterAccountContent() {
       return;
     }
 
+<<<<<<< HEAD
     const schoolEmail = formData.schoolEmail.trim().toLowerCase();
     if (!schoolEmail.endsWith('@sdca.edu.ph')) {
       showToast('Please use your school email (@sdca.edu.ph)');
@@ -143,6 +154,9 @@ export function RegisterAccountContent() {
     } finally {
       setIsSendingVerification(false);
     }
+=======
+    setStep('verify');
+>>>>>>> origin/frontend-user
   };
 
   const handleVerificationCreate = () => {
@@ -163,13 +177,18 @@ export function RegisterAccountContent() {
     }, 240);
   };
 
+<<<<<<< HEAD
   const handleCreateAccount = async () => {
+=======
+  const handleCreateAccount = () => {
+>>>>>>> origin/frontend-user
     if (!privacyAgreed) {
       showToast('Please agree to the Data Privacy Policy');
       return;
     }
 
     setIsCreatingAccount(true);
+<<<<<<< HEAD
     try {
       const result = await registerUser({
         firstName: formData.firstName.trim(),
@@ -197,6 +216,20 @@ export function RegisterAccountContent() {
       setIsCreatingAccount(false);
       showToast(error instanceof Error ? error.message : 'Failed to create account');
     }
+=======
+    window.localStorage.setItem('dcspaceFirstName', formData.firstName.trim());
+    window.localStorage.setItem('dcspaceLastName', formData.lastName.trim());
+    window.localStorage.setItem('dcspaceStudentNumber', formData.studentNumber.trim());
+    window.localStorage.setItem('dcspaceCourse', formData.course);
+    window.localStorage.setItem('dcspaceSchool', formData.school);
+    window.localStorage.setItem('dcspaceOrganizationPart', formData.organization.trim());
+    window.localStorage.setItem('dcspaceOrganizationRole', formData.role);
+    window.localStorage.setItem('dcspaceRfidNumber', formData.rfidTagNumber.trim());
+    window.localStorage.setItem('dcspaceStudentEmail', formData.schoolEmail.trim());
+    window.sessionStorage.removeItem('dcspacePrivacySeen');
+
+    window.setTimeout(() => router.push('/login'), 900);
+>>>>>>> origin/frontend-user
   };
 
   return (
@@ -459,6 +492,7 @@ export function RegisterAccountContent() {
                   <button className="register-back-step" type="button" onClick={() => setStep('school')}>
                     Go back to School Details
                   </button>
+<<<<<<< HEAD
                   <button
                     className="register-continue"
                     type="button"
@@ -466,6 +500,10 @@ export function RegisterAccountContent() {
                     disabled={isSendingVerification}
                   >
                     {isSendingVerification ? 'Sending code…' : 'Verify Account'}
+=======
+                  <button className="register-continue" type="button" onClick={handleVerifyAccount}>
+                    Verify Account
+>>>>>>> origin/frontend-user
                   </button>
                 </div>
               </div>
@@ -490,6 +528,7 @@ export function RegisterAccountContent() {
                   <button className="register-back-step" type="button" onClick={() => setStep('account')}>
                     Go back to Account Setup
                   </button>
+<<<<<<< HEAD
                   <button
                     className="register-back-step"
                     type="button"
@@ -498,6 +537,8 @@ export function RegisterAccountContent() {
                   >
                     Resend code
                   </button>
+=======
+>>>>>>> origin/frontend-user
                   <button className="register-continue" type="button" onClick={handleVerificationCreate}>
                     Create Account
                   </button>
@@ -552,7 +593,11 @@ export function RegisterAccountContent() {
                   </span>
                 </label>
 
+<<<<<<< HEAD
                 <button className="privacy-modal__submit" type="button" onClick={() => void handleCreateAccount()}>
+=======
+                <button className="privacy-modal__submit" type="button" onClick={handleCreateAccount}>
+>>>>>>> origin/frontend-user
                   Create Account
                 </button>
               </div>
