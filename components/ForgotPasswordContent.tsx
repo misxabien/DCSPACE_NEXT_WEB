@@ -125,13 +125,14 @@ export function ForgotPasswordContent() {
 
         <aside className="forgot-side" aria-label="Forgot password brand panel">
           <div className="forgot-side__content">
-            <Image
+            <img
               className="forgot-side__logo"
               src="/dcspace-logos/dcspace-whitetext-transparent.svg"
               alt="DC Space logo"
               width={498}
               height={270}
-              priority
+              decoding="async"
+              fetchPriority="high"
             />
             <h2>Forgot your password?</h2>
             {step === 'email' && (

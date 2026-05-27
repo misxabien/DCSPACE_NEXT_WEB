@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import { sanitizeUser, validateRegistrationBody } from "@/lib/auth-helpers";
 import { hashPassword } from "@/lib/password";
 import { signAuthToken } from "@/lib/token";
+import { verifyRegistrationCode } from "@/lib/verification";
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +12,11 @@ export async function POST(request: Request) {
 
     if (validationError) {
       return NextResponse.json({ error: validationError }, { status: 400 });
+    }
+
+    const verification = await verifyRegistrationCode(body.email, body.verificationCode);
+    if (!verification.ok) {
+      return withCors(NextResponse.json({ error: verification.error }, { status: 400 }));
     }
 
     const rfidNumber = String(body.rfidNumber || "").trim();
