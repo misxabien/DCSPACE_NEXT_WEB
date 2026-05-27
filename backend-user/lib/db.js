@@ -89,7 +89,9 @@ async function connectWithFallback(uri, dbName) {
       String(primaryError?.message || "").includes("ENOTFOUND") ||
       String(primaryError?.message || "").includes("ECONNREFUSED");
 
-    if (!fallbackUri || !isSrvLookupFailure) {
+    const isTlsFailure = /ssl|tls|alert internal error/i.test(String(primaryError?.message || ""));
+
+    if (!fallbackUri || (!isSrvLookupFailure && !isTlsFailure)) {
       throw primaryError;
     }
 

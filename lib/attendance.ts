@@ -1,21 +1,29 @@
-export const REGISTERED_EVENTS_KEY = "dcspaceRegisteredEvents";
-export const LOGGED_IN_KEY = "dcspaceLoggedIn";
-export const CURRENT_USER_KEY = "dcspaceCurrentUser";
-export const SELECTED_ATTENDANCE_EVENT_KEY = "dcspaceSelectedAttendanceEventId";
-export const ATTENDANCE_UPDATED_EVENT = "dcspace-attendance-updated";
+export const REGISTERED_EVENTS_KEY = 'dcspaceRegisteredEvents';
+export const LOGGED_IN_KEY = 'dcspaceLoggedIn';
+export const CURRENT_USER_KEY = 'dcspaceCurrentUser';
+export const SELECTED_ATTENDANCE_EVENT_KEY = 'dcspaceSelectedAttendanceEventId';
+export const ATTENDANCE_UPDATED_EVENT = 'dcspace-attendance-updated';
 
-const ATTENDANCE_RECORDS_KEY_PREFIX = "dcspaceAttendanceRecords:";
-const DEFAULT_STUDENT_NUMBER = "2025-0000";
+const ATTENDANCE_RECORDS_KEY_PREFIX = 'dcspaceAttendanceRecords:';
+const DEFAULT_STUDENT_NUMBER = '2025-0000';
 
-export type EventStatus = "Ongoing" | "Passed" | "Upcoming";
+export type EventStatus = 'Ongoing' | 'Passed' | 'Upcoming';
 export type RequirementStatus =
-  | "Processing"
-  | "Complete"
-  | "Undertime"
-  | "Overtime"
-  | "Invalid";
+  | 'Processing'
+  | 'Complete'
+  | 'Undertime'
+  | 'Overtime'
+  | 'Invalid';
 
-export type CertificateStatus = "Download" | "Processing" | "Invalid";
+export type CertificateStatus = 'Download' | 'Processing' | 'Invalid';
+
+export type UploadedRequirementFile = {
+  requirementName?: string;
+  name: string;
+  type: string;
+  size: number;
+  dataUrl: string;
+};
 
 export type RegisteredEvent = {
   id?: string;
@@ -30,7 +38,12 @@ export type RegisteredEvent = {
   certificate?: string;
   minAttendance?: string;
   duration?: string;
-  ownerEmail?: string;
+  surveyFormLink?: string;
+  announcements?: string;
+  requirements?: string[];
+  bannerDataUrl?: string;
+  requirementFile?: UploadedRequirementFile;
+  requirementFiles?: UploadedRequirementFile[];
 };
 
 export type AttendanceUser = {
@@ -80,56 +93,51 @@ function readJson<T>(storage: Storage, key: string, fallback: T): T {
 }
 
 function present(value: unknown) {
-  return typeof value === "string" && value.trim() ? value.trim() : "";
+  return typeof value === 'string' && value.trim() ? value.trim() : '';
 }
 
 function normalizeKey(value: string) {
-  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "guest";
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'guest';
 }
 
 function normalizeRfid(value: string) {
-  return value.replace(/\s+/g, "").toLowerCase();
+  return value.replace(/\s+/g, '').toLowerCase();
 }
 
-export function readRegisteredEvents() {
-  const ownerEmail = String(readAuthSession()?.user?.email || "").trim().toLowerCase();
-  if (!ownerEmail) {
-    return [];
-  }
-  const byKey = new Map<string, RegisteredEvent>();
-  const addEvents = (events: RegisteredEvent[]) => {
-    for (const event of events) {
-      const eventOwner = String(event?.ownerEmail || "").trim().toLowerCase();
-      if (!eventOwner || eventOwner !== ownerEmail) {
-        continue;
-      }
-      const name = present(event?.name);
-      const dateTime = present(event?.dateTime);
-      if (!name || name.toLowerCase() === "event name") {
-        continue;
-      }
-      const id = present(event?.id);
-      const key = id || `${name}|${dateTime}`;
-      byKey.set(key, event);
-    }
-  };
+function isBrowser() {
+  return typeof window !== 'undefined';
+}
 
-  addEvents(readJson<RegisteredEvent[]>(window.localStorage, REGISTERED_EVENTS_KEY, []));
-  addEvents(readJson<RegisteredEvent[]>(window.localStorage, REGISTERED_EVENTS_KEY_V2, []));
-  return Array.from(byKey.values());
+const emptyAttendanceUser = (): AttendanceUser => ({
+  firstName: '',
+  lastName: '',
+  studentNumber: DEFAULT_STUDENT_NUMBER,
+  studentEmail: '',
+  rfidNumber: '',
+  course: '',
+  school: '',
+  organizationPart: '',
+  organizationRole: '',
+  accountKey: 'guest',
+  isLoggedIn: false,
+});
+
+export function readRegisteredEvents() {
+  if (!isBrowser()) return [];
+  return readJson<RegisteredEvent[]>(window.localStorage, REGISTERED_EVENTS_KEY, []);
 }
 
 export function signInAttendanceUser(email?: string) {
-  const savedEmail = present(email) || present(window.localStorage.getItem("dcspaceStudentEmail"));
+  const savedEmail = present(email) || present(window.localStorage.getItem('dcspaceStudentEmail'));
 
-  const firstName = present(window.localStorage.getItem("dcspaceFirstName"));
-  const lastName = present(window.localStorage.getItem("dcspaceLastName"));
-  const studentNumber = present(window.localStorage.getItem("dcspaceStudentNumber")) || DEFAULT_STUDENT_NUMBER;
-  const rfidNumber = present(window.localStorage.getItem("dcspaceRfidNumber"));
-  const course = present(window.localStorage.getItem("dcspaceCourse"));
-  const school = present(window.localStorage.getItem("dcspaceSchool"));
-  const organizationPart = present(window.localStorage.getItem("dcspaceOrganizationPart"));
-  const organizationRole = present(window.localStorage.getItem("dcspaceOrganizationRole"));
+  const firstName = present(window.localStorage.getItem('dcspaceFirstName'));
+  const lastName = present(window.localStorage.getItem('dcspaceLastName'));
+  const studentNumber = present(window.localStorage.getItem('dcspaceStudentNumber')) || DEFAULT_STUDENT_NUMBER;
+  const rfidNumber = present(window.localStorage.getItem('dcspaceRfidNumber'));
+  const course = present(window.localStorage.getItem('dcspaceCourse'));
+  const school = present(window.localStorage.getItem('dcspaceSchool'));
+  const organizationPart = present(window.localStorage.getItem('dcspaceOrganizationPart'));
+  const organizationRole = present(window.localStorage.getItem('dcspaceOrganizationRole'));
 
   const user: AttendanceUser = {
     firstName,
@@ -145,11 +153,11 @@ export function signInAttendanceUser(email?: string) {
     isLoggedIn: true,
   };
 
-  window.sessionStorage.setItem(LOGGED_IN_KEY, "true");
+  window.sessionStorage.setItem(LOGGED_IN_KEY, 'true');
   window.sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
 
   if (savedEmail) {
-    window.localStorage.setItem("dcspaceStudentEmail", savedEmail);
+    window.localStorage.setItem('dcspaceStudentEmail', savedEmail);
   }
 
   return user;
@@ -161,31 +169,33 @@ export function signOutAttendanceUser() {
 }
 
 export function getCurrentAttendanceUser(): AttendanceUser {
+  if (!isBrowser()) return emptyAttendanceUser();
+
   const sessionUser = readJson<Partial<AttendanceUser>>(window.sessionStorage, CURRENT_USER_KEY, {});
   const studentEmail =
-    present(sessionUser.studentEmail) || present(window.localStorage.getItem("dcspaceStudentEmail"));
+    present(sessionUser.studentEmail) || present(window.localStorage.getItem('dcspaceStudentEmail'));
   const studentNumber =
     present(sessionUser.studentNumber) ||
-    present(window.localStorage.getItem("dcspaceStudentNumber")) ||
+    present(window.localStorage.getItem('dcspaceStudentNumber')) ||
     DEFAULT_STUDENT_NUMBER;
   const rfidNumber =
-    present(sessionUser.rfidNumber) || present(window.localStorage.getItem("dcspaceRfidNumber"));
+    present(sessionUser.rfidNumber) || present(window.localStorage.getItem('dcspaceRfidNumber'));
   const isLoggedIn =
-    window.sessionStorage.getItem(LOGGED_IN_KEY) === "true" ||
+    window.sessionStorage.getItem(LOGGED_IN_KEY) === 'true' ||
     Boolean(window.sessionStorage.getItem(CURRENT_USER_KEY));
 
   return {
-    firstName: present(sessionUser.firstName) || present(window.localStorage.getItem("dcspaceFirstName")),
-    lastName: present(sessionUser.lastName) || present(window.localStorage.getItem("dcspaceLastName")),
+    firstName: present(sessionUser.firstName) || present(window.localStorage.getItem('dcspaceFirstName')),
+    lastName: present(sessionUser.lastName) || present(window.localStorage.getItem('dcspaceLastName')),
     studentNumber,
     studentEmail,
     rfidNumber,
-    course: present(sessionUser.course) || present(window.localStorage.getItem("dcspaceCourse")),
-    school: present(sessionUser.school) || present(window.localStorage.getItem("dcspaceSchool")),
+    course: present(sessionUser.course) || present(window.localStorage.getItem('dcspaceCourse')),
+    school: present(sessionUser.school) || present(window.localStorage.getItem('dcspaceSchool')),
     organizationPart:
-      present(sessionUser.organizationPart) || present(window.localStorage.getItem("dcspaceOrganizationPart")),
+      present(sessionUser.organizationPart) || present(window.localStorage.getItem('dcspaceOrganizationPart')),
     organizationRole:
-      present(sessionUser.organizationRole) || present(window.localStorage.getItem("dcspaceOrganizationRole")),
+      present(sessionUser.organizationRole) || present(window.localStorage.getItem('dcspaceOrganizationRole')),
     accountKey: normalizeKey(studentEmail || studentNumber || rfidNumber),
     isLoggedIn,
   };
@@ -194,8 +204,8 @@ export function getCurrentAttendanceUser(): AttendanceUser {
 export function getRegisteredEventId(event: RegisteredEvent) {
   const raw =
     event.id ||
-    [event.name, event.month, event.day, event.year, event.dateTime].filter(Boolean).join("|") ||
-    "event";
+    [event.name, event.month, event.day, event.year, event.dateTime].filter(Boolean).join('|') ||
+    'event';
 
   return normalizeKey(raw);
 }
@@ -219,13 +229,13 @@ export function formatEventDate(event: RegisteredEvent) {
   const eventDate = getRegisteredEventDate(event);
 
   if (!eventDate) {
-    return "MM/DD/YYYY";
+    return 'MM/DD/YYYY';
   }
 
-  return eventDate.toLocaleDateString("en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    year: "numeric",
+  return eventDate.toLocaleDateString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric',
   });
 }
 
@@ -235,14 +245,14 @@ export function getEventStatus(event: RegisteredEvent, now = new Date()): EventS
   today.setHours(0, 0, 0, 0);
 
   if (!eventDate) {
-    return "Upcoming";
+    return 'Upcoming';
   }
 
   if (eventDate.getTime() === today.getTime()) {
-    return "Ongoing";
+    return 'Ongoing';
   }
 
-  return eventDate < today ? "Passed" : "Upcoming";
+  return eventDate < today ? 'Passed' : 'Upcoming';
 }
 
 export function getAttendanceStorageKey(user: AttendanceUser) {
@@ -250,6 +260,7 @@ export function getAttendanceStorageKey(user: AttendanceUser) {
 }
 
 export function readUserAttendanceRecords(user: AttendanceUser) {
+  if (!isBrowser()) return {};
   return readJson<Record<string, AttendanceRecord>>(window.localStorage, getAttendanceStorageKey(user), {});
 }
 
@@ -269,12 +280,12 @@ function getRequiredMinutes(minAttendance?: string) {
 
   const value = minAttendance.toLowerCase();
 
-  if (value.includes("none") || value.includes("tba")) return 0;
+  if (value.includes('none') || value.includes('tba')) return 0;
 
   const number = Number(value.match(/\d+(\.\d+)?/)?.[0] || 0);
 
-  if (value.includes("hour")) return number * 60;
-  if (value.includes("min")) return number;
+  if (value.includes('hour')) return number * 60;
+  if (value.includes('min')) return number;
 
   return number;
 }
@@ -290,7 +301,7 @@ function getMinutesFromTime(time?: string) {
 }
 
 function getEventEndMinutes(event?: RegisteredEvent) {
-  const endTime = event?.dateTime?.split("-").at(-1)?.trim();
+  const endTime = event?.dateTime?.split('-').at(-1)?.trim();
 
   return getMinutesFromTime(endTime);
 }
@@ -315,19 +326,19 @@ function getTotalAttendedMinutes(record?: AttendanceRecord) {
 }
 
 export function getRequirementStatus(record?: AttendanceRecord, event?: RegisteredEvent): RequirementStatus {
-  if (!record?.taps?.length && !record?.tapIn) return "Processing";
+  if (!record?.taps?.length && !record?.tapIn) return 'Processing';
 
   const hasOpenTap = record.taps?.some((pair) => pair.tapIn && !pair.tapOut);
 
   if (hasOpenTap) {
-    return "Processing";
+    return 'Processing';
   }
 
   const totalAttendedMinutes = getTotalAttendedMinutes(record);
   const requiredMinutes = getRequiredMinutes(event?.minAttendance);
 
   if (requiredMinutes > 0 && totalAttendedMinutes < requiredMinutes) {
-    return "Undertime";
+    return 'Undertime';
   }
 
   const lastCompletedPair = [...(record.taps || [])]
@@ -341,25 +352,29 @@ export function getRequirementStatus(record?: AttendanceRecord, event?: Register
     const overtimeMinutes = finalTapOutMinutes - eventEndMinutes;
 
     if (overtimeMinutes > 60) {
-      return "Processing";
+      return 'Invalid';
     }
 
     if (overtimeMinutes >= 30 && overtimeMinutes <= 60) {
-      return "Overtime";
+      return 'Overtime';
     }
   }
 
-  return "Complete";
+  return 'Complete';
 }
 
 export function getCertificateStatus(record?: AttendanceRecord, event?: RegisteredEvent): CertificateStatus {
   const status = getRequirementStatus(record, event);
 
-  if (status === "Complete" || status === "Overtime") {
-    return "Download";
+  if (status === 'Complete' || status === 'Overtime') {
+    return 'Download';
   }
 
-  return "Processing";
+  if (status === 'Invalid') {
+    return 'Invalid';
+  }
+
+  return 'Processing';
 }
 
 export function setSelectedAttendanceEvent(eventId: string) {
@@ -367,7 +382,7 @@ export function setSelectedAttendanceEvent(eventId: string) {
 }
 
 export function getSelectedAttendanceEventId() {
-  return window.localStorage.getItem(SELECTED_ATTENDANCE_EVENT_KEY) || "";
+  return window.localStorage.getItem(SELECTED_ATTENDANCE_EVENT_KEY) || '';
 }
 
 export function recordRfidAttendanceTap(scannedRfid: string, events: RegisteredEvent[]) {
@@ -375,17 +390,17 @@ export function recordRfidAttendanceTap(scannedRfid: string, events: RegisteredE
   const normalizedScan = normalizeRfid(scannedRfid);
 
   if (!user.isLoggedIn) {
-    return { ok: false, message: "Please sign in before tapping an RFID card." };
+    return { ok: false, message: 'Please sign in before tapping an RFID card.' };
   }
 
   if (!user.rfidNumber || normalizeRfid(user.rfidNumber) !== normalizedScan) {
-    return { ok: false, message: "RFID card does not match the signed-in account." };
+    return { ok: false, message: 'RFID card does not match the signed-in account.' };
   }
 
-  const ongoingEvent = events.find((event) => getEventStatus(event) === "Ongoing");
+  const ongoingEvent = events.find((event) => getEventStatus(event) === 'Ongoing');
 
   if (!ongoingEvent) {
-    return { ok: false, message: "No registered event is ongoing today." };
+    return { ok: false, message: 'No registered event is ongoing today.' };
   }
 
   const eventId = getRegisteredEventId(ongoingEvent);
@@ -412,7 +427,7 @@ export function recordRfidAttendanceTap(scannedRfid: string, events: RegisteredE
 
   const nextRecord: AttendanceRecord = {
     eventId,
-    eventName: ongoingEvent.name || "Event Name",
+    eventName: ongoingEvent.name || 'Event Name',
     eventDate: formatEventDate(ongoingEvent),
     studentNumber: user.studentNumber,
     rfidNumber: user.rfidNumber,
@@ -426,7 +441,22 @@ export function recordRfidAttendanceTap(scannedRfid: string, events: RegisteredE
   writeUserAttendanceRecords(user, records);
   setSelectedAttendanceEvent(eventId);
 
-  const tapType = lastTapPair && !lastTapPair.tapOut ? "tap out" : "tap in";
+  const tapType = lastTapPair && !lastTapPair.tapOut ? 'tap out' : 'tap in';
+
+  if (typeof window !== 'undefined') {
+    void import('@/lib/user-api')
+      .then(({ readAuthSession, recordAttendanceTap }) => {
+        const session = readAuthSession();
+        if (!session) return;
+        return recordAttendanceTap(session.token, {
+          eventId,
+          eventName: nextRecord.eventName,
+          eventDate: nextRecord.eventDate,
+          rfidNumber: user.rfidNumber,
+        });
+      })
+      .catch(() => undefined);
+  }
 
   return {
     ok: true,
@@ -443,26 +473,26 @@ export function downloadAttendanceCertificate(
     return;
   }
 
-  const eventName = event.name || record?.eventName || "Event Name";
-  const issuedDate = new Date().toLocaleDateString("en-US", {
-    month: "long",
-    day: "2-digit",
-    year: "numeric",
+  const eventName = event.name || record?.eventName || 'Event Name';
+  const issuedDate = new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    day: '2-digit',
+    year: 'numeric',
   });
   const certificate = [
-    "DC Space E-Certificate",
-    "",
+    'DC Space E-Certificate',
+    '',
     `This certifies that student ${user.studentNumber} completed the attendance requirement for:`,
     eventName,
-    "",
+    '',
     `Event Date: ${formatEventDate(event)}`,
-    `Tap IN: ${record?.tapIn || ""}`,
-    `Tap OUT: ${record?.tapOut || ""}`,
+    `Tap IN: ${record?.tapIn || ''}`,
+    `Tap OUT: ${record?.tapOut || ''}`,
     `Issued Date: ${issuedDate}`,
-  ].join("\n");
-  const blob = new Blob([certificate], { type: "text/plain;charset=utf-8" });
+  ].join('\n');
+  const blob = new Blob([certificate], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
+  const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = `DCSPACE-Certificate-${normalizeKey(eventName)}.txt`;
   document.body.appendChild(anchor);
@@ -472,9 +502,9 @@ export function downloadAttendanceCertificate(
 }
 
 function formatAttendanceTime(date: Date) {
-  return date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
     hour12: true,
   });
 }
