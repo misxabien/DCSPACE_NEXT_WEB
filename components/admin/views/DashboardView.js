@@ -1,84 +1,194 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useShowStatus } from "@/contexts/ShowStatusContext";
 
 const CHIPS = ["Weekly", "Monthly", "Quarterly"];
 
-const STATS = [
-  {
-    action: "Total Events opened",
-    label: "Total Events",
-    trend: "+12%",
-    value: "320",
-    hint: "Compared to last period",
-  },
-  {
-    action: "Attendees opened",
-    label: "Attendees",
-    trend: "+18%",
-    value: "1,685",
-    hint: "Unique users attended",
-  },
-  {
-    action: "Certificates opened",
-    label: "Certificates",
-    trend: "+16%",
-    value: "1,563",
-    hint: "Issued automatically",
-  },
-  {
-    action: "Organizations opened",
-    label: "Organizations",
-    trend: "+14%",
-    value: "23",
-    hint: "Active partner schools",
-  },
-];
+function formatCount(value) {
+  const number = Number(value ?? 0);
+  return Number.isFinite(number) ? number.toLocaleString() : "0";
+}
 
-const INSIGHTS = [
-  ["BSIT - DX", "100%", "135"],
-  ["BMMA - RC", "76%", "102"],
-  ["BACOMM - ADC", "74%", "100"],
-  ["BMLS - LD", "70%", "95"],
-  ["BS/BEED - GEG", "63%", "85"],
-  ["BSTM - JTTC", "51%", "69"],
-];
+function normalizeRows(rows) {
+  return Array.isArray(rows)
+    ? rows
+        .map((row) => ({
+          label: typeof row?.label === "string" && row.label.trim() ? row.label : "Unknown",
+          value: Number(row?.value ?? 0),
+        }))
+        .filter((row) => Number.isFinite(row.value))
+    : [];
+}
 
-const ENGAGED = [
-  ["BSIT - DX", "100%", "160"],
-  ["BMMA - RC", "75%", "121"],
-  ["BACOMM - ADC", "74%", "119"],
-  ["BMLS - LD", "70%", "113"],
-  ["BS/BEED - GEG", "63%", "101"],
-  ["BSTM - JTTC", "51%", "82"],
-];
+function normalizeChartDataset(chart) {
+  const labels = Array.isArray(chart?.labels) ? chart.labels : [];
+  const data = Array.isArray(chart?.datasets?.[0]?.data) ? chart.datasets[0].data : [];
 
-const BAR_HEIGHTS = [42, 50, 54, 61, 58, 64, 69, 66, 76];
+  return labels
+    .map((label, index) => ({
+      label: typeof label === "string" && label.trim() ? label : "Unknown",
+      value: Number(data[index] ?? 0),
+    }))
+    .filter((row) => Number.isFinite(row.value));
+}
 
-const PINS = [
-  {
-    title: "Best Time to Schedule",
-    body: "Friday 4:00 PM currently has the highest attendance.",
-  },
-  {
-    title: "Suggested Venue",
-    body: "Use DRA Hall for events with expected large audiences.",
-  },
-  {
-    title: "Target Audience",
-    body: "BSIT students are most likely to attend this month.",
-  },
-  {
-    title: "Conflict Warning",
-    body: "Two events overlap on April 25 from 2:00 to 4:00 PM.",
-  },
-];
+function normalizeRecommendations(rows) {
+  return Array.isArray(rows)
+    ? rows
+        .map((row) => ({
+          title: typeof row?.title === "string" ? row.title.trim() : "",
+          body: typeof row?.body === "string" ? row.body.trim() : "",
+        }))
+        .filter((row) => row.title && row.body)
+    : [];
+}
+
+function StatCard({ item, onOpen }) {
+  return (
+    <article
+      className="card stat"
+      data-action={item.action}
+      onClick={onOpen}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+    >
+      <div className="stat-top">
+        <span>{item.label}</span>
+        <span className="trend up">Live</span>
+      </div>
+      <p className="value">{item.value}</p>
+      <small className="muted">{item.hint}</small>
+    </article>
+  );
+}
+
+function MetricPanel({ title, rows, loading, emptyText }) {
+  const maxValue = Math.max(...rows.map((row) => row.value), 0);
+
+  return (
+    <article className="card two-col">
+      <div className="panel-title">
+        <h2>{title}</h2>
+      </div>
+      {rows.length > 0 ? (
+        rows.map((row) => (
+          <div key={row.label} className="metric-row">
+            <span>{row.label}</span>
+            <div className="progress">
+              <div
+                className="bar"
+                style={{ width: `${maxValue ? (row.value / maxValue) * 100 : 0}%` }}
+              />
+            </div>
+            <span>{formatCount(row.value)}</span>
+          </div>
+        ))
+      ) : (
+        <p className="muted">{loading ? "Loading live data..." : emptyText}</p>
+      )}
+    </article>
+  );
+}
 
 export function DashboardView() {
   const showStatus = useShowStatus();
   const [range, setRange] = useState("Weekly");
   const [pinned, setPinned] = useState(() => new Set());
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadDashboard() {
+      setLoading(true);
+      setError("");
+
+      try {
+        const response = await fetch("/api/admin/dashboard", {
+          credentials: "include",
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to load dashboard data");
+        }
+
+        setDashboard(await response.json());
+      } catch (err) {
+        if (err?.name === "AbortError") return;
+        setError(err instanceof Error ? err.message : "Unable to load dashboard data");
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadDashboard();
+
+    return () => controller.abort();
+  }, []);
+
+  const stats = useMemo(
+    () => [
+      {
+        action: "Total Events opened",
+        label: "Total Events",
+        value: formatCount(dashboard?.totalEvents),
+        hint: "From MongoDB events",
+      },
+      {
+        action: "Attendees opened",
+        label: "Attendees",
+        value: formatCount(dashboard?.totalAttendees),
+        hint: "From RFID attendance logs",
+      },
+      {
+        action: "Certificates opened",
+        label: "Certificates",
+        value: formatCount(dashboard?.totalCertificates),
+        hint: "Issued certificate records",
+      },
+      {
+        action: "Organizations opened",
+        label: "Organizations",
+        value: formatCount(dashboard?.totalOrganizations),
+        hint: "Distinct event organizations",
+      },
+    ],
+    [dashboard],
+  );
+
+  const attendanceTrends = useMemo(() => {
+    const aiRows = normalizeRows(dashboard?.aiAnalytics?.attendanceTrends);
+    return aiRows.length ? aiRows : normalizeChartDataset(dashboard?.charts?.attendanceTrend);
+  }, [dashboard]);
+
+  const peakEventTimes = useMemo(() => {
+    const aiRows = normalizeRows(dashboard?.aiAnalytics?.peakEventTimes);
+    return aiRows.length ? aiRows : normalizeChartDataset(dashboard?.charts?.peakTimes);
+  }, [dashboard]);
+
+  const recommendations = useMemo(
+    () => normalizeRecommendations(dashboard?.aiAnalytics?.recommendations),
+    [dashboard],
+  );
+
+  const chartRows = useMemo(
+    () => normalizeChartDataset(dashboard?.charts?.attendanceTrend),
+    [dashboard],
+  );
+
+  const maxChart = Math.max(...chartRows.map((row) => row.value), 0);
 
   function togglePin(i) {
     setPinned((prev) => {
@@ -114,79 +224,48 @@ export function DashboardView() {
       </div>
 
       <section className="grid">
-        {STATS.map((s) => (
-          <article
-            key={s.label}
-            className="card stat"
-            data-action={s.action}
-            onClick={() => showStatus(s.action)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                showStatus(s.action);
-              }
-            }}
-          >
-            <div className="stat-top">
-              <span>{s.label}</span>
-              <span className="trend up">{s.trend}</span>
-            </div>
-            <p className="value">{s.value}</p>
-            <small className="muted">{s.hint}</small>
-          </article>
+        {stats.map((item) => (
+          <StatCard key={item.label} item={item} onOpen={() => showStatus(item.action)} />
         ))}
 
-        <article className="card two-col">
-          <div className="panel-title">
-            <h2>Key Events Insights</h2>
-          </div>
-          {INSIGHTS.map(([name, w, n]) => (
-            <div key={name} className="metric-row">
-              <span>{name}</span>
-              <div className="progress">
-                <div className="bar" style={{ width: w }} />
-              </div>
-              <span>{n}</span>
-            </div>
-          ))}
-        </article>
+        <MetricPanel
+          title="Key Events Insights"
+          rows={attendanceTrends}
+          loading={loading}
+          emptyText="No attendance data yet."
+        />
 
-        <article className="card two-col">
-          <div className="panel-title">
-            <h2>Top Engaged Course</h2>
-          </div>
-          {ENGAGED.map(([name, w, n]) => (
-            <div key={name} className="metric-row">
-              <span>{name}</span>
-              <div className="progress">
-                <div className="bar" style={{ width: w }} />
-              </div>
-              <span>{n}</span>
-            </div>
-          ))}
-        </article>
+        <MetricPanel
+          title="Peak Event Times"
+          rows={peakEventTimes}
+          loading={loading}
+          emptyText="No tap time data yet."
+        />
 
         <article className="card chart-panel">
           <div className="panel-title">
-            <h2>Most Used Facilities</h2>
+            <h2>Attendance by Time</h2>
           </div>
           <div className="mini-chart">
-            {BAR_HEIGHTS.map((h, i) => (
-              <div
-                key={i}
-                className="mini-bar"
-                style={{ height: `${h}%` }}
-              />
-            ))}
-            <div className="x-labels">
-              {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"].map(
-                (m) => (
-                  <span key={m}>{m}</span>
-                )
-              )}
-            </div>
+            {chartRows.length > 0 ? (
+              <>
+                {chartRows.map((row) => (
+                  <div
+                    key={row.label}
+                    className="mini-bar"
+                    title={`${row.label}: ${formatCount(row.value)}`}
+                    style={{ height: `${maxChart ? Math.max((row.value / maxChart) * 100, 8) : 8}%` }}
+                  />
+                ))}
+                <div className="x-labels">
+                  {chartRows.map((row) => (
+                    <span key={row.label}>{row.label}</span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="muted">{loading ? "Loading live data..." : "No chart data yet."}</p>
+            )}
           </div>
         </article>
 
@@ -195,23 +274,37 @@ export function DashboardView() {
             <h2>Smart Recommendations</h2>
           </div>
           <div className="ai-list">
-            {PINS.map((p, i) => (
-              <div key={p.title} className="ai-item">
-                <div>
-                  <h3>{p.title}</h3>
-                  <p>{p.body}</p>
+            {recommendations.length > 0 ? (
+              recommendations.map((item, i) => (
+                <div key={item.title} className="ai-item">
+                  <div>
+                    <h3>{item.title}</h3>
+                    <p>{item.body}</p>
+                  </div>
+                  <button
+                    className={`pin${pinned.has(i) ? " active" : ""}`}
+                    type="button"
+                    aria-label="Pin recommendation"
+                    aria-pressed={pinned.has(i)}
+                    onClick={() => togglePin(i)}
+                  >
+                    Pin
+                  </button>
                 </div>
-                <button
-                  className={`pin${pinned.has(i) ? " active" : ""}`}
-                  type="button"
-                  aria-label="Pin recommendation"
-                  aria-pressed={pinned.has(i)}
-                  onClick={() => togglePin(i)}
-                >
-                  📌
-                </button>
+              ))
+            ) : (
+              <div className="ai-item">
+                <div>
+                  <h3>{error ? "Dashboard data unavailable" : "No recommendations yet"}</h3>
+                  <p>
+                    {error ||
+                      (loading
+                        ? "Loading live dashboard data..."
+                        : "Recommendations will appear after attendance records are available.")}
+                  </p>
+                </div>
               </div>
-            ))}
+            )}
           </div>
         </article>
       </section>
