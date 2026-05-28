@@ -3,9 +3,9 @@ import { MongoClient, type Db } from 'mongodb';
 const clientOptions = {
   maxPoolSize: 10,
   minPoolSize: 0,
-  serverSelectionTimeoutMS: 8000,
-  connectTimeoutMS: 8000,
-  socketTimeoutMS: 15000,
+  serverSelectionTimeoutMS: 10_000,
+  connectTimeoutMS: 10_000,
+  socketTimeoutMS: 15_000,
   // Prefer IPv4 — avoids TLS/DNS issues on some networks with Atlas.
   family: 4 as const,
 };
