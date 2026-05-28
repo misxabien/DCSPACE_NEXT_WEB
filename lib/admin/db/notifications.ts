@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MongoClient } from "mongodb";
+import { MongoClient } from 'mongodb';
 
-const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
-const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
+const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
+const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
 
 const globalForMongo = globalThis as unknown as {
   adminNotificationsMongoClient?: MongoClient;
@@ -33,12 +33,12 @@ async function getDatabase() {
  */
 export async function getNotifications() {
   const db = await getDatabase();
-  const events = db.collection<any>("events");
-  const reports = db.collection<any>("reports");
+  const events = db.collection<any>('events');
+  const reports = db.collection<any>('reports');
 
   const [eventItems, reportItems] = await Promise.all([
     events
-      .find({ status: { $in: ["pending", "pending_approval", "PENDING", "PENDING_APPROVAL"] } })
+      .find({ status: { $in: ['pending', 'pending_approval', 'PENDING', 'PENDING_APPROVAL'] } })
       .sort({ createdAt: -1 })
       .limit(25)
       .toArray(),
@@ -48,21 +48,21 @@ export async function getNotifications() {
   const feed = [
     ...eventItems.map((item) => ({
       id: String(item._id),
-      type: "event" as const,
-      title: item.title ?? item.name ?? "Untitled event",
-      organizer: item.organizerName ?? item.organizer?.name ?? "Unknown organizer",
-      organization: item.organizationName ?? item.organization?.name ?? "N/A",
-      school: item.schoolName ?? item.school?.name ?? "N/A",
+      type: 'event' as const,
+      title: item.title ?? item.name ?? 'Untitled event',
+      organizer: item.organizerName ?? item.organizer?.name ?? 'Unknown organizer',
+      organization: item.organizationName ?? item.organization?.name ?? 'N/A',
+      school: item.schoolName ?? item.school?.name ?? 'N/A',
       viewTarget: `/admin/events/${String(item._id)}`,
       createdAt: new Date(item.createdAt ?? Date.now()),
     })),
     ...reportItems.map((item) => ({
       id: String(item._id),
-      type: "report" as const,
-      reportType: item.reportType ?? item.type ?? "General Report",
-      event: item.eventName ?? item.event?.title ?? "Untitled event",
-      reporter: item.reporterName ?? item.reporter?.name ?? "Unknown reporter",
-      organizer: item.organizerName ?? item.organizer?.name ?? "Unknown organizer",
+      type: 'report' as const,
+      reportType: item.reportType ?? item.type ?? 'General Report',
+      event: item.eventName ?? item.event?.title ?? 'Untitled event',
+      reporter: item.reporterName ?? item.reporter?.name ?? 'Unknown reporter',
+      organizer: item.organizerName ?? item.organizer?.name ?? 'Unknown organizer',
       viewTarget:
         item.eventId
           ? `/admin/events/${String(item.eventId)}`
@@ -84,6 +84,3 @@ export async function getNotifications() {
     total: feed.length,
   };
 }
-
-
-

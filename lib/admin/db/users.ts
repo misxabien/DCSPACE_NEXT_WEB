@@ -2,8 +2,8 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { MongoClient, ObjectId } from "mongodb";
 
-const mongoUri = process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017";
-const mongoDbName = process.env.MONGODB_DB_NAME ?? "dcspace";
+const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
+const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
 
 const globalForMongo = globalThis as unknown as {
   adminMongoClient?: MongoClient;
@@ -38,27 +38,27 @@ async function getDatabase() {
 
 async function getUsersCollection() {
   const db = await getDatabase();
-  return db.collection<any>("users");
+  return db.collection<any>('users');
 }
 
 async function getEventsCollection() {
   const db = await getDatabase();
-  return db.collection<any>("events");
+  return db.collection<any>('events');
 }
 
-function hashPassword(password: string, salt = randomBytes(16).toString("hex")) {
-  const hash = scryptSync(password, salt, 64).toString("hex");
+function hashPassword(password: string, salt = randomBytes(16).toString('hex')) {
+  const hash = scryptSync(password, salt, 64).toString('hex');
   return `${salt}:${hash}`;
 }
 
 function verifyPassword(password: string, storedPassword: string) {
-  if (!storedPassword.includes(":")) {
+  if (!storedPassword.includes(':')) {
     return storedPassword === password;
   }
 
-  const [salt, storedHash] = storedPassword.split(":");
+  const [salt, storedHash] = storedPassword.split(':');
   const candidateHash = scryptSync(password, salt, 64);
-  const expectedHash = Buffer.from(storedHash, "hex");
+  const expectedHash = Buffer.from(storedHash, 'hex');
 
   if (candidateHash.length !== expectedHash.length) {
     return false;
@@ -79,9 +79,9 @@ function normalizeFilter(value: string | null | undefined) {
   }
 
   if (
-    cleaned === "All Roles" ||
-    cleaned === "All Statuses" ||
-    cleaned === "All Organization"
+    cleaned === 'All Roles' ||
+    cleaned === 'All Statuses' ||
+    cleaned === 'All Organization'
   ) {
     return undefined;
   }
@@ -91,7 +91,7 @@ function normalizeFilter(value: string | null | undefined) {
 
 function toObjectId(id: string) {
   if (!ObjectId.isValid(id)) {
-    throw createAppError("ValidationError", "Invalid identifier", 400);
+    throw createAppError('ValidationError', 'Invalid identifier', 400);
   }
 
   return new ObjectId(id);
@@ -106,12 +106,12 @@ function formatTimestamp(value: Date | string | null | undefined) {
 
   return {
     iso: date.toISOString(),
-    display: new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
+    display: new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
     }).format(date),
   };
 }
@@ -119,29 +119,41 @@ function formatTimestamp(value: Date | string | null | undefined) {
 function mapAuthenticatedUser(user: any) {
   return {
     id: String(user._id),
-    name: user.name ?? user.fullName ?? user.email ?? "",
-    email: user.email ?? "",
-    role: user.role ?? "student",
+    name: user.name ?? user.fullName ?? user.email ?? '',
+    email: user.email ?? '',
+    role: user.role ?? 'student',
     organization: user.organizationName ?? user.organization?.name ?? null,
     isActive: user.isActive ?? true,
   };
 }
 
+function splitName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const firstName = parts[0] ?? '';
+  const lastName = parts.length > 1 ? parts.slice(1).join(' ') : '';
+
+  return { firstName, lastName };
+}
+
 function mapUserRecord(user: any) {
   const timestamp = formatTimestamp(user.updatedAt ?? user.createdAt ?? null);
-  const registrationStatus = user.registrationStatus ?? (user.rfid ? "Registered" : "Not Registered");
+  const rfid = user.rfid ?? user.rfidNumber ?? null;
+  const registrationStatus = user.registrationStatus ?? (rfid ? 'Registered' : 'Not Registered');
 
   return {
     id: String(user._id),
-    name: user.name ?? user.fullName ?? "",
-    email: user.email ?? "",
-    role: user.role ?? "student",
-    organization: user.organizationName ?? user.organization?.name ?? "Unassigned",
-    rfid: user.rfid ?? null,
+    name: user.name ?? user.fullName ?? [user.firstName, user.lastName].filter(Boolean).join(' ') ?? '',
+    email: user.email ?? '',
+    role: user.role ?? 'student',
+    organization: user.organizationName ?? user.organizationPart ?? user.organization?.name ?? 'Unassigned',
+    rfid,
+    rfidNumber: rfid,
     registrationStatus,
     isActive: user.isActive ?? true,
     status: registrationStatus,
-    studentId: user.studentId ?? user.idNumber ?? null,
+    studentId: user.studentId ?? user.studentNumber ?? user.idNumber ?? null,
+    studentNumber: user.studentNumber ?? user.studentId ?? user.idNumber ?? null,
+    course: user.course ?? '',
     assignedEventIds: Array.isArray(user.assignedEventIds) ? user.assignedEventIds : [],
     timestamp,
     actions: {
@@ -159,8 +171,8 @@ function mapUserRecord(user: any) {
 function mapAssignedEvent(event: any) {
   return {
     id: String(event._id),
-    title: event.title ?? event.name ?? "Untitled event",
-    status: (event.status ?? "unknown").toString().toLowerCase(),
+    title: event.title ?? event.name ?? 'Untitled event',
+    status: (event.status ?? 'unknown').toString().toLowerCase(),
   };
 }
 
@@ -172,6 +184,7 @@ export type RegisterUserInput = {
   organization?: string | null;
   studentId?: string | null;
   rfid?: string | null;
+  course?: string | null;
   googleId?: string | null;
 };
 
@@ -197,6 +210,7 @@ export type CreateUserInput = {
   organization?: string | null;
   studentId?: string | null;
   rfid?: string | null;
+  course?: string | null;
   isActive?: boolean;
   password?: string;
 };
@@ -208,6 +222,7 @@ export type UpdateUserInput = Partial<{
   organization: string | null;
   studentId: string | null;
   rfid: string | null;
+  course: string | null;
   isActive: boolean;
   registrationStatus: string;
 }>;
@@ -226,21 +241,29 @@ export async function registerUser(input: RegisterUserInput) {
   const existingUser = await users.findOne({ email: normalizedEmail });
 
   if (existingUser) {
-    throw createAppError("ValidationError", "A user with that email already exists", 400);
+    throw createAppError('ValidationError', 'A user with that email already exists', 400);
   }
 
   const now = new Date();
+  const { firstName, lastName } = splitName(input.name);
   const document = {
     name: input.name,
+    firstName,
+    lastName,
+    fullName: input.name,
     email: normalizedEmail,
     passwordHash: hashPassword(input.password),
-    role: (input.role ?? "student").toLowerCase(),
+    role: (input.role ?? 'student').toLowerCase(),
     organizationName: input.organization ?? null,
+    organizationPart: input.organization ?? null,
     studentId: input.studentId ?? null,
+    studentNumber: input.studentId ?? null,
     rfid: input.rfid ?? null,
-    registrationStatus: input.rfid ? "Registered" : "Not Registered",
+    rfidNumber: input.rfid ?? null,
+    course: input.course ?? null,
+    registrationStatus: input.rfid ? 'Registered' : 'Not Registered',
     isActive: true,
-    authProviders: input.googleId ? ["credentials", "google"] : ["credentials"],
+    authProviders: input.googleId ? ['credentials', 'google'] : ['credentials'],
     googleId: input.googleId ?? null,
     assignedEventIds: [],
     createdAt: now,
@@ -315,19 +338,19 @@ export async function loginUser(input: LoginUserInput) {
   const user = await users.findOne({ email: normalizedEmail });
 
   if (!user || user.isActive === false) {
-    throw createAppError("AuthenticationError", "Invalid email or password", 401);
+    throw createAppError('AuthenticationError', 'Invalid email or password', 401);
   }
 
   const storedPassword = user.passwordHash ?? user.password;
 
   if (!storedPassword || !verifyPassword(input.password, storedPassword)) {
-    throw createAppError("AuthenticationError", "Invalid email or password", 401);
+    throw createAppError('AuthenticationError', 'Invalid email or password', 401);
   }
 
   const authenticatedUser = mapAuthenticatedUser(user);
 
-  if (input.requireAdmin && authenticatedUser.role !== "admin") {
-    throw createAppError("AuthorizationError", "Forbidden", 403);
+  if (input.requireAdmin && authenticatedUser.role !== 'admin') {
+    throw createAppError('AuthorizationError', 'Forbidden', 403);
   }
 
   return authenticatedUser;
@@ -366,12 +389,15 @@ export async function getUsers(params: GetUsersParams) {
   if (search) {
     andConditions.push({
       $or: [
-        { name: { $regex: search, $options: "i" } },
-        { fullName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { studentId: { $regex: search, $options: "i" } },
-        { idNumber: { $regex: search, $options: "i" } },
-        { rfid: { $regex: search, $options: "i" } },
+        { name: { $regex: search, $options: 'i' } },
+        { fullName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { studentId: { $regex: search, $options: 'i' } },
+        { idNumber: { $regex: search, $options: 'i' } },
+        { rfid: { $regex: search, $options: 'i' } },
+        { studentNumber: { $regex: search, $options: 'i' } },
+        { rfidNumber: { $regex: search, $options: 'i' } },
+        { course: { $regex: search, $options: 'i' } },
       ],
     });
   }
@@ -385,8 +411,8 @@ export async function getUsers(params: GetUsersParams) {
   if (status) {
     const normalizedStatus = status.toLowerCase();
 
-    if (normalizedStatus === "active" || normalizedStatus === "inactive") {
-      andConditions.push({ isActive: normalizedStatus === "active" });
+    if (normalizedStatus === 'active' || normalizedStatus === 'inactive') {
+      andConditions.push({ isActive: normalizedStatus === 'active' });
     } else {
       andConditions.push({ registrationStatus: status });
     }
@@ -395,8 +421,8 @@ export async function getUsers(params: GetUsersParams) {
   if (organization) {
     andConditions.push({
       $or: [
-        { organizationName: { $regex: organization, $options: "i" } },
-        { department: { $regex: organization, $options: "i" } },
+        { organizationName: { $regex: organization, $options: 'i' } },
+        { department: { $regex: organization, $options: 'i' } },
       ],
     });
   }
@@ -438,11 +464,12 @@ export async function createUser(input: CreateUserInput) {
   const createdUser = await registerUser({
     name: input.name,
     email: input.email,
-    password: input.password ?? "ChangeMe123!",
+    password: input.password ?? 'ChangeMe123!',
     role: input.role,
     organization: input.organization ?? null,
     studentId: input.studentId ?? null,
     rfid: input.rfid ?? null,
+    course: input.course ?? null,
   });
 
   if (input.isActive === false) {
@@ -461,19 +488,35 @@ export async function updateUser(id: string, input: UpdateUserInput) {
   const existingUser = await users.findOne({ _id: objectId });
 
   if (!existingUser) {
-    throw createAppError("NotFoundError", "User not found", 404);
+    throw createAppError('NotFoundError', 'User not found', 404);
   }
 
   const updates: Record<string, unknown> = {
     updatedAt: new Date(),
   };
 
-  if (input.name !== undefined) updates.name = input.name;
+  if (input.name !== undefined) {
+    const { firstName, lastName } = splitName(input.name);
+    updates.name = input.name;
+    updates.fullName = input.name;
+    updates.firstName = firstName;
+    updates.lastName = lastName;
+  }
   if (input.email !== undefined) updates.email = input.email.trim().toLowerCase();
   if (input.role !== undefined) updates.role = input.role.toLowerCase();
-  if (input.organization !== undefined) updates.organizationName = input.organization;
-  if (input.studentId !== undefined) updates.studentId = input.studentId;
-  if (input.rfid !== undefined) updates.rfid = input.rfid;
+  if (input.organization !== undefined) {
+    updates.organizationName = input.organization;
+    updates.organizationPart = input.organization;
+  }
+  if (input.studentId !== undefined) {
+    updates.studentId = input.studentId;
+    updates.studentNumber = input.studentId;
+  }
+  if (input.rfid !== undefined) {
+    updates.rfid = input.rfid;
+    updates.rfidNumber = input.rfid;
+  }
+  if (input.course !== undefined) updates.course = input.course;
   if (input.isActive !== undefined) updates.isActive = input.isActive;
   if (input.registrationStatus !== undefined) updates.registrationStatus = input.registrationStatus;
 
@@ -492,7 +535,7 @@ export async function deleteUser(id: string) {
   const result = await users.deleteOne({ _id: objectId });
 
   if (result.deletedCount === 0) {
-    throw createAppError("NotFoundError", "User not found", 404);
+    throw createAppError('NotFoundError', 'User not found', 404);
   }
 
   return { id, deleted: true };
@@ -507,7 +550,7 @@ export async function toggleUserStatus(id: string, nextStatus?: boolean) {
   const existingUser = await users.findOne({ _id: objectId });
 
   if (!existingUser) {
-    throw createAppError("NotFoundError", "User not found", 404);
+    throw createAppError('NotFoundError', 'User not found', 404);
   }
 
   const isActive = nextStatus ?? !(existingUser.isActive ?? true);
@@ -535,10 +578,10 @@ export async function resetUserPassword(id: string) {
   const existingUser = await users.findOne({ _id: objectId });
 
   if (!existingUser) {
-    throw createAppError("NotFoundError", "User not found", 404);
+    throw createAppError('NotFoundError', 'User not found', 404);
   }
 
-  const temporaryPassword = randomBytes(6).toString("base64url");
+  const temporaryPassword = randomBytes(6).toString('base64url');
 
   await users.updateOne(
     { _id: objectId },
@@ -564,7 +607,7 @@ export async function assignToEvent(id: string, input: AssignToEventInput) {
   const trimmedEventId = input.eventId?.trim();
 
   if (!trimmedEventId) {
-    throw createAppError("ValidationError", "eventId is required", 400);
+    throw createAppError('ValidationError', 'eventId is required', 400);
   }
 
   const users = await getUsersCollection();
@@ -573,7 +616,7 @@ export async function assignToEvent(id: string, input: AssignToEventInput) {
   const existingUser = await users.findOne({ _id: objectId });
 
   if (!existingUser) {
-    throw createAppError("NotFoundError", "User not found", 404);
+    throw createAppError('NotFoundError', 'User not found', 404);
   }
 
   let eventRecord: any | null = null;
@@ -587,7 +630,7 @@ export async function assignToEvent(id: string, input: AssignToEventInput) {
   }
 
   if (!eventRecord) {
-    throw createAppError("NotFoundError", "Event not found", 404);
+    throw createAppError('NotFoundError', 'Event not found', 404);
   }
 
   const assignedEventId = String(eventRecord._id);

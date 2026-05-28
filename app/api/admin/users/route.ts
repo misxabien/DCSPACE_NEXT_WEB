@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { requireAdmin } from "../../../../lib/admin/auth/roleGuard";
-import { createUser, getUsers } from "../../../../lib/admin/db/users";
+import { requireAdmin } from "@/lib/admin/auth/roleGuard";
+import { createUser, getUsers } from "@/lib/admin/db/users";
 
 function toErrorResponse(error: unknown) {
   if (error instanceof Error && error.name === "AdminAuthorizationError") {
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
       organization: typeof body.organization === "string" ? body.organization : null,
       studentId: typeof body.studentId === "string" ? body.studentId : null,
       rfid: typeof body.rfid === "string" ? body.rfid : null,
+      course: typeof body.course === "string" ? body.course : null,
       isActive: body.isActive === undefined ? true : Boolean(body.isActive),
       password: typeof body.password === "string" ? body.password : undefined,
     });

@@ -1,6 +1,6 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { promises as fs } from "fs";
-import path from "path";
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 /** Data required to stamp a certificate. */
 export type CertificateData = {
@@ -43,13 +43,17 @@ const COLOR_ID = rgb(0.55, 0.48, 0.40);         /* muted brown  */
 
 const DEFAULT_TEMPLATE = path.join(
   process.cwd(),
-  "public",
-  "certificates",
-  "default-template.png",
+  'public',
+  'certificates',
+  'default-template.png',
 );
 
-async function resolveTemplateBytes(templatePath?: string | null) {
-  const resolved = templatePath ?? DEFAULT_TEMPLATE;
+async function resolveTemplateBytes(template?: string | Buffer | Uint8Array | null) {
+  if (template && typeof template !== 'string') {
+    return Buffer.from(template);
+  }
+
+  const resolved = template ?? DEFAULT_TEMPLATE;
 
   try {
     return await fs.readFile(resolved);
@@ -59,7 +63,7 @@ async function resolveTemplateBytes(templatePath?: string | null) {
       return fs.readFile(DEFAULT_TEMPLATE);
     }
 
-    throw new Error("Default certificate template not found");
+    throw new Error('Default certificate template not found');
   }
 }
 
@@ -88,9 +92,9 @@ function isPng(bytes: Buffer) {
  */
 export async function generateCertificatePdf(
   data: CertificateData,
-  templatePath?: string | null,
+  template?: string | Buffer | Uint8Array | null,
 ): Promise<Uint8Array> {
-  const templateBytes = await resolveTemplateBytes(templatePath);
+  const templateBytes = await resolveTemplateBytes(template);
 
   /* Create a blank landscape-A4 PDF. */
   const pdfDoc = await PDFDocument.create();
@@ -131,13 +135,13 @@ export async function generateCertificatePdf(
   }
 
   /* Title */
-  drawCentered("CERTIFICATE OF ATTENDANCE", TITLE_Y, 26, fontBold, COLOR_TITLE);
+  drawCentered('CERTIFICATE OF ATTENDANCE', TITLE_Y, 26, fontBold, COLOR_TITLE);
 
   /* Student name */
   drawCentered(data.studentName, NAME_Y, 32, fontBold, COLOR_NAME);
 
   /* Connector */
-  drawCentered("has successfully attended the event", CONNECTOR_Y, 13, fontRegular, COLOR_BODY);
+  drawCentered('has successfully attended the event', CONNECTOR_Y, 13, fontRegular, COLOR_BODY);
 
   /* Event title */
   drawCentered(data.eventTitle, EVENT_Y, 20, fontBold, COLOR_BODY);
@@ -148,7 +152,7 @@ export async function generateCertificatePdf(
   /* Organizer & organization */
   const organizerLine = [data.organizer, data.organization]
     .filter(Boolean)
-    .join(" — ");
+    .join(' — ');
 
   if (organizerLine) {
     drawCentered(organizerLine, ORGANIZER_Y, 11, fontRegular, COLOR_BODY);

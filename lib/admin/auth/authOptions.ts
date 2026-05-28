@@ -3,9 +3,9 @@ import type { DefaultSession } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
+import { findUserByEmail, loginUser } from "../db/users";
 import {
   buildHardcodedAdminUser,
-  getDevAdminConfig,
   getNextAuthSecret,
   isHardcodedAdminLogin,
 } from "./devAdmin";
@@ -51,7 +51,7 @@ const allowedGoogleDomain = process.env.ALLOWED_GOOGLE_DOMAIN ?? "sdca.edu.ph";
  * Returns the Google SSO metadata needed by the admin login flow.
  */
 export function getGoogleSsoConfig(callbackUrl?: string) {
-  const resolvedCallbackUrl = callbackUrl?.trim() ? callbackUrl : "/admin/dashboard";
+  const resolvedCallbackUrl = callbackUrl?.trim() ? callbackUrl : "/admin";
 
   return {
     provider: "google" as const,
@@ -68,7 +68,7 @@ export function getGoogleSsoConfig(callbackUrl?: string) {
  */
 export function buildSessionPayload(user: SessionUserPayload, callbackUrl?: string) {
   return {
-    callbackUrl: callbackUrl?.trim() ? callbackUrl : "/admin/dashboard",
+    callbackUrl: callbackUrl?.trim() ? callbackUrl : "/admin",
     user,
     tokenClaims: {
       sub: user.id,
@@ -111,12 +111,15 @@ export const authOptions: AuthOptions = {
           return buildHardcodedAdminUser();
         }
 
-        if (process.env.NODE_ENV === "development") {
-          // Local UX shortcut: allow dashboard access without MongoDB.
-          return buildHardcodedAdminUser();
+        try {
+          return await loginUser({
+            email: credentials.email,
+            password: credentials.password,
+            requireAdmin: true,
+          });
+        } catch {
+          return null;
         }
-
-        return null;
       },
     }),
     GoogleProvider({
@@ -133,19 +136,27 @@ export const authOptions: AuthOptions = {
 
       const email = (profile?.email ?? user.email ?? "").toLowerCase();
 
-      if (!email || !isAllowedGoogleEmail(email)) {
-        return false;
+      if (!email) {
+        return "/login?error=GoogleAccount";
       }
 
-      // No MongoDB check in hardcoded mode.
-      const devEmail = getDevAdminConfig().email;
-      if (process.env.NODE_ENV === "development") {
-        return true;
-      }
-
-      return email === devEmail;
+      return isAllowedGoogleEmail(email);
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      if (account?.provider === "google") {
+        const email = String(token.email || user?.email || "").toLowerCase();
+        const registeredUser = email ? await findUserByEmail(email) : null;
+
+        if (registeredUser) {
+          token.sub = registeredUser.id;
+          token.role = registeredUser.role;
+          token.organization = registeredUser.organization ?? null;
+          token.isActive = registeredUser.isActive ?? true;
+        }
+
+        return token as JWT;
+      }
+
       if (user) {
         token.role = user.role;
         token.organization = user.organization ?? null;
@@ -167,5 +178,6 @@ export const authOptions: AuthOptions = {
   },
   pages: {
     signIn: "/admin/login",
+    error: "/login",
   },
 };
