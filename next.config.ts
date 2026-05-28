@@ -47,6 +47,14 @@ const nextConfig: NextConfig = {
         destination: '/api/user/registrations',
       },
       {
+        source: '/api/user/certificates',
+        destination: '/api/certificates',
+      },
+      {
+        source: '/api/user/attendance',
+        destination: '/api/attendance',
+      },
+      {
         source: '/api/user/auth/:path*',
         destination: `${backendUserUrl}/api/auth/:path*`,
       },

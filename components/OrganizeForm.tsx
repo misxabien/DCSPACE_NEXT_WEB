@@ -1,560 +1,835 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { readAuthSession, submitOrganizedEvent } from "@/lib/user-api";
+import { useRouter } from 'next/navigation';
+import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { EmptyState } from '@/components/EmptyState';
+import { getCurrentAttendanceUser } from '@/lib/attendance';
+import { canOrganizeEvents, saveOrganizedEvent } from '@/lib/dc-events';
 
 type ReviewDetails = {
   eventName: string;
+  eventType: string;
+  eventDescription: string;
   eventDate: string;
-  venue: string;
-  courseOrganizer: string;
-  school: string;
-  department: string;
+  eventEndDate: string;
   startTime: string;
   endTime: string;
-  eventType: string;
-  duration: string;
+  venue: string;
+  hasRegistrationDeadline: 'yes' | 'no' | '';
+  registrationDeadline: string;
+  surveyFormLink: string;
+  announcements: string;
   minAttendance: string;
-  posterFile: string;
-  registrationFile: string;
-  surveyFile: string;
-  certificateTemplateFile: string;
+  gracePeriod: string;
+  attendanceAccess: 'all' | 'specific';
+  allowedCourses: string[];
+  requiredFiles: string[];
 };
 
 const emptyReviewDetails: ReviewDetails = {
-  eventName: "",
-  eventDate: "",
-  venue: "",
-  courseOrganizer: "",
-  school: "",
-  department: "",
-  startTime: "",
-  endTime: "",
-  eventType: "",
-  duration: "",
-  minAttendance: "",
-  posterFile: "Not provided",
-  registrationFile: "Not provided",
-  surveyFile: "Not provided",
-  certificateTemplateFile: "Not provided",
+  eventName: '',
+  eventType: '',
+  eventDescription: '',
+  eventDate: '',
+  eventEndDate: '',
+  startTime: '',
+  endTime: '',
+  venue: '',
+  hasRegistrationDeadline: '',
+  registrationDeadline: '',
+  surveyFormLink: '',
+  announcements: '',
+  minAttendance: '',
+  gracePeriod: '',
+  attendanceAccess: 'all',
+  allowedCourses: [],
+  requiredFiles: [],
 };
 
+const progressSteps = ['Event Details', 'Attendance Setup', 'Requirements & Files', 'Review & Submit'];
+const bannerRatio = 1170 / 504;
+const bannerRatioTolerance = 0.05;
+const courseOptions = [
+  'BSN',
+  'BSRT',
+  'BSPT',
+  'BS Bio',
+  'BS Pharm',
+  'BS MLS',
+  'BSA',
+  'BS Psych',
+  'BEEd',
+  'BSEd',
+  'BSBA-FM',
+  'BSBA-MM',
+  'BSTM',
+  'BMA',
+  'BSIT',
+];
+
+function getDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function getDurationFromTimes(startTime: string, endTime: string) {
+  if (!startTime || !endTime) return '';
+
+  const [startHour, startMinute] = startTime.split(':').map(Number);
+  const [endHour, endMinute] = endTime.split(':').map(Number);
+
+  if ([startHour, startMinute, endHour, endMinute].some(Number.isNaN)) return '';
+
+  const startTotal = startHour * 60 + startMinute;
+  let endTotal = endHour * 60 + endMinute;
+
+  if (endTotal < startTotal) endTotal += 24 * 60;
+
+  const totalMinutes = endTotal - startTotal;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const hourText = hours > 0 ? `${hours} ${hours === 1 ? 'hour' : 'hours'}` : '';
+  const minuteText = minutes > 0 ? `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}` : '';
+
+  return [hourText, minuteText].filter(Boolean).join(' ') || '0 minutes';
+}
+
+function formatDateLabel(value: string) {
+  if (!value || value === 'Not provided') return 'Day, Date';
+
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+  });
+}
+
+function formatDateRangeLabel(startValue: string, endValue: string) {
+  const startLabel = formatDateLabel(startValue);
+  const endLabel = formatDateLabel(endValue);
+
+  if (!endValue || endValue === 'Not provided' || startValue === endValue) {
+    return startLabel;
+  }
+
+  return `${startLabel} - ${endLabel}`;
+}
+
+function formatTimeLabel(value: string) {
+  if (!value || value === 'Not provided') return 'Time';
+
+  const [hourValue, minuteValue] = value.split(':');
+  const hour = Number(hourValue);
+  const minute = Number(minuteValue);
+
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return value;
+
+  return new Date(2026, 0, 1, hour, minute).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
 export function OrganizeForm() {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
-  const courseRef = useRef<HTMLSelectElement>(null);
-  const orgRef = useRef<HTMLInputElement>(null);
-  const combinedRef = useRef<HTMLInputElement>(null);
-  const [showReview, setShowReview] = useState(false);
+  const [canCreate, setCanCreate] = useState<boolean | null>(null);
   const [reviewDetails, setReviewDetails] = useState<ReviewDetails>(emptyReviewDetails);
-  const [liveDetails, setLiveDetails] = useState<ReviewDetails>(emptyReviewDetails);
-  const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [requiredFileDrafts, setRequiredFileDrafts] = useState<string[]>(['']);
+  const [requiredFilesChoice, setRequiredFilesChoice] = useState<'yes' | 'no'>('yes');
+  const [registrationDeadlineChoice, setRegistrationDeadlineChoice] = useState<'yes' | 'no' | ''>('');
+  const [registrationDeadline, setRegistrationDeadline] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [progressIndex, setProgressIndex] = useState(0);
+  const [bannerWarning, setBannerWarning] = useState('');
+  const [bannerPreview, setBannerPreview] = useState('');
+  const [bannerDataUrl, setBannerDataUrl] = useState('');
+  const [attendanceAccess, setAttendanceAccess] = useState<'all' | 'specific'>('all');
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [isCourseDropdownOpen, setIsCourseDropdownOpen] = useState(false);
+
+  const todayDate = getDateInputValue(new Date());
+  const totalDuration = getDurationFromTimes(startTime, endTime);
+  const requiredFiles = requiredFilesChoice === 'yes' ? requiredFileDrafts.map((file) => file.trim()).filter(Boolean) : [];
+  const canAddRequiredFile = requiredFileDrafts.every((file) => file.trim());
+  const isReviewStep = progressIndex === progressSteps.length - 1;
+  const isFormComplete = isReviewStep ? Boolean(formRef.current?.checkValidity()) : false;
+  const currentUser = typeof window === 'undefined' ? null : getCurrentAttendanceUser();
+  const hostOrganization = currentUser?.organizationPart || 'Organization Name';
+  const hostCourse = currentUser?.course || 'Course';
+  const hostDepartment = currentUser?.school || 'School/Department';
 
   useEffect(() => {
-    function syncCombined() {
-      const course = courseRef.current;
-      const org = orgRef.current;
-      const combined = combinedRef.current;
-      if (!course || !org || !combined) return;
-      const c = (course.value || "").trim();
-      const o = (org.value || "").trim().replace(/^[\s—-]+|[\s—-]+$/g, "");
-      combined.value = c && o ? `${c}-${o}` : c || o || "";
-    }
-
-    const course = courseRef.current;
-    const org = orgRef.current;
-    if (!course || !org) return;
-
-    course.addEventListener("change", syncCombined);
-    org.addEventListener("input", syncCombined);
-    syncCombined();
-    return () => {
-      course.removeEventListener("change", syncCombined);
-      org.removeEventListener("input", syncCombined);
-    };
+    setCanCreate(canOrganizeEvents());
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (bannerPreview) {
+        URL.revokeObjectURL(bannerPreview);
+      }
+    };
+  }, [bannerPreview]);
 
   const getFormValue = (formData: FormData, key: string) => {
     const value = formData.get(key);
-    return typeof value === "string" && value.trim() ? value.trim() : "Not provided";
+    return typeof value === 'string' && value.trim() ? value.trim() : 'Not provided';
   };
 
-  const getFileName = (formData: FormData, key: string) => {
+  const getOptionalFormValue = (formData: FormData, key: string) => {
     const value = formData.get(key);
-    if (value instanceof File && value.name) {
-      return value.name;
-    }
-    return "Not provided";
+    return typeof value === 'string' ? value.trim() : '';
   };
 
-  const readFileAsDataUrl = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        resolve(typeof reader.result === "string" ? reader.result : "");
-      };
-      reader.onerror = () => {
-        reject(new Error("Failed to read uploaded file."));
-      };
-      reader.readAsDataURL(file);
-    });
-
-  const buildDetailsFromFormData = (formData: FormData): ReviewDetails => ({
-    eventName: getFormValue(formData, "event_name"),
-    eventDate: getFormValue(formData, "event_date"),
-    venue: getFormValue(formData, "venue"),
-    courseOrganizer: getFormValue(formData, "course_organizer_combined"),
-    school: getFormValue(formData, "school"),
-    department: getFormValue(formData, "department"),
-    startTime: getFormValue(formData, "start_time"),
-    endTime: getFormValue(formData, "end_time"),
-    eventType: getFormValue(formData, "event_type"),
-    duration: getFormValue(formData, "duration"),
-    minAttendance: getFormValue(formData, "min_attendance"),
-    posterFile: getFileName(formData, "poster"),
-    registrationFile: getFileName(formData, "registration"),
-    surveyFile: getFileName(formData, "survey"),
-    certificateTemplateFile: getFileName(formData, "certificate_template"),
-  });
-
-  useEffect(() => {
-    const form = formRef.current;
-    if (!form) {
-      return;
-    }
-
-    const syncLiveDetails = () => {
-      const formData = new FormData(form);
-      setLiveDetails(buildDetailsFromFormData(formData));
-    };
-
-    form.addEventListener("input", syncLiveDetails);
-    form.addEventListener("change", syncLiveDetails);
-    syncLiveDetails();
-
-    return () => {
-      form.removeEventListener("input", syncLiveDetails);
-      form.removeEventListener("change", syncLiveDetails);
-    };
-  }, []);
-
-  const handleReview = () => {
-    if (combinedRef.current && courseRef.current && orgRef.current) {
-      const course = (courseRef.current.value || "").trim();
-      const org = (orgRef.current.value || "").trim().replace(/^[\s—-]+|[\s—-]+$/g, "");
-      combinedRef.current.value = course && org ? `${course}-${org}` : course || org || "";
-    }
-
-    if (!formRef.current) {
-      return;
-    }
+  const getReviewDetails = () => {
+    if (!formRef.current) return emptyReviewDetails;
 
     const formData = new FormData(formRef.current);
-    setReviewDetails(buildDetailsFromFormData(formData));
-    setShowReview(true);
+
+    return {
+      eventName: getFormValue(formData, 'event_name'),
+      eventType: getFormValue(formData, 'event_type'),
+      eventDescription: getFormValue(formData, 'event_description'),
+      eventDate: getFormValue(formData, 'event_date'),
+      eventEndDate: getFormValue(formData, 'event_end_date'),
+      startTime: getFormValue(formData, 'start_time'),
+      endTime: getFormValue(formData, 'end_time'),
+      venue: getFormValue(formData, 'venue'),
+      hasRegistrationDeadline: registrationDeadlineChoice,
+      registrationDeadline: registrationDeadlineChoice === 'yes' ? getFormValue(formData, 'registration_deadline') : '',
+      surveyFormLink: getOptionalFormValue(formData, 'survey_form_link'),
+      announcements: getOptionalFormValue(formData, 'announcements'),
+      minAttendance: getFormValue(formData, 'min_attendance'),
+      gracePeriod: getFormValue(formData, 'grace_period'),
+      attendanceAccess,
+      allowedCourses: attendanceAccess === 'specific' ? selectedCourses : [],
+      requiredFiles,
+    };
   };
+
+  const goToStep = (nextStep: number) => {
+    setReviewDetails(getReviewDetails());
+    setProgressIndex(Math.min(Math.max(nextStep, 0), progressSteps.length - 1));
+  };
+
+  const handleFormKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
+    if (event.key !== 'Enter') return;
+    if (event.target instanceof HTMLTextAreaElement) return;
+
+    event.preventDefault();
+    if (progressIndex < progressSteps.length - 1) {
+      goToStep(progressIndex + 1);
+    }
+  };
+
+  const handleBannerChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    setBannerWarning('');
+    if (bannerPreview) {
+      URL.revokeObjectURL(bannerPreview);
+      setBannerPreview('');
+    }
+    setBannerDataUrl('');
+
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type)) {
+      setBannerWarning('Valid file formats: JPG, GIF, PNG.');
+      event.target.value = '';
+      return;
+    }
+
+    const imageUrl = URL.createObjectURL(file);
+    const image = new window.Image();
+
+    image.onload = () => {
+      const ratio = image.width / image.height;
+
+      if (Math.abs(ratio - bannerRatio) > bannerRatioTolerance) {
+        setBannerWarning('Event banner must be at least 1170 pixels wide by 504 pixels high.');
+      }
+
+      setBannerPreview(imageUrl);
+
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        if (typeof reader.result === 'string') {
+          setBannerDataUrl(reader.result);
+        }
+      });
+      reader.readAsDataURL(file);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(imageUrl);
+      setBannerWarning('Could not read this banner image. Try a JPG, GIF, or PNG.');
+      event.target.value = '';
+    };
+    image.src = imageUrl;
+  };
+
+  const addRequiredFile = () => {
+    if (requiredFileDrafts.some((file) => !file.trim())) return;
+
+    setRequiredFileDrafts((files) => [...files, '']);
+  };
+
+  const updateRequiredFileDraft = (index: number, value: string) => {
+    setRequiredFileDrafts((files) => files.map((file, fileIndex) => (fileIndex === index ? value : file)));
+  };
+
+  const removeRequiredFileDraft = (index: number) => {
+    setRequiredFileDrafts((files) => files.filter((_, fileIndex) => fileIndex !== index));
+  };
+
+  const handleRequiredFilesChoice = (choice: 'yes' | 'no') => {
+    setRequiredFilesChoice(choice);
+
+    if (choice === 'yes') {
+      setRequiredFileDrafts((files) => (files.length ? files : ['']));
+      return;
+    }
+
+    setRequiredFileDrafts(['']);
+  };
+
+  const handleRegistrationDeadlineChoice = (choice: 'yes' | 'no') => {
+    setRegistrationDeadlineChoice(choice);
+
+    if (choice === 'no') {
+      setRegistrationDeadline('');
+    }
+  };
+
+  const handleAttendanceAccessChange = (access: 'all' | 'specific') => {
+    setAttendanceAccess(access);
+
+    if (access === 'all') {
+      setSelectedCourses([]);
+      setIsCourseDropdownOpen(false);
+    }
+  };
+
+  const toggleSelectedCourse = (course: string) => {
+    setSelectedCourses((courses) =>
+      courses.includes(course) ? courses.filter((selectedCourse) => selectedCourse !== course) : [...courses, course],
+    );
+  };
+
+  const getOrganizedEventPayload = (status: 'Draft' | 'Pending') => {
+    const details = getReviewDetails();
+
+    return {
+      eventName: details.eventName,
+      eventDescription: details.eventDescription,
+      eventDate: details.eventDate,
+      eventEndDate: details.eventEndDate,
+      requiredFiles: details.requiredFiles,
+      venue: details.venue,
+      courseOrganizer: hostOrganization,
+      organizerCourse: hostCourse,
+      school: hostDepartment,
+      department: hostDepartment,
+      startTime: details.startTime,
+      endTime: details.endTime,
+      eventType: details.eventType,
+      duration: totalDuration,
+      minAttendance: details.minAttendance,
+      attendanceAccess: details.attendanceAccess,
+      allowedCourses: details.allowedCourses,
+      registrationDeadline: details.registrationDeadline,
+      surveyFormLink: details.surveyFormLink,
+      announcements: details.announcements,
+      bannerDataUrl,
+      status,
+    };
+  };
+
+  const saveReviewEvent = (status: 'Draft' | 'Pending') => {
+    if (!canCreate || !formRef.current?.checkValidity()) return;
+
+    saveOrganizedEvent(getOrganizedEventPayload(status));
+    router.push('/events-organized');
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    saveReviewEvent('Pending');
+  };
+
+  if (canCreate === null) return null;
+
+  if (!canCreate) {
+    return (
+      <EmptyState message="Only organization officers can organize and create events. Organization members can browse events, register, and track attendance." />
+    );
+  }
 
   return (
     <form
       ref={formRef}
-      className="organize-form-shell"
-      action="#"
-      method="post"
+      className={`organize-form-shell organize-form-shell--step-${progressIndex}`}
+      onSubmit={handleSubmit}
+      onKeyDown={handleFormKeyDown}
       aria-label="Create new event"
-      onSubmit={async (event) => {
-        event.preventDefault();
-        if (!formRef.current) {
-          return;
-        }
-        try {
-          setSubmitError("");
-          setSubmitSuccess("");
-          setIsSubmitting(true);
-          const formData = new FormData(formRef.current);
-          const posterValue = formData.get("poster");
-          const posterImage =
-            posterValue instanceof File && posterValue.size > 0 ? await readFileAsDataUrl(posterValue) : "";
-          await submitOrganizedEvent({
-            eventName: getFormValue(formData, "event_name"),
-            date: getFormValue(formData, "event_date"),
-            venue: getFormValue(formData, "venue"),
-            description: getFormValue(formData, "event_type"),
-            requester: getFormValue(formData, "organizer_name"),
-            department: getFormValue(formData, "department"),
-            school: getFormValue(formData, "school"),
-            courseCode: getFormValue(formData, "course_code"),
-            courseOrganizer: getFormValue(formData, "course_organizer_combined"),
-            submittedByEmail: readAuthSession()?.user?.email || "",
-            startTime: getFormValue(formData, "start_time"),
-            endTime: getFormValue(formData, "end_time"),
-            duration: getFormValue(formData, "duration"),
-            minAttendance: getFormValue(formData, "min_attendance"),
-            posterImage,
-          });
-          setSubmitSuccess("Event submitted to admin for review. It will appear in Events after approval.");
-          formRef.current.reset();
-          setLiveDetails(emptyReviewDetails);
-        } catch (submitErrorValue) {
-          setSubmitError(submitErrorValue instanceof Error ? submitErrorValue.message : "Failed to submit event.");
-        } finally {
-          setIsSubmitting(false);
-        }
-      }}
+      noValidate
     >
-      <label className="form-section-label" htmlFor="event-name">
-        Event Name
-      </label>
+      <ol className="organize-progress" aria-label="Create event progress">
+        {progressSteps.map((step, index) => (
+          <li className={index <= progressIndex ? 'is-active' : ''} key={step}>
+            <span className="organize-progress__line" aria-hidden="true" />
+            <span className="organize-progress__dot" aria-hidden="true" />
+            <span className="organize-progress__label">{step}</span>
+          </li>
+        ))}
+      </ol>
+
       <div className="form-panel">
-        <div className="field-event-name">
-          <input
-            className="input-text"
-            id="event-name"
-            name="event_name"
-            type="text"
-            placeholder="Enter event name"
-            autoComplete="off"
-            required
-          />
-        </div>
+        <section className={`wizard-page${progressIndex === 0 ? ' is-active' : ''}`} aria-hidden={progressIndex !== 0}>
+          <h2 className="form-group-title">Basic Information</h2>
+          <div className="form-flow">
+            <label className="form-row form-row--span2">
+              <span className="form-row__label">Event Title*</span>
+              <input className="input-text" name="event_name" type="text" placeholder="Enter the name of your event" required />
+            </label>
 
-        <div className="form-flow">
-          <div className="form-row">
-            <span className="form-row__label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <rect x="3" y="5" width="18" height="16" rx="2" />
-                <path d="M3 10h18M8 3v4M16 3v4" strokeLinecap="round" />
-              </svg>
-              Date:
-            </span>
-            <input className="input-inline" type="date" name="event_date" />
-          </div>
+            <label className="form-row form-row--span2">
+              <span className="form-row__label">Event Type*</span>
+              <input className="input-text" name="event_type" type="text" placeholder="Enter what type your event is" required />
+            </label>
 
-          <div className="form-row">
-            <span className="form-row__label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path
-                  d="M12 21s7-4.35 7-10a7 7 0 10-14 0c0 5.65 7 10 7 10Z"
-                  strokeLinejoin="round"
-                />
-                <circle cx="12" cy="11" r="2.5" />
-              </svg>
-              Venue:
-            </span>
-            <input className="input-inline" type="text" name="venue" placeholder="Location" />
-          </div>
+            <label className="form-row form-row--span2 form-row--textarea">
+              <span className="form-row__label">Event Description*</span>
+              <textarea
+                className="input-text input-textarea"
+                name="event_description"
+                placeholder="Describe what's special about your event & other important details."
+                required
+              />
+            </label>
 
-          <div className="form-row form-row--span2">
-            <span className="form-row__label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M5 4h14v16H5V4z" strokeLinejoin="round" />
-                <path d="M9 8h6M9 12h6M9 16h4" strokeLinecap="round" />
-              </svg>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <circle cx="12" cy="9" r="4" />
-                <path d="M6 21v-1a6 6 0 0112 0v1" strokeLinecap="round" />
-              </svg>
-              Course &amp; Requesting Organizer:
-            </span>
-            <div className="course-org-inputs">
-              <select
-                ref={courseRef}
-                className="input-inline"
-                id="course-code"
-                name="course_code"
-                aria-label="Course program"
-                defaultValue=""
-              >
-                <option value="">Select course</option>
-                <option value="BSIT">BSIT — BS Information Technology</option>
-                <option value="BMMA">BMMA — Bachelor of Multimedia Arts</option>
-                <option value="BACOMM">BACOMM — BA Communication</option>
-                <option value="BSRT">BSRT — BS Radiologic Technology</option>
-                <option value="BSPT">BSPT — BS Physical Therapy</option>
-                <option value="BSBIO">BSB — BS Biology</option>
-                <option value="BSPHARMA">BSPh — BS Pharmacy</option>
-                <option value="BSA">BSA — BS Accountancy</option>
-                <option value="BSBA">BSBA — BS Business Administration</option>
-                <option value="BSHM">BSHM — BS Hospitality Management</option>
-                <option value="BSTM">BSTM — BS Tourism Management</option>
-                <option value="BSN">BSN — BS Nursing</option>
-                <option value="BSMT">BSMT — BS Medical Technology</option>
-                <option value="BSED">BSED — Bachelor of Secondary Education</option>
-                <option value="BEED">BEED — Bachelor of Elementary Education</option>
-              </select>
-              <span className="course-org-sep" aria-hidden>
-                —
+            <label className="upload-tile upload-tile--banner">
+              <span className="upload-tile__text">Event Banner*</span>
+              <input type="file" name="poster" accept=".jpg,.jpeg,.png,.gif,image/jpeg,image/png,image/gif" onChange={handleBannerChange} required />
+            </label>
+            <p className="banner-hint">
+              Event Banner must be at least 1170 pixels wide by 504 pixels high.
+              <br />
+              Valid file formats: JPG, GIF, PNG.
+            </p>
+            {bannerWarning && (
+              <p className="banner-warning" role="alert">
+                {bannerWarning}
+              </p>
+            )}
+
+            <h2 className="form-group-title form-group-title--span">Schedule &amp; Venue</h2>
+            <span className="form-row form-row--session">
+              <span className="form-row__label">Session(s)*</span>
+              <span className="session-fields">
+                <span className="session-field">
+                  <span className="form-row__label form-row__label--inline">Date(s)</span>
+                  <span className="date-fields date-fields--range">
+                    <label className="date-field">
+                      <span>Start Date</span>
+                      <input
+                        className="input-inline"
+                        type="date"
+                        name="event_date"
+                        min={todayDate}
+                        value={startDate}
+                        onChange={(event) => {
+                          const nextStartDate = event.target.value;
+
+                          setStartDate(nextStartDate);
+                          if (endDate && nextStartDate && endDate < nextStartDate) {
+                            setEndDate('');
+                          }
+                        }}
+                        required
+                      />
+                    </label>
+                    <label className="date-field">
+                      <span>End Date</span>
+                      <input
+                        className="input-inline"
+                        type="date"
+                        name="event_end_date"
+                        min={startDate || todayDate}
+                        value={endDate}
+                        onChange={(event) => setEndDate(event.target.value)}
+                      />
+                    </label>
+                  </span>
+                </span>
+                <span className="session-field">
+                  <span className="form-row__label form-row__label--inline">Time</span>
+                  <span className="time-pair">
+                    <label className="date-field">
+                      <span>Start Time</span>
+                      <input className="input-inline" type="time" name="start_time" value={startTime} onChange={(event) => setStartTime(event.target.value)} required />
+                    </label>
+                    <label className="date-field">
+                      <span>End Time</span>
+                      <input className="input-inline" type="time" name="end_time" value={endTime} onChange={(event) => setEndTime(event.target.value)} required />
+                    </label>
+                  </span>
+                </span>
               </span>
-              <input
-                ref={orgRef}
-                className="input-inline"
-                id="organizer-name"
-                name="organizer_name"
-                type="text"
-                placeholder="Org name e.g. DOMINIXODE"
-                autoComplete="organization"
-                aria-label="Requesting organizer or organization name"
-              />
+            </span>
+
+            <label className="form-row form-row--span2">
+              <span className="form-row__label">Where will your event take place?*</span>
+              <input className="input-inline" type="text" name="venue" placeholder="Enter the location of the venue" required />
+            </label>
+
+            <div className="form-row form-row--span2 deadline-choice">
+              <span className="form-row__label" id="registration-deadline-choice-label">
+                Is there a deadline for the registration?{registrationDeadlineChoice ? '' : '*'}
+              </span>
+              <span className="deadline-choice__body" role="radiogroup" aria-labelledby="registration-deadline-choice-label">
+                <label>
+                  <input
+                    type="radio"
+                    name="has_registration_deadline"
+                    value="yes"
+                    checked={registrationDeadlineChoice === 'yes'}
+                    required
+                    onChange={() => handleRegistrationDeadlineChoice('yes')}
+                  />
+                  <span>Yes</span>
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="has_registration_deadline"
+                    value="no"
+                    checked={registrationDeadlineChoice === 'no'}
+                    required
+                    onChange={() => handleRegistrationDeadlineChoice('no')}
+                  />
+                  <span>No</span>
+                </label>
+              </span>
             </div>
-            <span className="muted-hint">
-              Displays together as <strong>BSIT-DOMINIXODE</strong> (course code + organizer).
-            </span>
-            <input ref={combinedRef} type="hidden" id="course-organizer-combined" name="course_organizer_combined" defaultValue="" />
-          </div>
 
-          <div className="form-row">
-            <span className="form-row__label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M4 21V8l8-4 8 4v13" strokeLinejoin="round" />
-                <path d="M4 12h16M9 12v9M15 12v9" strokeLinejoin="round" />
-              </svg>
-              School:
-            </span>
-            <select className="input-inline" name="school" defaultValue="">
-              <option value="">Select school</option>
-              <option value="main">Main campus</option>
-              <option value="annex">Annex</option>
-            </select>
-          </div>
+            {registrationDeadlineChoice === 'yes' && (
+              <label className="form-row form-row--span2">
+                <span className="form-row__label">Registration deadline{registrationDeadline ? '' : '*'}</span>
+                <input
+                  className="input-inline"
+                  type="date"
+                  name="registration_deadline"
+                  min={todayDate}
+                  value={registrationDeadline}
+                  required
+                  onChange={(event) => setRegistrationDeadline(event.target.value)}
+                />
+              </label>
+            )}
 
-          <div className="form-row">
-            <span className="form-row__label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M4 7h6v10H4V7zm10 3h6v7h-6v-7zM4 20h16v2H4v-2z" strokeLinejoin="round" />
-              </svg>
-              Department:
-            </span>
-            <select className="input-inline" name="department" aria-label="Department" defaultValue="">
-              <option value="">Select department</option>
-              <option value="SASE">SASE</option>
-              <option value="SCMCS">SCMCS</option>
-              <option value="SIHTM">SIHTM</option>
-              <option value="SMLS">SMLS</option>
-              <option value="SNAHS">SNAHS</option>
-            </select>
-          </div>
-
-          <div className="form-row form-row--span2">
-            <div className="time-pair">
-              <div className="form-row">
-                <span className="form-row__label">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                    <circle cx="12" cy="12" r="8" />
-                    <path d="M12 8v4l3 2" strokeLinecap="round" />
-                  </svg>
-                  Start Time:
-                </span>
-                <div className="time-row">
-                  <input type="time" name="start_time" />
-                </div>
-              </div>
-              <div className="form-row">
-                <span className="form-row__label">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                    <circle cx="12" cy="12" r="8" />
-                    <path d="M12 8v4l3 2" strokeLinecap="round" />
-                  </svg>
-                  End Time:
-                </span>
-                <div className="time-row">
-                  <input type="time" name="end_time" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="form-row form-row--span2">
-            <span className="form-row__label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <circle cx="9" cy="9" r="3" />
-                <circle cx="15" cy="9" r="3" />
-                <path d="M3 18c0-3 4-5 9-5s9 2 9 5" strokeLinecap="round" />
-              </svg>
-              Type of Event:
-            </span>
-            <input className="input-inline" type="text" name="event_type" placeholder="Workshop, seminar..." />
-          </div>
-
-          <div className="form-row form-row--span2">
-            <span className="form-row__label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7v6l4 2" strokeLinecap="round" />
-              </svg>
-              Total Time Duration:
-            </span>
-            <input className="input-inline" type="text" name="duration" placeholder="e.g. 3 hours" />
-          </div>
-
-          <div className="form-row form-row--span2">
-            <span className="form-row__label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <circle cx="12" cy="12" r="9" />
-                <path d="M8 12l2.5 2.5L16 9" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Minimum Attendance Time Required:
-            </span>
-            <input
-              className="input-inline"
-              type="text"
-              name="min_attendance"
-              defaultValue="None / 0 Hours / TBA"
-            />
-            <span className="muted-hint">Edit as needed (None, 0 Hours, or TBA).</span>
-          </div>
-        </div>
-
-
-        <div className="upload-grid">
-          <label className="upload-tile">
-            <svg className="upload-tile__plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
-              <path strokeLinecap="round" d="M12 5v14M5 12h14" />
-            </svg>
-            <span className="upload-tile__text">Add Poster/Pubmat</span>
-            <span className="upload-tile__file-name">{liveDetails.posterFile}</span>
-            <input type="file" name="poster" accept="image/*,.pdf" />
-          </label>
-          <label className="upload-tile">
-            <svg className="upload-tile__plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
-              <path strokeLinecap="round" d="M12 5v14M5 12h14" />
-            </svg>
-            <span className="upload-tile__text">Add Registration Form</span>
-            <span className="upload-tile__file-name">{liveDetails.registrationFile}</span>
-            <input type="file" name="registration" accept=".pdf,.doc,.docx" />
-          </label>
-          <label className="upload-tile">
-            <svg className="upload-tile__plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
-              <path strokeLinecap="round" d="M12 5v14M5 12h14" />
-            </svg>
-            <span className="upload-tile__text">Add Survey Form</span>
-            <span className="upload-tile__file-name">{liveDetails.surveyFile}</span>
-            <input type="file" name="survey" accept=".pdf,.doc,.docx" />
-          </label>
-          <label className="upload-tile">
-            <svg className="upload-tile__plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
-              <path strokeLinecap="round" d="M12 5v14M5 12h14" />
-            </svg>
-            <span className="upload-tile__text">Add E-Certificate Template</span>
-            <span className="upload-tile__file-name">{liveDetails.certificateTemplateFile}</span>
-            <input type="file" name="certificate_template" accept=".pdf,.doc,.docx" />
-          </label>
-        </div>
-
-        <div className="form-actions">
-          <button type="button" className="btn-review" onClick={handleReview}>
-            Review
-          </button>
-          <button type="submit" className="btn-submit" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit"}
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-              <circle cx="12" cy="12" r="9" stroke="#fff" strokeWidth="2" />
-              <path
-                d="M8 12l2.5 3L16 10"
-                stroke="#fff"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            <h2 className="form-group-title form-group-title--span">Additional Information</h2>
+            <label className="form-row form-row--span2">
+              <span className="form-row__label">Survey Form Link</span>
+              <input className="input-inline" type="url" name="survey_form_link" placeholder="Enter the survey form link" />
+            </label>
+            <label className="form-row form-row--span2 form-row--textarea">
+              <span className="form-row__label">Announcements</span>
+              <textarea
+                className="input-text input-textarea input-textarea--announcements"
+                name="announcements"
+                placeholder="Enter any important updates or announcements."
               />
-            </svg>
-          </button>
-        </div>
-        {submitError && <p className="auth-field-error">{submitError}</p>}
-        {submitSuccess && <p style={{ color: "#2d8a4a", marginTop: "10px" }}>{submitSuccess}</p>}
+            </label>
+          </div>
+        </section>
 
-        {showReview && (
-          <div className="review-overlay">
-            <section className="review-modal" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
-              <div className="review-modal__header">
-                <h2 id="review-modal-title">Review Event Details</h2>
-                <button className="review-modal__close" type="button" aria-label="Close review" onClick={() => setShowReview(false)}>
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                  </svg>
-                </button>
-              </div>
-
-              <dl className="review-list">
-                <div>
-                  <dt>Event Name</dt>
-                  <dd>{reviewDetails.eventName}</dd>
-                </div>
-                <div>
-                  <dt>Date</dt>
-                  <dd>{reviewDetails.eventDate}</dd>
-                </div>
-                <div>
-                  <dt>Venue</dt>
-                  <dd>{reviewDetails.venue}</dd>
-                </div>
-                <div>
-                  <dt>Course &amp; Organizer</dt>
-                  <dd>{reviewDetails.courseOrganizer}</dd>
-                </div>
-                <div>
-                  <dt>School</dt>
-                  <dd>{reviewDetails.school}</dd>
-                </div>
-                <div>
-                  <dt>Department</dt>
-                  <dd>{reviewDetails.department}</dd>
-                </div>
-                <div>
-                  <dt>Time</dt>
-                  <dd>
-                    {reviewDetails.startTime} to {reviewDetails.endTime}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Type of Event</dt>
-                  <dd>{reviewDetails.eventType}</dd>
-                </div>
-                <div>
-                  <dt>Total Duration</dt>
-                  <dd>{reviewDetails.duration}</dd>
-                </div>
-                <div>
-                  <dt>Minimum Attendance</dt>
-                  <dd>{reviewDetails.minAttendance}</dd>
-                </div>
-                <div>
-                  <dt>Poster File</dt>
-                  <dd>{reviewDetails.posterFile}</dd>
-                </div>
-                <div>
-                  <dt>Registration Form File</dt>
-                  <dd>{reviewDetails.registrationFile}</dd>
-                </div>
-                <div>
-                  <dt>Survey Form File</dt>
-                  <dd>{reviewDetails.surveyFile}</dd>
-                </div>
-                <div>
-                  <dt>E-Certificate Template File</dt>
-                  <dd>{reviewDetails.certificateTemplateFile}</dd>
-                </div>
-              </dl>
-
-              <div className="review-modal__actions">
-                <button className="btn-review" type="button" onClick={() => setShowReview(false)}>
-                  Edit
-                </button>
-                <button className="btn-submit" type="submit">
-                  Submit
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <circle cx="12" cy="12" r="9" stroke="#fff" strokeWidth="2" />
-                    <path
-                      d="M8 12l2.5 3L16 10"
-                      stroke="#fff"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+        <section className={`wizard-page${progressIndex === 1 ? ' is-active' : ''}`} aria-hidden={progressIndex !== 1}>
+          <div className="form-flow">
+            <h2 className="form-group-title form-group-title--span">Attendance Requirements</h2>
+            <label className="form-row form-row--span2">
+              <span className="form-row__label">Minimum Attendance Time Required*</span>
+              <input className="input-inline" type="text" name="min_attendance" placeholder="Enter the minimum attendance time required" required />
+            </label>
+            <label className="form-row form-row--span2">
+              <span className="form-row__label">Grace Period*</span>
+              <input className="input-inline" type="text" name="grace_period" placeholder="Enter the grace period" required />
+            </label>
+            <div className="form-row form-row--span2 attendance-access">
+              <span className="form-row__label">Who can attend this event?*</span>
+              <div className="attendance-access__body">
+                <div className="attendance-access__choices">
+                  <label>
+                    <input
+                      type="radio"
+                      name="attendance_access"
+                      value="all"
+                      checked={attendanceAccess === 'all'}
+                      onChange={() => handleAttendanceAccessChange('all')}
                     />
-                  </svg>
-                </button>
+                    <span>All Courses</span>
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="attendance_access"
+                      value="specific"
+                      checked={attendanceAccess === 'specific'}
+                      onChange={() => handleAttendanceAccessChange('specific')}
+                    />
+                    <span>Specific Courses Only</span>
+                  </label>
+                </div>
+
+                {attendanceAccess === 'specific' && (
+                  <div className="course-multiselect">
+                    <input
+                      className="course-multiselect__validator"
+                      type="text"
+                      name="selected_courses"
+                      value={selectedCourses.join(', ')}
+                      required
+                      readOnly
+                      tabIndex={-1}
+                      aria-hidden="true"
+                    />
+                    <button
+                      className="course-multiselect__button"
+                      type="button"
+                      aria-haspopup="listbox"
+                      aria-expanded={isCourseDropdownOpen}
+                      onClick={() => setIsCourseDropdownOpen((isOpen) => !isOpen)}
+                    >
+                      <span>{selectedCourses.length ? selectedCourses.join(', ') : 'Please select the course'}</span>
+                      <span aria-hidden="true">⌄</span>
+                    </button>
+
+                    {isCourseDropdownOpen && (
+                      <div className="course-multiselect__menu" role="listbox" aria-label="Select courses">
+                        {courseOptions.map((course) => (
+                          <label className="course-multiselect__option" key={course}>
+                            <input
+                              type="checkbox"
+                              checked={selectedCourses.includes(course)}
+                              onChange={() => toggleSelectedCourse(course)}
+                            />
+                            <span>{course}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            </section>
+            </div>
           </div>
-        )}
+        </section>
+
+        <section className={`wizard-page wizard-page--files${progressIndex === 2 ? ' is-active' : ''}`} aria-hidden={progressIndex !== 2}>
+          <div className="upload-grid">
+            <h2 className="form-group-title upload-grid__title">Event Documents</h2>
+            <label className="upload-tile">
+              <span className="upload-tile__text">Approved Concept Paper*</span>
+              <input type="file" name="concept_paper" accept=".pdf,.png,.jpg,.jpeg" required />
+            </label>
+            <p className="upload-hint">Valid file formats: PDF, PNG, JPG, JPEG</p>
+            <label className="upload-tile">
+              <span className="upload-tile__text">Room Reservation Form*</span>
+              <input type="file" name="room_reservation" accept=".pdf,.png,.jpg,.jpeg" required />
+            </label>
+            <p className="upload-hint">Valid file formats: PDF, PNG, JPG, JPEG</p>
+            <label className="upload-tile">
+              <span className="upload-tile__text">E-Certificate Template*</span>
+              <input type="file" name="certificate_template" accept=".pdf,.png,.jpg,.jpeg" required />
+            </label>
+            <p className="upload-hint">Valid file formats: PDF, PNG, JPG, JPEG</p>
+          </div>
+
+          <section className="required-files" aria-labelledby="required-files-title">
+            <h2 id="required-files-title">File Requirements</h2>
+            <fieldset className="required-files__choice">
+              <legend className="required-files__legend">Required participant files</legend>
+              <span className="required-files__question">Are participants required to submit any files before joining the event?</span>
+              <label>
+                <input
+                  type="radio"
+                  name="has_required_files"
+                  value="yes"
+                  checked={requiredFilesChoice === 'yes'}
+                  onChange={() => handleRequiredFilesChoice('yes')}
+                />
+                <span>Yes</span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="has_required_files"
+                  value="no"
+                  checked={requiredFilesChoice === 'no'}
+                  onChange={() => handleRequiredFilesChoice('no')}
+                />
+                <span>No</span>
+              </label>
+            </fieldset>
+
+            {requiredFilesChoice === 'yes' && (
+              <>
+                <div className="required-files__list">
+                  {requiredFileDrafts.map((fileName, index) => {
+                    const inputId = `required-file-name-${index}`;
+
+                    return (
+                      <div className="required-files__row" key={inputId}>
+                        <label className="form-row__label" htmlFor={inputId}>
+                          File Name*
+                        </label>
+                        <input
+                          className="required-files__input"
+                          id={inputId}
+                          type="text"
+                          value={fileName}
+                          placeholder="Enter the required file name"
+                          autoComplete="off"
+                          required={index === 0}
+                          onChange={(event) => updateRequiredFileDraft(index, event.target.value)}
+                        />
+                        <span className="required-files__controls">
+                          {index > 0 && (
+                            <button
+                              className="required-files__remove"
+                              type="button"
+                              onClick={() => removeRequiredFileDraft(index)}
+                              aria-label="Remove required file"
+                            >
+                              <span aria-hidden="true">-</span>
+                            </button>
+                          )}
+                          {index === requiredFileDrafts.length - 1 && (
+                            <button
+                              className="required-files__add"
+                              type="button"
+                              onClick={addRequiredFile}
+                              disabled={!canAddRequiredFile}
+                              aria-label="Add required file"
+                            >
+                              <img src="/svg icons organized events page/svg icons create event form page/plus-file-icon.svg" alt="" aria-hidden="true" />
+                            </button>
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </section>
+        </section>
+
+        <section className={`wizard-page${progressIndex === 3 ? ' is-active' : ''}`} aria-hidden={progressIndex !== 3}>
+          <h2 className="review-page__heading">
+            Nearly there! Check <span>if everything&apos;s correct.</span>
+          </h2>
+          {!isFormComplete && (
+            <p className="review-page__warning" role="status">
+              Complete all required details to create the event.
+            </p>
+          )}
+          <article className="review-event-card">
+            <div className="review-event-card__banner">
+              {bannerPreview ? <img src={bannerPreview} alt="" /> : <span />}
+            </div>
+            <div className="review-event-card__content">
+              <div>
+                <h2>{reviewDetails.eventName === 'Not provided' ? 'Event Title' : reviewDetails.eventName}</h2>
+                <section>
+                  <h3>Date &amp; Time</h3>
+                  <p>{formatDateRangeLabel(reviewDetails.eventDate, reviewDetails.eventEndDate)}</p>
+                  <p>
+                    {formatTimeLabel(reviewDetails.startTime)} - {formatTimeLabel(reviewDetails.endTime)}
+                  </p>
+                </section>
+                <section>
+                  <h3>Location</h3>
+                  <p>{reviewDetails.venue === 'Not provided' ? 'Event Venue' : reviewDetails.venue}</p>
+                </section>
+                <section>
+                  <h3>Hosted By</h3>
+                  <p>{hostOrganization}</p>
+                  <p>{hostCourse}</p>
+                  <p>{hostDepartment}</p>
+                </section>
+                <section>
+                  <h3>Event Requirements</h3>
+                  <p>Attendance Time Requirement: {reviewDetails.minAttendance}</p>
+                  <p>Grace Period: {reviewDetails.gracePeriod}</p>
+                  <p>
+                    Eligible Courses:{' '}
+                    {reviewDetails.attendanceAccess === 'specific' && reviewDetails.allowedCourses.length
+                      ? reviewDetails.allowedCourses.join(', ')
+                      : 'All Courses'}
+                  </p>
+                  <p>Required File(s): {reviewDetails.requiredFiles.length ? reviewDetails.requiredFiles.join(', ') : 'None'}</p>
+                </section>
+                {(reviewDetails.surveyFormLink || reviewDetails.announcements) && (
+                  <section>
+                    <h3>Additional Information</h3>
+                    {reviewDetails.surveyFormLink && <p>Survey Form Link: {reviewDetails.surveyFormLink}</p>}
+                    {reviewDetails.announcements && <p>Announcements: {reviewDetails.announcements}</p>}
+                  </section>
+                )}
+                <section>
+                  <h3>Event Description</h3>
+                  <p>{reviewDetails.eventDescription === 'Not provided' ? 'Event description will appear here.' : reviewDetails.eventDescription}</p>
+                </section>
+              </div>
+              <aside>
+                <button className="btn-submit" type="button">
+                  Attend Event
+                </button>
+                <small>Registration Deadline:</small>
+                <strong>
+                  {reviewDetails.hasRegistrationDeadline === 'yes'
+                    ? formatDateLabel(reviewDetails.registrationDeadline)
+                    : 'No deadline'}
+                </strong>
+              </aside>
+            </div>
+          </article>
+        </section>
+
+        <div className="form-actions" key={`organize-actions-${progressIndex}`}>
+          {progressIndex > 0 && (
+            <button type="button" className="btn-back" onClick={() => goToStep(progressIndex - 1)}>
+              Go back to {progressSteps[progressIndex - 1]}
+            </button>
+          )}
+          {progressIndex < progressSteps.length - 1 ? (
+            <button type="button" className="btn-submit" onClick={() => goToStep(progressIndex + 1)}>
+              Save &amp; Continue
+            </button>
+          ) : (
+            <>
+              <button type="button" className="btn-review" onClick={() => saveReviewEvent('Draft')} disabled={!isFormComplete}>
+                Save for Later
+              </button>
+              <button type="submit" className="btn-submit" disabled={!isFormComplete}>
+                Create Event
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </form>
   );

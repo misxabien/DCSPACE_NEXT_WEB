@@ -3,6 +3,20 @@ import { MongoClient, type Db } from "mongodb";
 let cachedDb: Db | null = null;
 let connectPromise: Promise<Db> | null = null;
 let indexesPromise: Promise<void> | null = null;
+const mongoConnectTimeoutMs = 9000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  });
+}
 
 function getConfig() {
   const uri = process.env.MONGODB_URI;
@@ -72,10 +86,11 @@ function buildNonSrvFallbackUri(uri: string) {
 async function connectWithFallback(uri: string, dbName: string) {
   const clientOptions = {
     maxPoolSize: 10,
-    minPoolSize: 1,
-    serverSelectionTimeoutMS: 10000,
-    connectTimeoutMS: 10000,
-    socketTimeoutMS: 20000,
+    minPoolSize: 0,
+    serverSelectionTimeoutMS: 8000,
+    connectTimeoutMS: 8000,
+    socketTimeoutMS: 15000,
+    family: 4 as const,
   };
 
   const tryConnect = async (candidateUri: string) => {
@@ -109,10 +124,16 @@ export async function getDb() {
 
   if (!connectPromise) {
     const { uri, dbName } = getConfig();
-    connectPromise = connectWithFallback(uri, dbName)
+    connectPromise = withTimeout(
+      connectWithFallback(uri, dbName),
+      mongoConnectTimeoutMs,
+      "MongoDB connection timed out. Check MONGODB_URI, Atlas IP allowlist, and network access.",
+    )
       .then(async (db) => {
         cachedDb = db;
-        await ensureIndexes(db);
+        void ensureIndexes(db).catch((error) => {
+          console.error("[mongo] Failed to ensure indexes", error);
+        });
         return db;
       })
       .catch((error) => {

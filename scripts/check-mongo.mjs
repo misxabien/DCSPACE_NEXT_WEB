@@ -84,15 +84,30 @@ function validateUri(uri, dbName) {
 
 async function tryConnect(candidateUri) {
   const client = new MongoClient(candidateUri, {
-    serverSelectionTimeoutMS: 15000,
-    connectTimeoutMS: 15000,
+    serverSelectionTimeoutMS: 8000,
+    connectTimeoutMS: 8000,
     family: 4,
   });
-  await client.connect();
+  await withTimeout(
+    client.connect(),
+    10000,
+    'MongoDB connection timed out. Check Atlas IP allowlist, DNS/network access, and MONGODB_URI.',
+  );
   const db = client.db(dbName);
   const collections = await db.listCollections().toArray();
   await client.close();
   return collections.map((c) => c.name).sort();
+}
+
+function withTimeout(promise, timeoutMs, message) {
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timeoutId);
+  });
 }
 
 async function main() {
