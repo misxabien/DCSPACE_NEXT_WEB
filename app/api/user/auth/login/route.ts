@@ -65,6 +65,19 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     const details = error instanceof Error ? error.message : 'Unknown error';
+    const isDatabaseTimeout = /timed out|secureConnect|server selection|connectTimeoutMS|mongo/i.test(details);
+    if (isDatabaseTimeout) {
+      return withCors(
+        NextResponse.json(
+          {
+            error: 'Failed to login.',
+            details:
+              'Could not reach the database in time. Check MONGODB_URI / Atlas Network Access, then try again.',
+          },
+          { status: 503 },
+        ),
+      );
+    }
     return withCors(NextResponse.json({ error: 'Failed to login.', details }, { status: 500 }));
   }
 }

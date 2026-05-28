@@ -3,10 +3,9 @@ import { MongoClient, type Db } from 'mongodb';
 const clientOptions = {
   maxPoolSize: 10,
   minPoolSize: 1,
-  // Give Atlas TLS handshakes enough time on slower networks.
-  serverSelectionTimeoutMS: 30_000,
-  connectTimeoutMS: 20_000,
-  socketTimeoutMS: 45_000,
+  serverSelectionTimeoutMS: 15000,
+  connectTimeoutMS: 15000,
+  socketTimeoutMS: 20000,
   // Prefer IPv4 — avoids TLS/DNS issues on some networks with Atlas.
   family: 4 as const,
 };
