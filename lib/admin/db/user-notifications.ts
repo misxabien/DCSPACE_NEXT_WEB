@@ -1,31 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MongoClient, ObjectId } from 'mongodb';
-
-const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
-const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
-
-const globalForMongo = globalThis as unknown as {
-  userNotificationsMongoClient?: MongoClient;
-  userNotificationsMongoPromise?: Promise<MongoClient>;
-};
-
-async function getMongoClient() {
-  if (globalForMongo.userNotificationsMongoClient) {
-    return globalForMongo.userNotificationsMongoClient;
-  }
-
-  if (!globalForMongo.userNotificationsMongoPromise) {
-    const client = new MongoClient(mongoUri);
-    globalForMongo.userNotificationsMongoPromise = client.connect();
-  }
-
-  globalForMongo.userNotificationsMongoClient = await globalForMongo.userNotificationsMongoPromise;
-  return globalForMongo.userNotificationsMongoClient;
-}
+import { ObjectId } from 'mongodb';
+import { getUserDb } from '@/lib/user-server/get-user-db';
 
 async function getDatabase() {
-  const client = await getMongoClient();
-  return client.db(mongoDbName);
+  return getUserDb();
 }
 
 export type UserNotificationType =

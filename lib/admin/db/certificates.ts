@@ -1,18 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MongoClient, ObjectId } from 'mongodb';
+import { ObjectId } from 'mongodb';
 import { promises as fs } from 'fs';
 import path from 'path';
-
-const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
-const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
-
-const globalForMongo = globalThis as unknown as {
-  adminCertificatesMongoClient?: MongoClient;
-  adminCertificatesMongoPromise?: Promise<MongoClient>;
-};
 import { generateCertificatePdf } from '@/lib/admin/certificates/generate';
 import type { CertificateData } from '@/lib/admin/certificates/generate';
 import { createUserNotification } from '@/lib/admin/db/user-notifications';
+import { getUserDb } from '@/lib/user-server/get-user-db';
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -21,23 +14,8 @@ function createAppError(name: string, message: string, status: number) {
   return error;
 }
 
-async function getMongoClient() {
-  if (globalForMongo.adminCertificatesMongoClient) {
-    return globalForMongo.adminCertificatesMongoClient;
-  }
-
-  if (!globalForMongo.adminCertificatesMongoPromise) {
-    const client = new MongoClient(mongoUri);
-    globalForMongo.adminCertificatesMongoPromise = client.connect();
-  }
-
-  globalForMongo.adminCertificatesMongoClient = await globalForMongo.adminCertificatesMongoPromise;
-  return globalForMongo.adminCertificatesMongoClient;
-}
-
 async function getDatabase() {
-  const client = await getMongoClient();
-  return client.db(mongoDbName);
+  return getUserDb();
 }
 
 async function getEventsCollection() {
@@ -79,6 +57,9 @@ function formatDateLabel(value: Date | string | null | undefined) {
   }
 
   const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === 'string' && value.trim() ? value.trim() : 'TBA';
+  }
 
   return new Intl.DateTimeFormat('en-US', {
     month: 'long',
@@ -92,7 +73,22 @@ function formatTimeLabel(value: Date | string | null | undefined) {
     return 'TBA';
   }
 
+  if (typeof value === 'string') {
+    const raw = value.trim();
+
+    if (!raw) {
+      return 'TBA';
+    }
+
+    if (/^\d{1,2}:\d{2}(\s?[AP]M)?$/i.test(raw)) {
+      return raw.toUpperCase();
+    }
+  }
+
   const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === 'string' && value.trim() ? value.trim() : 'TBA';
+  }
 
   return new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
@@ -134,6 +130,9 @@ function formatTimestamp(value: Date | string | null | undefined) {
   }
 
   const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
 
   return {
     iso: date.toISOString(),
@@ -204,7 +203,7 @@ export async function listEcertEvents(search?: string | null) {
   const normalizedSearch = search?.trim();
 
   const query: Record<string, unknown> = {
-    status: { $in: ['approved', 'APPROVED'] },
+    status: { $regex: '^approved$', $options: 'i' },
   };
 
   if (normalizedSearch) {

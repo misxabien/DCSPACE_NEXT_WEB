@@ -1,14 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
-import { MongoClient, ObjectId } from "mongodb";
-
-const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
-const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
-
-const globalForMongo = globalThis as unknown as {
-  adminMongoClient?: MongoClient;
-  adminMongoClientPromise?: Promise<MongoClient>;
-};
+import { ObjectId } from "mongodb";
+import { getUserDb } from "@/lib/user-server/get-user-db";
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -17,23 +10,8 @@ function createAppError(name: string, message: string, status: number) {
   return error;
 }
 
-async function getMongoClient() {
-  if (globalForMongo.adminMongoClient) {
-    return globalForMongo.adminMongoClient;
-  }
-
-  if (!globalForMongo.adminMongoClientPromise) {
-    const client = new MongoClient(mongoUri);
-    globalForMongo.adminMongoClientPromise = client.connect();
-  }
-
-  globalForMongo.adminMongoClient = await globalForMongo.adminMongoClientPromise;
-  return globalForMongo.adminMongoClient;
-}
-
 async function getDatabase() {
-  const client = await getMongoClient();
-  return client.db(mongoDbName);
+  return getUserDb();
 }
 
 async function getUsersCollection() {

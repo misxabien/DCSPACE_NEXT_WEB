@@ -1,13 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MongoClient, ObjectId } from 'mongodb';
-
-const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
-const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
-
-const globalForMongo = globalThis as unknown as {
-  adminFeedbackMongoClient?: MongoClient;
-  adminFeedbackMongoPromise?: Promise<MongoClient>;
-};
+import { ObjectId } from 'mongodb';
+import { getUserDb } from '@/lib/user-server/get-user-db';
 
 export type FeedbackStatus = 'new' | 'actioned' | 'reviewed';
 export type FeedbackCategory = 'event' | 'system';
@@ -19,23 +12,8 @@ function createAppError(name: string, message: string, status: number) {
   return error;
 }
 
-async function getMongoClient() {
-  if (globalForMongo.adminFeedbackMongoClient) {
-    return globalForMongo.adminFeedbackMongoClient;
-  }
-
-  if (!globalForMongo.adminFeedbackMongoPromise) {
-    const client = new MongoClient(mongoUri);
-    globalForMongo.adminFeedbackMongoPromise = client.connect();
-  }
-
-  globalForMongo.adminFeedbackMongoClient = await globalForMongo.adminFeedbackMongoPromise;
-  return globalForMongo.adminFeedbackMongoClient;
-}
-
 async function getDatabase() {
-  const client = await getMongoClient();
-  return client.db(mongoDbName);
+  return getUserDb();
 }
 
 function toObjectId(id: string, label: string) {

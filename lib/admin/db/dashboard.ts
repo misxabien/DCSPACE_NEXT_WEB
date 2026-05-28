@@ -1,31 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MongoClient } from 'mongodb';
-
-const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
-const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
-
-const globalForMongo = globalThis as unknown as {
-  adminDashboardMongoClient?: MongoClient;
-  adminDashboardMongoPromise?: Promise<MongoClient>;
-};
-
-async function getMongoClient() {
-  if (globalForMongo.adminDashboardMongoClient) {
-    return globalForMongo.adminDashboardMongoClient;
-  }
-
-  if (!globalForMongo.adminDashboardMongoPromise) {
-    const client = new MongoClient(mongoUri);
-    globalForMongo.adminDashboardMongoPromise = client.connect();
-  }
-
-  globalForMongo.adminDashboardMongoClient = await globalForMongo.adminDashboardMongoPromise;
-  return globalForMongo.adminDashboardMongoClient;
-}
+import { getUserDb } from '@/lib/user-server/get-user-db';
 
 async function getDatabase() {
-  const client = await getMongoClient();
-  return client.db(mongoDbName);
+  return getUserDb();
 }
 
 function toDateKey(value: Date | string | null | undefined) {

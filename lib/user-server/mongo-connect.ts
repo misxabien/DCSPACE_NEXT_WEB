@@ -1,4 +1,5 @@
 import { MongoClient, type Db } from 'mongodb';
+import dns from 'node:dns';
 
 const clientOptions = {
   maxPoolSize: 10,
@@ -10,6 +11,27 @@ const clientOptions = {
   // Prefer IPv4 — avoids TLS/DNS issues on some networks with Atlas.
   family: 4 as const,
 };
+
+let dnsConfigured = false;
+
+function configureDnsResolvers() {
+  if (dnsConfigured) {
+    return;
+  }
+
+  const raw = process.env.MONGODB_DNS_SERVERS?.trim();
+  const resolvers = raw
+    ? raw.split(',').map((value) => value.trim()).filter(Boolean)
+    : ['8.8.8.8', '1.1.1.1'];
+
+  try {
+    dns.setServers(resolvers);
+  } catch {
+    // If the runtime disallows overriding DNS servers, continue with OS defaults.
+  }
+
+  dnsConfigured = true;
+}
 
 export function getMongoConfig() {
   const uri = process.env.MONGODB_URI?.trim();
@@ -54,6 +76,15 @@ function shouldTryFallback(error: unknown) {
   );
 }
 
+function getLocalFallbackUri() {
+  const localFromEnv = process.env.MONGODB_URI_LOCAL?.trim();
+  if (localFromEnv) {
+    return localFromEnv;
+  }
+
+  return 'mongodb://127.0.0.1:27017';
+}
+
 async function tryConnect(uri: string) {
   const client = new MongoClient(uri, clientOptions);
   await client.connect();
@@ -61,6 +92,7 @@ async function tryConnect(uri: string) {
 }
 
 export async function connectUserMongo(): Promise<{ db: Db; client: MongoClient }> {
+  configureDnsResolvers();
   const { uri, dbName } = getMongoConfig();
 
   try {
@@ -68,13 +100,30 @@ export async function connectUserMongo(): Promise<{ db: Db; client: MongoClient 
     return { client, db: client.db(dbName) };
   } catch (primaryError) {
     const fallbackUri = buildNonSrvFallbackUri(uri);
+    const shouldFallback = shouldTryFallback(primaryError);
 
-    if (!fallbackUri || !shouldTryFallback(primaryError)) {
-      throw primaryError;
+    if (fallbackUri && shouldFallback) {
+      try {
+        const client = await tryConnect(fallbackUri);
+        return { client, db: client.db(dbName) };
+      } catch (fallbackError) {
+        const localUri = getLocalFallbackUri();
+        try {
+          const client = await tryConnect(localUri);
+          return { client, db: client.db(dbName) };
+        } catch {
+          throw fallbackError;
+        }
+      }
     }
 
-    const client = await tryConnect(fallbackUri);
-    return { client, db: client.db(dbName) };
+    if (shouldFallback) {
+      const localUri = getLocalFallbackUri();
+      const client = await tryConnect(localUri);
+      return { client, db: client.db(dbName) };
+    }
+
+    throw primaryError;
   }
 }
 

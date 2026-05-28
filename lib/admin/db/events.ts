@@ -1,14 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { MongoClient, ObjectId } from 'mongodb';
+import { ObjectId } from 'mongodb';
 import { createUserNotification } from '@/lib/admin/db/user-notifications';
-
-const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
-const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
-
-const globalForMongo = globalThis as unknown as {
-  adminEventsMongoClient?: MongoClient;
-  adminEventsMongoPromise?: Promise<MongoClient>;
-};
+import { getUserDb } from '@/lib/user-server/get-user-db';
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -17,23 +10,8 @@ function createAppError(name: string, message: string, status: number) {
   return error;
 }
 
-async function getMongoClient() {
-  if (globalForMongo.adminEventsMongoClient) {
-    return globalForMongo.adminEventsMongoClient;
-  }
-
-  if (!globalForMongo.adminEventsMongoPromise) {
-    const client = new MongoClient(mongoUri);
-    globalForMongo.adminEventsMongoPromise = client.connect();
-  }
-
-  globalForMongo.adminEventsMongoClient = await globalForMongo.adminEventsMongoPromise;
-  return globalForMongo.adminEventsMongoClient;
-}
-
 async function getDatabase() {
-  const client = await getMongoClient();
-  return client.db(mongoDbName);
+  return getUserDb();
 }
 
 async function getEventsCollection() {
@@ -82,6 +60,10 @@ function toDateLabel(value: Date | string | null | undefined) {
   }
 
   const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === 'string' && value.trim() ? value.trim() : 'TBA';
+  }
+
   return new Intl.DateTimeFormat('en-US', {
     month: 'long',
     day: 'numeric',
@@ -94,14 +76,31 @@ function toTimeLabel(startValue: Date | string | null | undefined, endValue: Dat
     return 'TBA';
   }
 
+  if (typeof startValue === 'string') {
+    const rawStart = startValue.trim();
+    const rawEnd = typeof endValue === 'string' ? endValue.trim() : '';
+
+    if (rawStart && /^\d{1,2}:\d{2}(\s?[AP]M)?$/i.test(rawStart)) {
+      if (rawEnd && /^\d{1,2}:\d{2}(\s?[AP]M)?$/i.test(rawEnd)) {
+        return `${rawStart.toUpperCase()} - ${rawEnd.toUpperCase()}`;
+      }
+
+      return rawStart.toUpperCase();
+    }
+  }
+
   const start = startValue instanceof Date ? startValue : new Date(startValue);
+  if (Number.isNaN(start.getTime())) {
+    return typeof startValue === 'string' && startValue.trim() ? startValue.trim() : 'TBA';
+  }
+
   const end = endValue ? (endValue instanceof Date ? endValue : new Date(endValue)) : null;
   const formatter = new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',
     minute: '2-digit',
   });
 
-  if (!end) {
+  if (!end || Number.isNaN(end.getTime())) {
     return formatter.format(start);
   }
 
@@ -151,6 +150,35 @@ function mapEventCard(event: any) {
       null,
     status: normalizeEventStatus(event.status),
   };
+}
+
+function safeMapEventCard(event: any) {
+  try {
+    return mapEventCard(event);
+  } catch (error) {
+    return {
+      id: String(event?._id ?? ''),
+      title: event?.title ?? event?.name ?? 'Untitled event',
+      date: 'TBA',
+      time: 'TBA',
+      venue: event?.venue ?? event?.location ?? 'TBA',
+      organizer:
+        event?.requester ??
+        event?.courseOrganizer ??
+        event?.representativeName ??
+        event?.organizerName ??
+        event?.createdByName ??
+        'Unknown organizer',
+      pubmatImage:
+        event?.pubmatImage ??
+        event?.posterUrl ??
+        event?.eventPoster ??
+        event?.attachments?.eventPoster ??
+        null,
+      status: normalizeEventStatus(event?.status),
+      _mappingError: error instanceof Error ? error.message : 'Unknown mapping error',
+    };
+  }
 }
 
 function mapEventDetail(event: any) {
@@ -240,23 +268,11 @@ export async function getEvents(params: GetEventsParams) {
 
   if (status === 'pending') {
     andConditions.push({
-      status: {
-        $nin: ['approved', 'rejected'],
-      },
-    });
-    andConditions.push({
       $or: [
         {
           status: {
-            $in: [
-              'pending',
-              'pending_approval',
-              'changes_requested',
-              'draft',
-              'Pending',
-              'PENDING',
-              'PENDING_APPROVAL',
-            ],
+            $regex: '^(pending|pending_approval|changes_requested|draft)$',
+            $options: 'i',
           },
         },
         { status: { $exists: false } },
@@ -269,7 +285,8 @@ export async function getEvents(params: GetEventsParams) {
   if (status === 'approved') {
     andConditions.push({
       status: {
-        $in: ['approved', 'APPROVED'],
+        $regex: '^approved$',
+        $options: 'i',
       },
     });
   }
@@ -309,7 +326,7 @@ export async function getEvents(params: GetEventsParams) {
   const totalPages = total === 0 ? 0 : Math.ceil(total / limit);
 
   return {
-    events: rows.map(mapEventCard),
+    events: rows.map(safeMapEventCard),
     pagination: {
       page,
       limit,
