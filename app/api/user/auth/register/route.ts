@@ -82,6 +82,15 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     const details = error instanceof Error ? error.message : 'Unknown error';
-    return withCors(NextResponse.json({ error: 'Failed to register account.', details }, { status: 500 }));
+    return withCors(
+      NextResponse.json(
+        {
+          error: 'Failed to register account.',
+          details,
+          message: details,
+        },
+        { status: 500 },
+      ),
+    );
   }
 }
