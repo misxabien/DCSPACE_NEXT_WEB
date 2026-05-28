@@ -1,6 +1,6 @@
 const configuredBackendUrl = process.env.NEXT_PUBLIC_BACKEND_USER_API_URL;
 const authStorageKey = "dcspace_auth";
-const requestTimeoutMs = 10000;
+const requestTimeoutMs = 25000;
 
 function getCandidateBaseUrls(preferLocalOnly = false) {
   const urls = new Set<string>();
