@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
+import type { Db } from 'mongodb';
 import { isSchoolEmail } from '@/lib/user-server/auth-helpers';
 import { withCors, optionsResponse } from '@/lib/user-server/cors';
 import { getUserDb } from '@/lib/user-server/get-user-db';
 import { issueRegistrationVerificationCode } from '@/lib/user-server/verification';
+
+export const maxDuration = 60;
 
 export async function OPTIONS() {
   return optionsResponse();
@@ -23,8 +26,9 @@ export async function POST(request: Request) {
       );
     }
 
+    let db: Db | null = null;
     try {
-      const db = await getUserDb();
+      db = await getUserDb();
       const existingUser = await db.collection('users').findOne({ email });
       if (existingUser) {
         return withCors(
@@ -32,10 +36,10 @@ export async function POST(request: Request) {
         );
       }
     } catch {
-      // Continue with memory verification store if Mongo is temporarily unavailable.
+      db = null;
     }
 
-    const result = await issueRegistrationVerificationCode(email);
+    const result = await issueRegistrationVerificationCode(email, { db });
 
     return withCors(
       NextResponse.json(
@@ -51,7 +55,9 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    const isEmailConfig = /email is not set up|mail server|smtp/i.test(message);
+    const isEmailConfig = /email is not set up|mail server|smtp|email server timed out|could not reach the email server/i.test(
+      message,
+    );
     const isDatabase = /mongo|Missing MONGODB/i.test(message);
 
     if (isEmailConfig) {

@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import type { Db } from 'mongodb';
 import { getUserDb } from '@/lib/user-server/get-user-db';
 import { hashPassword, verifyPassword } from '@/lib/user-server/password';
 import { sendVerificationEmail } from '@/lib/user-server/mailer';
@@ -31,39 +32,48 @@ async function isDatabaseAvailable() {
   }
 }
 
-/** Use MongoDB whenever possible so codes survive dev hot-reload and server restarts. */
-async function useMemoryStore() {
-  if (!(await isDatabaseAvailable())) {
-    return true;
-  }
-  return shouldUseMemoryVerificationStore() && process.env.FORCE_VERIFICATION_MEMORY === 'true';
-}
-
-async function getVerificationsCollection() {
-  const db = await getUserDb();
+async function getVerificationsCollection(db: Db) {
   const collection = db.collection('email_verifications');
   await collection.createIndex({ email: 1, purpose: 1 }, { unique: true });
   await collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   return collection;
 }
 
-export async function issueRegistrationVerificationCode(email: string) {
+export async function issueRegistrationVerificationCode(
+  email: string,
+  options?: { db?: Db | null },
+) {
   const normalizedEmail = normalizeEmail(email);
   const code = generateVerificationCode();
   const codeHash = hashPassword(code);
   const expiresAt = new Date(Date.now() + CODE_TTL_MS);
 
-  const dbAvailable = await isDatabaseAvailable();
+  let dbAvailable = false;
+  let db: Db | null = options?.db ?? null;
+
+  if (options?.db !== undefined) {
+    dbAvailable = options.db !== null;
+  } else {
+    dbAvailable = await isDatabaseAvailable();
+    if (dbAvailable) {
+      db = await getUserDb();
+    }
+  }
+
   if (!dbAvailable && !shouldUseMemoryVerificationStore()) {
     throw new Error(
       'Database is not available. Fix MONGODB_URI in .env.local (run npm run check:mongo), then request a new code.',
     );
   }
 
-  if (!dbAvailable || (await useMemoryStore())) {
+  const useMemory =
+    !dbAvailable ||
+    (shouldUseMemoryVerificationStore() && process.env.FORCE_VERIFICATION_MEMORY === 'true');
+
+  if (useMemory) {
     saveMemoryVerification({ email: normalizedEmail, codeHash, expiresAt });
-  } else {
-    const verifications = await getVerificationsCollection();
+  } else if (db) {
+    const verifications = await getVerificationsCollection(db);
     const now = new Date();
     await verifications.updateOne(
       { email: normalizedEmail, purpose: PURPOSE },
@@ -115,7 +125,8 @@ async function verifyFromMemory(normalizedEmail: string, trimmedCode: string) {
 }
 
 async function verifyFromDatabase(normalizedEmail: string, trimmedCode: string) {
-  const verifications = await getVerificationsCollection();
+  const db = await getUserDb();
+  const verifications = await getVerificationsCollection(db);
   const record = await verifications.findOne({ email: normalizedEmail, purpose: PURPOSE });
 
   if (!record) {
