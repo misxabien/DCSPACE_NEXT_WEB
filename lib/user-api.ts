@@ -1,6 +1,7 @@
 const configuredBackendUrl = process.env.NEXT_PUBLIC_BACKEND_USER_API_URL;
 const authStorageKey = "dcspace_auth";
 const requestTimeoutMs = 25000;
+const authRequestTimeoutMs = 60000;
 
 function getCandidateBaseUrls(preferLocalOnly = false) {
   const urls = new Set<string>();
@@ -94,6 +95,8 @@ type ApiOptions = {
   method?: string;
   body?: unknown;
   token?: string;
+  /** Override default fetch timeout (auth endpoints use a longer limit). */
+  timeoutMs?: number;
 };
 
 type AuthEndpoint = "send-verification" | "register" | "login";
@@ -162,7 +165,8 @@ async function apiRequest<T>(
   for (const baseUrl of candidateBaseUrls) {
     const rawPath = typeof path === "function" ? path(baseUrl) : path;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
+    const timeoutMs = options.timeoutMs ?? requestTimeoutMs;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     let response: Response;
 
     try {
@@ -177,7 +181,11 @@ async function apiRequest<T>(
       });
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
-        lastError = new Error("Request timed out. Please check the server and try again.");
+        lastError = new Error(
+          timeoutMs > requestTimeoutMs
+            ? "Request timed out while sending the verification email. Check MongoDB and SMTP in .env.local, then try again."
+            : "Request timed out. Please check the server and try again.",
+        );
       } else {
         lastError = new Error(
           "Could not reach the server. Run npm run dev and ensure .env.local has MONGODB_URI and JWT_SECRET.",
@@ -234,6 +242,7 @@ export async function sendRegistrationVerificationEmail(email: string) {
     {
       method: "POST",
       body: { email },
+      timeoutMs: authRequestTimeoutMs,
     },
     true,
   );
@@ -261,6 +270,7 @@ export async function registerUser(payload: {
     {
       method: "POST",
       body: payload,
+      timeoutMs: authRequestTimeoutMs,
     },
     true,
   );
@@ -272,6 +282,7 @@ export async function loginUser(email: string, password: string) {
     {
       method: "POST",
       body: { email, password },
+      timeoutMs: authRequestTimeoutMs,
     },
     true,
   );
