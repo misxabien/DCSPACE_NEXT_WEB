@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { USERS } from "@/lib/admin/usersData";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useShowStatus } from "@/contexts/ShowStatusContext";
 
 function csvEscape(value) {
@@ -10,9 +9,35 @@ function csvEscape(value) {
   return s;
 }
 
+function mapApiUserToRow(user) {
+  const orgRole = String(user.organizationRole || "").toLowerCase();
+  const isOrganizer = user.role === "organizer" || orgRole.includes("officer");
+  const hasRfid = Boolean(String(user.rfidNumber || user.rfid || "").trim());
+
+  return {
+    id: user.id,
+    name: user.name || "—",
+    email: user.email || "",
+    role: isOrganizer ? "organizer" : "student",
+    roleLabel:
+      user.roleLabel ||
+      (isOrganizer ? "Student Organizer" : user.role === "faculty" ? "Faculty" : "Student"),
+    status: user.accountStatus || user.status || (user.isActive === false ? "inactive" : "active"),
+    org: user.organization || "Unassigned",
+    course: user.course || "—",
+    rfid: hasRfid ? "registered" : "inactive",
+    lastActive: user.timestamp?.display || "—",
+    registeredEventIds: user.registeredEventIds || user.assignedEventIds || [],
+  };
+}
+
 export function UsersView() {
   const showStatus = useShowStatus();
-  const [rows, setRows] = useState(USERS);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [orgOptions, setOrgOptions] = useState([]);
+  const [pagination, setPagination] = useState(null);
   const [keyword, setKeyword] = useState("");
   const [role, setRole] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -21,6 +46,51 @@ export function UsersView() {
   const [selectedEmails, setSelectedEmails] = useState([]);
   const skipStatusToast = useRef(true);
   const headerCheckboxRef = useRef(null);
+
+  const loadUsers = useCallback(async () => {
+    setLoading(true);
+    setLoadError("");
+
+    try {
+      const params = new URLSearchParams();
+      params.set("limit", "100");
+      params.set("registeredOnly", "true");
+      if (keyword.trim()) params.set("search", keyword.trim());
+      if (role !== "all") params.set("role", role);
+      if (statusFilter !== "all") params.set("status", statusFilter);
+      if (org !== "all") params.set("organization", org);
+
+      const response = await fetch(`/api/admin/users?${params.toString()}`);
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to load users from the database.");
+      }
+
+      const mapped = (payload.users || []).map(mapApiUserToRow);
+      setRows(mapped);
+      setPagination(payload.pagination ?? null);
+
+      const organizations = [
+        ...new Set(
+          (payload.users || [])
+            .map((user) => user.organization)
+            .filter((value) => value && value !== "Unassigned"),
+        ),
+      ].sort((a, b) => a.localeCompare(b));
+      setOrgOptions(organizations);
+    } catch (error) {
+      setRows([]);
+      setPagination(null);
+      setLoadError(error instanceof Error ? error.message : "Failed to load users.");
+    } finally {
+      setLoading(false);
+    }
+  }, [keyword, role, statusFilter, org]);
+
+  useEffect(() => {
+    void loadUsers();
+  }, [loadUsers]);
 
   const filtered = useMemo(() => {
     const k = keyword.trim().toLowerCase();
@@ -160,9 +230,9 @@ export function UsersView() {
     showStatus(`Exported ${selectedUsers.length} user(s)`);
   }
 
-  function deleteSelected() {
-    const toDelete = new Set(effectiveSelected);
-    const n = toDelete.size;
+  async function deleteSelected() {
+    const toDelete = rows.filter((user) => effectiveSelectedSet.has(user.email));
+    const n = toDelete.length;
     if (n === 0) {
       showStatus("Select users to delete");
       return;
@@ -174,9 +244,93 @@ export function UsersView() {
     ) {
       return;
     }
-    setRows((prev) => prev.filter((r) => !toDelete.has(r.email)));
-    setSelectedEmails((prev) => prev.filter((e) => !toDelete.has(e)));
-    showStatus(`Deleted ${n} user(s)`);
+
+    try {
+      await Promise.all(
+        toDelete.map((user) =>
+          fetch(`/api/admin/users/${user.id}`, { method: "DELETE" }),
+        ),
+      );
+      setSelectedEmails((prev) => prev.filter((e) => !effectiveSelectedSet.has(e)));
+      showStatus(`Deleted ${n} user(s)`);
+      await loadUsers();
+    } catch {
+      showStatus("Failed to delete selected users");
+    }
+  }
+
+  async function toggleUserActive(user) {
+    const nextActive = user.status !== "active";
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "toggleStatus",
+          isActive: nextActive,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to update user status");
+      }
+      setRows((prev) =>
+        prev.map((row) =>
+          row.email === user.email
+            ? { ...row, status: nextActive ? "active" : "inactive" }
+            : row,
+        ),
+      );
+      showStatus(nextActive ? "User enabled" : "User disabled");
+    } catch (error) {
+      showStatus(
+        error instanceof Error ? error.message : "Failed to update user status",
+      );
+    }
+  }
+
+  async function resetUserPassword(user) {
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "resetPassword" }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to reset password");
+      }
+      showStatus(
+        payload.temporaryPassword
+          ? `Temporary password for ${user.name}: ${payload.temporaryPassword}`
+          : `Password reset for ${user.name}`,
+      );
+    } catch (error) {
+      showStatus(
+        error instanceof Error ? error.message : "Failed to reset password",
+      );
+    }
+    setOpenMenuEmail(null);
+  }
+
+  async function deleteUser(user) {
+    if (!window.confirm(`Delete ${user.name}? This cannot be undone.`)) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: "DELETE",
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to delete user");
+      }
+      showStatus(`Deleted ${user.name}`);
+      setOpenMenuEmail(null);
+      await loadUsers();
+    } catch (error) {
+      showStatus(error instanceof Error ? error.message : "Failed to delete user");
+    }
   }
 
   return (
@@ -237,19 +391,20 @@ export function UsersView() {
               onChange={(e) => setOrg(e.target.value)}
             >
               <option value="all">Organization: All</option>
-              <option value="Dormcode">Dormcode</option>
-              <option value="Dormkcode">Dormkcode</option>
-              <option value="Dormxcode">Dormxcode</option>
+              {orgOptions.map((organization) => (
+                <option key={organization} value={organization}>
+                  {organization}
+                </option>
+              ))}
             </select>
             <button
               className="btn-soft"
               id="applyFilterBtn"
               type="button"
-              onClick={() =>
-                showStatus(`${filtered.length} user(s) shown`)
-              }
+              disabled={loading}
+              onClick={() => void loadUsers()}
             >
-              Filter
+              {loading ? "Loading…" : "Filter"}
             </button>
           </div>
 
@@ -283,7 +438,7 @@ export function UsersView() {
               <button
                 className="btn-soft"
                 type="button"
-                onClick={deleteSelected}
+                onClick={() => void deleteSelected()}
                 style={{
                   borderColor: "#e8a4a4",
                   color: "#9f2f2f",
@@ -338,9 +493,32 @@ export function UsersView() {
               </tr>
             </thead>
             <tbody id="usersTableBody">
-              {filtered.map((u) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={9} style={{ textAlign: "center", padding: "28px 16px" }}>
+                    Loading users from database…
+                  </td>
+                </tr>
+              ) : null}
+              {!loading && loadError ? (
+                <tr>
+                  <td colSpan={9} style={{ textAlign: "center", padding: "28px 16px", color: "#9f2f2f" }}>
+                    {loadError}
+                  </td>
+                </tr>
+              ) : null}
+              {!loading && !loadError && filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={9} style={{ textAlign: "center", padding: "28px 16px" }}>
+                    No users have registered for events yet.
+                  </td>
+                </tr>
+              ) : null}
+              {!loading &&
+                !loadError &&
+                filtered.map((u) => (
                 <tr
-                  key={u.email}
+                  key={u.id || u.email}
                   data-name={u.name}
                   data-email={u.email}
                   data-role={u.role}
@@ -377,21 +555,7 @@ export function UsersView() {
                       className={`switch${u.status === "active" ? " on" : ""}`}
                       type="button"
                       aria-label="Toggle status"
-                      onClick={() => {
-                        setRows((prev) =>
-                          prev.map((r) => {
-                            if (r.email !== u.email) return r;
-                            const nextOn = r.status !== "active";
-                            return {
-                              ...r,
-                              status: nextOn ? "active" : "inactive",
-                            };
-                          })
-                        );
-                        showStatus(
-                          u.status === "active" ? "User disabled" : "User enabled"
-                        );
-                      }}
+                      onClick={() => void toggleUserActive(u)}
                     />
                   </td>
                   <td className="users-col-course">{u.course ?? "—"}</td>
@@ -415,10 +579,7 @@ export function UsersView() {
                       <button
                         className="menu-action"
                         type="button"
-                        onClick={() => {
-                          showStatus(`Reset Password: ${u.name}`);
-                          setOpenMenuEmail(null);
-                        }}
+                        onClick={() => void resetUserPassword(u)}
                       >
                         Reset Password
                       </button>
@@ -426,19 +587,21 @@ export function UsersView() {
                         className="menu-action"
                         type="button"
                         onClick={() => {
-                          showStatus(`Assign to Event: ${u.name}`);
+                          const count = u.registeredEventIds?.length ?? 0;
+                          showStatus(
+                            count > 0
+                              ? `${u.name} is registered for ${count} event(s)`
+                              : `${u.name} has no event registrations yet`,
+                          );
                           setOpenMenuEmail(null);
                         }}
                       >
-                        Assign to Event
+                        View registrations
                       </button>
                       <button
                         className="menu-action delete"
                         type="button"
-                        onClick={() => {
-                          showStatus(`Delete User: ${u.name}`);
-                          setOpenMenuEmail(null);
-                        }}
+                        onClick={() => void deleteUser(u)}
                       >
                         Delete User
                       </button>
@@ -452,10 +615,10 @@ export function UsersView() {
         <div className="users-toolbar users-footer">
           <div className="users-footer-inner">
             <span>
-              Showing {filtered.length === 0 ? 0 : 1} to {filtered.length} of{" "}
-              {filtered.length} entries
+              {pagination?.summary ||
+                `Showing ${filtered.length === 0 ? 0 : 1} to ${filtered.length} of ${filtered.length} entries`}
             </span>
-            <span>Previous &nbsp; 10 &nbsp; Next</span>
+            <span>Event registrations from user app</span>
           </div>
         </div>
       </section>

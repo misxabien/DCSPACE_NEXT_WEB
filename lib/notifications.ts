@@ -1,13 +1,19 @@
-import { readOrganizedEvents } from "@/lib/dc-events";
+import type { FrontendEvent } from "@/lib/dc-events";
 import {
   formatEventDate,
   getCertificateStatus,
   getEventStatus,
   getRegisteredEventId,
-  readRegisteredEvents,
-  readUserAttendanceRecords,
-  getCurrentAttendanceUser,
+  type AttendanceRecord,
+  type RegisteredEvent,
 } from "@/lib/attendance";
+import { fetchUserNotifications, readAuthSession } from "@/lib/user-api";
+import {
+  loadAttendanceRecords,
+  loadOrganizedEventsForUser,
+  loadRegisteredEvents,
+  userCanOrganize,
+} from "@/lib/user-data";
 
 export const NOTIFICATION_READ_KEY = "dcspaceReadNotificationIds";
 export const NOTIFICATIONS_UPDATED_EVENT = "dcspace-notifications-updated";
@@ -77,27 +83,64 @@ export function formatNotificationTimeAgo(dateValue: string) {
   return getRelativeTime(dateValue);
 }
 
-export function readNotifications(): DcNotification[] {
+function buildNotifications(
+  organizedEvents: FrontendEvent[],
+  registeredEvents: RegisteredEvent[],
+  records: Record<string, AttendanceRecord>,
+): DcNotification[] {
   const readIds = getReadIds();
-  const currentUser = getCurrentAttendanceUser();
-  const records = readUserAttendanceRecords(currentUser);
-  const registeredEvents = readRegisteredEvents();
-  const organizedEvents = readOrganizedEvents();
   const now = new Date().toISOString();
   const notifications = new Map<string, Omit<DcNotification, "isRead">>();
 
   organizedEvents.forEach((event) => {
     const eventDate = parseEventDate(event).toISOString();
-    notifications.set(`new-event-${event.id}`, {
-      id: `new-event-${event.id}`,
-      category: "updates",
-      title: "New Event!",
-      subtitle: event.dateTime || formatEventDate(event),
-      eventName: event.name || "Event Name",
-      notifiedAt: eventDate,
-      actionAt: eventDate,
-      icon: "calendar-week",
-    });
+    const status = event.status?.toLowerCase() || "";
+
+    if (status.includes("approve") || status.includes("accept")) {
+      notifications.set(`approved-${event.id}`, {
+        id: `approved-${event.id}`,
+        category: "updates",
+        title: "Event Approved",
+        subtitle: event.dateTime || formatEventDate(event),
+        eventName: event.name || "Event",
+        notifiedAt: eventDate,
+        actionAt: eventDate,
+        icon: "calendar-week",
+      });
+    } else if (status.includes("reject")) {
+      notifications.set(`rejected-${event.id}`, {
+        id: `rejected-${event.id}`,
+        category: "updates",
+        title: "Event Rejected",
+        subtitle: event.adminChangeRequest || event.dateTime || formatEventDate(event),
+        eventName: event.name || "Event",
+        notifiedAt: now,
+        actionAt: now,
+        icon: "archive",
+      });
+    } else if (status.includes("change")) {
+      notifications.set(`changes-${event.id}`, {
+        id: `changes-${event.id}`,
+        category: "updates",
+        title: "Changes Requested",
+        subtitle: event.adminChangeRequest || event.dateTime || formatEventDate(event),
+        eventName: event.name || "Event",
+        notifiedAt: now,
+        actionAt: now,
+        icon: "archive",
+      });
+    } else if (status.includes("pending")) {
+      notifications.set(`pending-${event.id}`, {
+        id: `pending-${event.id}`,
+        category: "updates",
+        title: "Event Pending Approval",
+        subtitle: event.dateTime || formatEventDate(event),
+        eventName: event.name || "Event",
+        notifiedAt: now,
+        actionAt: eventDate,
+        icon: "archive",
+      });
+    }
   });
 
   registeredEvents.forEach((event) => {
@@ -112,20 +155,20 @@ export function readNotifications(): DcNotification[] {
         category: "reminders",
         title: "Upcoming Event Reminder",
         subtitle: event.dateTime || formatEventDate(event),
-        eventName: event.name || "Event Name",
+        eventName: event.name || "Event",
         notifiedAt: now,
         actionAt: eventDate,
         icon: "calendar-check-fill",
       });
     }
 
-    if (getCertificateStatus(record) === "Download") {
+    if (getCertificateStatus(record, event) === "Download") {
       notifications.set(`certificate-${eventId}`, {
         id: `certificate-${eventId}`,
         category: "updates",
         title: "Certificate Ready",
-        subtitle: "Certificate Title",
-        eventName: event.name || "Event Name",
+        subtitle: "Your certificate is ready to download",
+        eventName: event.name || "Event",
         notifiedAt: record?.updatedAt || now,
         actionAt: record?.updatedAt || now,
         icon: "patch-check-fill",
@@ -139,6 +182,69 @@ export function readNotifications(): DcNotification[] {
       isRead: readIds.has(notification.id),
     }))
     .sort((first, second) => new Date(second.notifiedAt).getTime() - new Date(first.notifiedAt).getTime());
+}
+
+function mapStoredNotification(record: {
+  id: string;
+  title: string;
+  message: string;
+  eventTitle: string;
+  createdAt: string;
+  type: string;
+}): Omit<DcNotification, "isRead"> {
+  return {
+    id: `stored-${record.id}`,
+    category: "updates",
+    title: record.title,
+    subtitle: record.message || record.eventTitle,
+    eventName: record.eventTitle,
+    notifiedAt: record.createdAt,
+    actionAt: record.createdAt,
+    icon:
+      record.type === "event_approved"
+        ? "calendar-week"
+        : record.type === "certificate_ready"
+          ? "patch-check-fill"
+          : record.type === "event_rejected"
+            ? "archive"
+            : "archive",
+  };
+}
+
+export async function loadNotifications(): Promise<DcNotification[]> {
+  const [registeredEvents, records] = await Promise.all([
+    loadRegisteredEvents(),
+    loadAttendanceRecords(),
+  ]);
+
+  const organizedEvents = userCanOrganize() ? await loadOrganizedEventsForUser() : [];
+  const built = buildNotifications(organizedEvents, registeredEvents, records);
+  const notificationMap = new Map(built.map((item) => [item.id, item]));
+
+  const session = readAuthSession();
+  if (session?.token) {
+    try {
+      const { notifications } = await fetchUserNotifications(session.token);
+      notifications.forEach((record) => {
+        const mapped = mapStoredNotification(record);
+        notificationMap.set(mapped.id, {
+          ...mapped,
+          isRead: record.read,
+        });
+      });
+    } catch {
+      // Fall back to event-derived notifications only.
+    }
+  }
+
+  return Array.from(notificationMap.values()).sort(
+    (first, second) => new Date(second.notifiedAt).getTime() - new Date(first.notifiedAt).getTime(),
+  );
+}
+
+/** @deprecated Use loadNotifications() for API-backed data */
+export function readNotifications(): DcNotification[] {
+  return [];
 }
 
 export function markNotificationsAsRead(ids: string[]) {

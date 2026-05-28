@@ -1,31 +1,30 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import {
   getCertificateStatus,
   getCurrentAttendanceUser,
   getRegisteredEventId,
   getSelectedAttendanceEventId,
-  readRegisteredEvents,
-  readUserAttendanceRecords,
   type AttendanceRecord,
   type RegisteredEvent,
-} from "@/lib/attendance";
+} from '@/lib/attendance';
+import { loadAttendanceRecords, loadRegisteredEvents } from '@/lib/user-data';
 
 function getRequiredMinutes(minAttendance?: string) {
   if (!minAttendance) return 0;
 
   const lower = minAttendance.toLowerCase();
 
-  if (lower.includes("none") || lower.includes("tba")) return 0;
+  if (lower.includes('none') || lower.includes('tba')) return 0;
 
   const number = Number(lower.match(/\d+(\.\d+)?/)?.[0] || 0);
 
-  if (lower.includes("hour")) {
+  if (lower.includes('hour')) {
     return number * 60;
   }
 
-  if (lower.includes("min")) {
+  if (lower.includes('min')) {
     return number;
   }
 
@@ -45,71 +44,78 @@ function getTimeMinutes(time?: string) {
 }
 
 function getAttendanceStatus(event: RegisteredEvent, record?: AttendanceRecord) {
-  if (!record?.tapIn) return "Processing";
-  if (!record.tapOut) return "Present";
+  if (!record?.tapIn) return 'Processing';
+  if (!record.tapOut) return 'Present';
 
   const tapInMinutes = getTimeMinutes(record.tapIn);
   const tapOutMinutes = getTimeMinutes(record.tapOut);
 
   if (tapInMinutes === null || tapOutMinutes === null) {
-    return "Processing";
+    return 'Processing';
   }
 
   const attendedMinutes = tapOutMinutes - tapInMinutes;
   const requiredMinutes = getRequiredMinutes(event.minAttendance);
 
   if (requiredMinutes > 0 && attendedMinutes < requiredMinutes) {
-    return "Undertime";
+    return 'Undertime';
   }
 
-  if (event.dateTime?.toLowerCase().includes("-")) {
-    const eventEndTime = event.dateTime.split("-").at(-1)?.trim();
+  if (event.dateTime?.toLowerCase().includes('-')) {
+    const eventEndTime = event.dateTime.split('-').at(-1)?.trim();
     const eventEndMinutes = getTimeMinutes(eventEndTime);
 
     if (eventEndMinutes !== null && tapOutMinutes > eventEndMinutes) {
-      return "Overtime";
+      return 'Overtime';
     }
   }
 
-  return "Present";
+  return 'Present';
 }
 
 export function AttendanceDetailsTable() {
   const [event, setEvent] = useState<RegisteredEvent | null>(null);
   const [record, setRecord] = useState<AttendanceRecord | undefined>();
-  const [studentNumber, setStudentNumber] = useState("2025-0000");
+  const [studentNumber, setStudentNumber] = useState('2025-0000');
 
   useEffect(() => {
-    const user = getCurrentAttendanceUser();
-    const registeredEvents = readRegisteredEvents();
-    const selectedEventId = getSelectedAttendanceEventId();
+    let cancelled = false;
 
-    const selectedEvent =
-      registeredEvents.find((item) => getRegisteredEventId(item) === selectedEventId) ||
-      registeredEvents[0] ||
-      null;
+    void (async () => {
+      const user = getCurrentAttendanceUser();
+      const [registeredEvents, records] = await Promise.all([loadRegisteredEvents(), loadAttendanceRecords()]);
+      const selectedEventId = getSelectedAttendanceEventId();
 
-    const records = readUserAttendanceRecords(user);
-    const selectedRecord = selectedEvent
-      ? records[getRegisteredEventId(selectedEvent)]
-      : undefined;
+      const selectedEvent =
+        registeredEvents.find((item) => getRegisteredEventId(item) === selectedEventId) ||
+        registeredEvents[0] ||
+        null;
 
-    setStudentNumber(user.studentNumber || "2025-0000");
-    setEvent(selectedEvent);
-    setRecord(selectedRecord);
+      const selectedRecord = selectedEvent ? records[getRegisteredEventId(selectedEvent)] : undefined;
+
+      if (cancelled) return;
+
+      setStudentNumber(user.studentNumber || '2025-0000');
+      setEvent(selectedEvent);
+      setRecord(selectedRecord);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const attendanceStatus = event
     ? getAttendanceStatus(event, record)
-    : "Processing";
+    : 'Processing';
 
   const certificateStatus = getCertificateStatus(record);
 
   return (
     <div className="attendance-detail-section">
       <div className="attendance-required-time">
-        <span>Minimum Required Attendance Time:</span>{" "}
-        <strong>{event?.minAttendance || "TBA"}</strong>
+        <span>Minimum Required Attendance Time:</span>{' '}
+        <strong>{event?.minAttendance || 'TBA'}</strong>
       </div>
 
       <table className="detail-table">
@@ -130,10 +136,10 @@ export function AttendanceDetailsTable() {
 
         <tbody>
           <tr>
-            <td>{record?.eventDate || "MM/DD/YYYY"}</td>
+            <td>{record?.eventDate || 'MM/DD/YYYY'}</td>
             <td>{studentNumber}</td>
-            <td>{record?.tapIn || "00-00 AM/PM"}</td>
-            <td>{record?.tapOut || "00-00 AM/PM"}</td>
+            <td>{record?.tapIn || '00-00 AM/PM'}</td>
+            <td>{record?.tapOut || '00-00 AM/PM'}</td>
             <td className="col-status">{attendanceStatus}</td>
             <td className="col-cert">{certificateStatus}</td>
           </tr>

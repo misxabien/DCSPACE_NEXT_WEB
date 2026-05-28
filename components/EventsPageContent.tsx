@@ -1,37 +1,42 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { EmptyState } from "@/components/EmptyState";
-import { type FrontendEvent, readBrowseEvents, setSelectedBrowseEventId } from "@/lib/dc-events";
+import Image from 'next/image';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { EmptyState } from '@/components/EmptyState';
+import { type FrontendEvent, setSelectedBrowseEventId } from '@/lib/dc-events';
+import { loadApprovedBrowseEvents } from '@/lib/user-data';
 
 const today = new Date();
 const calendarYear = today.getFullYear();
 const calendarMonth = today.getMonth();
-const monthName = today.toLocaleString("en-US", { month: "long" });
+const monthName = today.toLocaleString('en-US', { month: 'long' });
 const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
 const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
 const calendarDays = [
   ...Array.from({ length: firstDay }, () => null),
   ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
 ];
-const weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"];
+const weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export function EventsPageContent() {
   const [eventCards, setEventCards] = useState<FrontendEvent[]>([]);
 
   useEffect(() => {
-    const refreshEvents = () => setEventCards(readBrowseEvents());
+    let cancelled = false;
 
-    refreshEvents();
-    window.addEventListener("pageshow", refreshEvents);
-    window.addEventListener("storage", refreshEvents);
-    window.addEventListener("dcspace-events-updated", refreshEvents);
+    const refreshEvents = async () => {
+      const browse = await loadApprovedBrowseEvents();
+      if (!cancelled) setEventCards(browse);
+    };
+
+    void refreshEvents();
+    window.addEventListener('pageshow', () => void refreshEvents());
+    window.addEventListener('storage', () => void refreshEvents());
+    window.addEventListener('dcspace-events-updated', () => void refreshEvents());
 
     return () => {
-      window.removeEventListener("pageshow", refreshEvents);
-      window.removeEventListener("storage", refreshEvents);
-      window.removeEventListener("dcspace-events-updated", refreshEvents);
+      cancelled = true;
     };
   }, []);
 
@@ -56,9 +61,13 @@ export function EventsPageContent() {
             {eventCards.map((event) => (
               <article className="browse-event-card" key={event.id}>
                 <div className="event-image">
-                  <svg className="folder-icon" viewBox="0 0 7 7" fill="none" aria-hidden="true">
-                    <path d="M1.38831 4.72105L2.63783 3.05502L3.60967 4.30454L4.30385 3.47153L5.2757 4.72105H1.38831ZM5.55337 1.66667H3.332L2.77666 1.11133H1.11064C0.963353 1.11133 0.8221 1.16984 0.717954 1.27398C0.613807 1.37813 0.555298 1.51938 0.555298 1.66667V4.99872C0.555298 5.146 0.613807 5.28726 0.717954 5.3914C0.8221 5.49555 0.963353 5.55406 1.11064 5.55406H5.55337C5.70066 5.55406 5.84191 5.49555 5.94605 5.3914C6.0502 5.28726 6.10871 5.146 6.10871 4.99872V2.22201C6.10871 2.07473 6.0502 1.93347 5.94605 1.82933C5.84191 1.72518 5.70066 1.66667 5.55337 1.66667Z" fill="currentColor" />
-                  </svg>
+                  {event.bannerDataUrl ? (
+                    <Image src={event.bannerDataUrl} alt="" fill unoptimized />
+                  ) : (
+                    <svg className="folder-icon" viewBox="0 0 7 7" fill="none" aria-hidden="true">
+                      <path d="M1.38831 4.72105L2.63783 3.05502L3.60967 4.30454L4.30385 3.47153L5.2757 4.72105H1.38831ZM5.55337 1.66667H3.332L2.77666 1.11133H1.11064C0.963353 1.11133 0.8221 1.16984 0.717954 1.27398C0.613807 1.37813 0.555298 1.51938 0.555298 1.66667V4.99872C0.555298 5.146 0.613807 5.28726 0.717954 5.3914C0.8221 5.49555 0.963353 5.55406 1.11064 5.55406H5.55337C5.70066 5.55406 5.84191 5.49555 5.94605 5.3914C6.0502 5.28726 6.10871 5.146 6.10871 4.99872V2.22201C6.10871 2.07473 6.0502 1.93347 5.94605 1.82933C5.84191 1.72518 5.70066 1.66667 5.55337 1.66667Z" fill="currentColor" />
+                    </svg>
+                  )}
                 </div>
                 <div className="event-card-body">
                   <h2>{event.name}</h2>
@@ -107,8 +116,8 @@ export function EventsPageContent() {
 
                   return (
                     <span
-                      className={`${day ? "calendar-day" : "empty-day"}${isToday ? " is-today" : ""}${isUpcoming ? " is-upcoming" : ""}`}
-                      key={`${day ?? "blank"}-${index}`}
+                      className={`${day ? 'calendar-day' : 'empty-day'}${isToday ? ' is-today' : ''}${isUpcoming ? ' is-upcoming' : ''}`}
+                      key={`${day ?? 'blank'}-${index}`}
                     >
                       {day}
                     </span>

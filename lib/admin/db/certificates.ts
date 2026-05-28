@@ -12,6 +12,7 @@ const globalForMongo = globalThis as unknown as {
 };
 import { generateCertificatePdf } from '@/lib/admin/certificates/generate';
 import type { CertificateData } from '@/lib/admin/certificates/generate';
+import { createUserNotification } from '@/lib/admin/db/user-notifications';
 
 function createAppError(name: string, message: string, status: number) {
   const error = new Error(message) as Error & { status: number };
@@ -161,28 +162,73 @@ function getUserDisplayName(user: any) {
 }
 
 function mapEventSummary(event: any) {
-  const start = event.startTime ?? event.startDate ?? event.eventDate ?? null;
+  const start = event.startTime ?? event.startDate ?? event.eventDate ?? event.date ?? null;
   const end = event.endTime ?? event.endDate ?? null;
+  const startLabel = formatTimeLabel(start);
+  const endLabel = formatTimeLabel(end);
+  const dateLine =
+    event.date && startLabel !== 'TBA' && endLabel !== 'TBA'
+      ? `${formatDateLabel(event.date)} · ${startLabel} – ${endLabel}`
+      : startLabel !== 'TBA' && endLabel !== 'TBA'
+        ? `${formatDateLabel(start)} · ${startLabel} – ${endLabel}`
+        : formatDateLabel(start ?? event.date);
 
   return {
     id: String(event._id),
     title: event.title ?? event.name ?? 'Untitled event',
-    date: formatDateLabel(start),
+    date: dateLine,
+    dateLabel: formatDateLabel(event.date ?? start),
     venue: event.venue ?? event.location ?? 'TBA',
-    startTime: formatTimeLabel(start),
-    endTime: formatTimeLabel(end),
-    organizer: event.organizerName ?? event.organizer?.name ?? 'Unknown organizer',
-    course: event.course ?? 'N/A',
-    organization: event.organizationName ?? event.organization?.name ?? 'N/A',
+    startTime: typeof event.startTime === 'string' ? event.startTime : startLabel,
+    endTime: typeof event.endTime === 'string' ? event.endTime : endLabel,
+    organizer:
+      event.requester ??
+      event.courseOrganizer ??
+      event.organizerName ??
+      event.organizer?.name ??
+      'Unknown organizer',
+    course: event.courseCode ?? event.course ?? 'N/A',
+    organization:
+      event.organizationName ?? event.organizationPart ?? event.organization?.name ?? 'N/A',
+    minAttendance: event.minAttendance ?? event.minimumAttendanceTime ?? '',
+    posterImage: event.posterImage ?? event.pubmatImage ?? null,
+    submittedByEmail: event.submittedByEmail ?? null,
   };
 }
 
-function mapAttendeeRow(user: any, attendance: any) {
+/**
+ * Lists approved events for the admin E-Certificate screen.
+ */
+export async function listEcertEvents(search?: string | null) {
+  const events = await getEventsCollection();
+  const normalizedSearch = search?.trim();
+
+  const query: Record<string, unknown> = {
+    status: { $in: ['approved', 'APPROVED'] },
+  };
+
+  if (normalizedSearch) {
+    query.$or = [
+      { title: { $regex: normalizedSearch, $options: 'i' } },
+      { name: { $regex: normalizedSearch, $options: 'i' } },
+      { venue: { $regex: normalizedSearch, $options: 'i' } },
+      { requester: { $regex: normalizedSearch, $options: 'i' } },
+    ];
+  }
+
+  const rows = await events.find(query).sort({ createdAt: -1 }).limit(50).toArray();
+
+  return {
+    events: rows.map(mapEventSummary),
+  };
+}
+
+function mapAttendeeRow(user: any, attendance: any, event?: any) {
   const timestamp = formatTimestamp(
     attendance.updatedAt ?? user.updatedAt ?? attendance.createdAt ?? user.createdAt ?? null,
   );
   const userId = String(user._id);
-  const attendanceStatus = deriveAttendanceStatus(attendance);
+  const attendanceStatus = deriveAttendanceStatus(attendance, event);
 
   return {
     attendeeId: attendance?._id ? String(attendance._id) : userId,
@@ -286,7 +332,7 @@ export async function getAttendeesByEvent(eventId: string, search?: string | nul
       continue;
     }
 
-    rows.push(mapAttendeeRow(user, attendanceRow));
+    rows.push(mapAttendeeRow(user, attendanceRow, event));
   }
 
   for (const user of userRows) {
@@ -295,14 +341,18 @@ export async function getAttendeesByEvent(eventId: string, search?: string | nul
     }
 
     rows.push(
-      mapAttendeeRow(user, {
-        _id: String(user._id),
-        isActive: true,
-        registrationStatus: 'Registered',
-        attendanceStatus: 'Pending',
-        certificateStatus: 'Pending',
-        updatedAt: user.updatedAt ?? user.createdAt ?? null,
-      }),
+      mapAttendeeRow(
+        user,
+        {
+          _id: String(user._id),
+          isActive: true,
+          registrationStatus: 'Registered',
+          attendanceStatus: 'Pending',
+          certificateStatus: 'Pending',
+          updatedAt: user.updatedAt ?? user.createdAt ?? null,
+        },
+        event,
+      ),
     );
   }
 
@@ -394,6 +444,8 @@ export async function toggleAttendeeStatus(id: string, eventId: string, nextStat
     ],
   });
 
+  const event = await findEventById(trimmedEventId);
+
   return {
     eventId: trimmedEventId,
     attendee: mapAttendeeRow(
@@ -405,7 +457,239 @@ export async function toggleAttendeeStatus(id: string, eventId: string, nextStat
         certificateStatus: 'Pending',
         updatedAt: now,
       },
+      event,
     ),
+  };
+}
+
+function formatCurrentTapTime(now = new Date()) {
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(now);
+}
+
+/**
+ * Records a tap-in or tap-out for a student at an event (RFID kiosk / user app).
+ */
+export async function recordAttendanceTapForEvent(input: {
+  eventId: string;
+  rfidNumber: string;
+  eventName?: string;
+  eventDate?: string;
+}) {
+  const trimmedEventId = input.eventId?.trim();
+  const rfid = input.rfidNumber?.trim();
+
+  if (!trimmedEventId) {
+    throw createAppError('ValidationError', 'eventId is required', 400);
+  }
+
+  if (!rfid) {
+    throw createAppError('ValidationError', 'rfidNumber is required', 400);
+  }
+
+  const event = await findEventById(trimmedEventId);
+  const users = await getUsersCollection();
+  const user = await users.findOne({
+    $or: [{ rfidNumber: rfid }, { rfid: rfid }],
+  });
+
+  if (!user) {
+    throw createAppError('NotFoundError', 'No user found for this RFID', 404);
+  }
+
+  const attendance = await getAttendanceCollection();
+  const eventObjectId = toObjectId(trimmedEventId, 'event');
+  const userId = user._id;
+  const now = new Date();
+  const currentTime = formatCurrentTapTime(now);
+
+  const existing = await attendance.findOne({
+    $or: [
+      { userId: String(userId), eventId: trimmedEventId },
+      { userId, eventId: trimmedEventId },
+      { userId: String(userId), eventId: eventObjectId },
+      { userId, eventId: eventObjectId },
+    ],
+  });
+
+  let tapType: 'tap in' | 'tap out';
+
+  if (!existing?.tapIn || existing.tapOut) {
+    tapType = 'tap in';
+
+    if (existing) {
+      await attendance.updateOne(
+        { _id: existing._id },
+        {
+          $set: {
+            tapIn: currentTime,
+            tapOut: null,
+            attendanceStatus: 'Incomplete',
+            certificateStatus: 'Pending',
+            updatedAt: now,
+          },
+        },
+      );
+    } else {
+      await attendance.insertOne({
+        eventId: eventObjectId,
+        userId,
+        eventName: input.eventName ?? event.title ?? event.name,
+        eventDate: input.eventDate ?? formatDateLabel(event.date ?? event.startDate),
+        studentNumber: user.studentNumber ?? user.studentId,
+        rfidNumber: rfid,
+        tapIn: currentTime,
+        tapOut: null,
+        attendanceStatus: 'Incomplete',
+        certificateStatus: 'Pending',
+        registrationStatus: 'Registered',
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  } else {
+    tapType = 'tap out';
+    const nextStatus = deriveAttendanceStatus(
+      { ...existing, tapOut: currentTime },
+      event,
+    );
+
+    await attendance.updateOne(
+      { _id: existing._id },
+      {
+        $set: {
+          tapOut: currentTime,
+          attendanceStatus: nextStatus,
+          updatedAt: now,
+        },
+      },
+    );
+
+    if (nextStatus === 'Completed') {
+      await tryAutoIssueCertificate(trimmedEventId, String(userId));
+    }
+  }
+
+  const refreshed = await attendance.findOne({
+    $or: [
+      { userId: String(userId), eventId: trimmedEventId },
+      { userId, eventId: trimmedEventId },
+      { userId: String(userId), eventId: eventObjectId },
+      { userId, eventId: eventObjectId },
+    ],
+  });
+
+  return {
+    message:
+      tapType === 'tap in'
+        ? `Tapped in at ${currentTime}`
+        : `Tapped out at ${currentTime}`,
+    tapType,
+    currentTime,
+    record: {
+      eventId: trimmedEventId,
+      eventName: input.eventName ?? event.title ?? event.name ?? 'Event',
+      eventDate: input.eventDate ?? formatDateLabel(event.date ?? event.startDate),
+      studentNumber: String(user.studentNumber ?? user.studentId ?? user._id),
+      rfidNumber: rfid,
+      tapIn: refreshed?.tapIn ?? (tapType === 'tap in' ? currentTime : ''),
+      tapOut: refreshed?.tapOut ?? (tapType === 'tap out' ? currentTime : ''),
+      updatedAt: (refreshed?.updatedAt ?? now).toISOString(),
+    },
+  };
+}
+
+/**
+ * Issues a certificate automatically when attendance requirements are met.
+ */
+export async function tryAutoIssueCertificate(eventId: string, userId: string) {
+  const trimmedEventId = eventId?.trim();
+  const trimmedUserId = userId?.trim();
+
+  if (!trimmedEventId || !trimmedUserId) {
+    return { issued: false, reason: 'missing_ids' as const };
+  }
+
+  const event = await findEventById(trimmedEventId);
+  const users = await getUsersCollection();
+  const userObjectId = toObjectId(trimmedUserId, 'user');
+  const user = await users.findOne({ _id: userObjectId });
+
+  if (!user) {
+    return { issued: false, reason: 'user_not_found' as const };
+  }
+
+  const attendance = await getAttendanceCollection();
+  const eventObjectId = toObjectId(trimmedEventId, 'event');
+
+  const attendanceRecord = await attendance.findOne({
+    $or: [
+      { userId: trimmedUserId, eventId: trimmedEventId },
+      { userId: userObjectId, eventId: trimmedEventId },
+      { userId: trimmedUserId, eventId: eventObjectId },
+      { userId: userObjectId, eventId: eventObjectId },
+    ],
+  });
+
+  if (!attendanceRecord) {
+    return { issued: false, reason: 'no_attendance' as const };
+  }
+
+  if (attendanceRecord.certificateId) {
+    return { issued: false, reason: 'already_issued' as const };
+  }
+
+  const status = deriveAttendanceStatus(attendanceRecord, event);
+
+  if (status !== 'Completed') {
+    return { issued: false, reason: status };
+  }
+
+  const templates = await getCertificateTemplatesCollection();
+  const hasTemplate = Boolean(await templates.findOne({ eventId: trimmedEventId }));
+
+  try {
+    await fs.access(DEFAULT_TEMPLATE);
+  } catch {
+    if (!hasTemplate) {
+      return { issued: false, reason: 'no_template' as const };
+    }
+  }
+
+  const result = await generateAndSaveCertificate(trimmedEventId, trimmedUserId);
+
+  const eventTitle = event.title ?? event.name ?? 'your event';
+
+  if (user.email) {
+    await createUserNotification({
+      userEmail: user.email,
+      eventId: trimmedEventId,
+      eventTitle,
+      type: 'certificate_ready',
+      message: `Your e-certificate for "${eventTitle}" is ready to download.`,
+    });
+  }
+
+  const registrations = await getEventRegistrationsCollection();
+  await registrations.updateMany(
+    {
+      eventId: { $in: [trimmedEventId, eventObjectId] },
+      userId: { $in: [trimmedUserId, userObjectId, String(userObjectId)] },
+    },
+    {
+      $set: {
+        certificateId: result.certificateId,
+        certificateStatus: 'issued',
+        updatedAt: new Date(),
+      },
+    },
+  );
+
+  return {
+    issued: true,
+    certificateId: result.certificateId,
   };
 }
 
@@ -426,7 +710,45 @@ function formatTapTime(value: Date | string | null | undefined) {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
-function deriveAttendanceStatus(record: any) {
+function parseRequiredMinutes(minAttendance?: string) {
+  if (!minAttendance) return 0;
+
+  const value = minAttendance.toLowerCase();
+
+  if (value.includes('none') || value.includes('tba')) return 0;
+
+  const number = Number(value.match(/\d+(\.\d+)?/)?.[0] || 0);
+
+  if (value.includes('hour')) return number * 60;
+  if (value.includes('min')) return number;
+
+  return number;
+}
+
+function getMinutesFromTimeLabel(time?: string) {
+  if (!time) return null;
+
+  const parsed = new Date(`January 1, 2026 ${time}`);
+
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  return parsed.getHours() * 60 + parsed.getMinutes();
+}
+
+function getTotalAttendedMinutes(record: any) {
+  const tapIn = record.tapIn ?? record.attendance?.tapIn ?? null;
+  const tapOut = record.tapOut ?? record.attendance?.tapOut ?? null;
+  const tapInMinutes = getMinutesFromTimeLabel(tapIn);
+  const tapOutMinutes = getMinutesFromTimeLabel(tapOut);
+
+  if (tapInMinutes === null || tapOutMinutes === null) {
+    return 0;
+  }
+
+  return Math.max(0, tapOutMinutes - tapInMinutes);
+}
+
+function deriveAttendanceStatus(record: any, event?: any) {
   const tapIn = record.tapIn ?? record.attendance?.tapIn ?? null;
   const tapOut = record.tapOut ?? record.attendance?.tapOut ?? null;
 
@@ -442,16 +764,32 @@ function deriveAttendanceStatus(record: any) {
     return 'Completed';
   }
 
-  if (tapIn && tapOut) return 'Completed';
   if (tapIn && !tapOut) return 'Incomplete';
+
+  if (tapIn && tapOut) {
+    const requiredMinutes = parseRequiredMinutes(
+      event?.minAttendance ?? event?.minimumAttendanceTime ?? event?.minAttendanceTime,
+    );
+
+    if (requiredMinutes > 0) {
+      const attendedMinutes = getTotalAttendedMinutes(record);
+      if (attendedMinutes < requiredMinutes) {
+        return 'Undertime';
+      }
+    }
+
+    return 'Completed';
+  }
 
   return 'Pending';
 }
 
-function mapCertAttendanceRecord(user: any, attendance: any) {
-  const attendanceStatus = deriveAttendanceStatus(attendance);
+function mapCertAttendanceRecord(user: any, attendance: any, event?: any) {
+  const attendanceStatus = deriveAttendanceStatus(attendance, event);
+  const userId = String(user._id);
 
   return {
+    userId,
     studentNumber: String(user.studentNumber ?? user.studentId ?? user.idNumber ?? user._id),
     date: attendance.createdAt
       ? new Intl.DateTimeFormat('en-US', {
@@ -546,7 +884,7 @@ export async function getCertAttendanceByEvent(
       continue;
     }
 
-    records.push(mapCertAttendanceRecord(user, row));
+    records.push(mapCertAttendanceRecord(user, row, event));
   }
 
   for (const user of userRows) {
@@ -564,10 +902,14 @@ export async function getCertAttendanceByEvent(
     }
 
     records.push(
-      mapCertAttendanceRecord(user, {
-        createdAt: null,
-        attendanceStatus: 'Pending',
-      }),
+      mapCertAttendanceRecord(
+        user,
+        {
+          createdAt: null,
+          attendanceStatus: 'Pending',
+        },
+        event,
+      ),
     );
   }
 
@@ -765,7 +1107,7 @@ export async function generateAndSaveCertificate(
     throw createAppError('NotFoundError', 'Attendance record not found', 404);
   }
 
-  const status = deriveAttendanceStatus(attendanceRecord);
+  const status = deriveAttendanceStatus(attendanceRecord, event);
 
   if (status !== 'Completed') {
     throw createAppError(
@@ -785,14 +1127,14 @@ export async function generateAndSaveCertificate(
   const timestamp = now.getTime().toString(36).toUpperCase();
   const certificateId = `DC-${shortEventId}-${shortUserId}-${timestamp}`;
 
-  const eventStart = event.startTime ?? event.startDate ?? event.eventDate ?? null;
+  const summary = mapEventSummary(event);
 
   const certData: CertificateData = {
     studentName: getUserDisplayName(user) || 'Student',
     eventTitle: event.title ?? event.name ?? 'Untitled Event',
-    eventDate: formatDateLabel(eventStart),
-    organizer: event.organizerName ?? event.organizer?.name ?? 'Unknown organizer',
-    organization: event.organizationName ?? event.organization?.name ?? '',
+    eventDate: summary.dateLabel,
+    organizer: summary.organizer,
+    organization: summary.organization,
     certificateId,
   };
 

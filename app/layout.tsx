@@ -1,23 +1,6 @@
 import type { Metadata } from "next";
-import { DM_Sans, Lato, Montserrat, Poppins } from "next/font/google";
+import { Montserrat, Poppins } from "next/font/google";
 import "./globals.css";
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-dm-sans",
-  display: "swap",
-  adjustFontFallback: true,
-});
-
-const lato = Lato({
-  subsets: ["latin"],
-  weight: ["100", "300", "400", "700", "900"],
-  style: ["normal", "italic"],
-  variable: "--font-lato",
-  display: "swap",
-  adjustFontFallback: true,
-});
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -62,7 +45,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${dmSans.variable} ${lato.variable} ${montserrat.variable} ${poppins.variable} ${dmSans.className}`}>
+      <body className={`${montserrat.variable} ${poppins.variable} ${poppins.className}`}>
         {children}
       </body>
     </html>

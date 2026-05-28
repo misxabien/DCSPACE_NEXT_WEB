@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MongoClient, ObjectId } from 'mongodb';
+import { createUserNotification } from '@/lib/admin/db/user-notifications';
 
 const mongoUri = process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017';
 const mongoDbName = process.env.MONGODB_DB_NAME ?? 'dcspace';
@@ -118,16 +119,25 @@ function getAllowedActions(status: string) {
 }
 
 function mapEventCard(event: any) {
-  const start = event.startTime ?? event.startDate ?? event.eventDate ?? null;
+  const start = event.startTime ?? event.startDate ?? event.eventDate ?? event.date ?? null;
   const end = event.endTime ?? event.endDate ?? null;
+  const timeDisplay =
+    typeof event.startTime === 'string' &&
+    event.startTime.trim() &&
+    typeof event.endTime === 'string' &&
+    event.endTime.trim()
+      ? `${event.startTime.trim()} - ${event.endTime.trim()}`
+      : toTimeLabel(start, end);
 
   return {
     id: String(event._id),
     title: event.title ?? event.name ?? 'Untitled event',
-    date: toDateLabel(start),
-    time: toTimeLabel(start, end),
+    date: event.date ? toDateLabel(event.date) : toDateLabel(start),
+    time: timeDisplay,
     venue: event.venue ?? event.location ?? 'TBA',
     organizer:
+      event.requester ??
+      event.courseOrganizer ??
       event.representativeName ??
       event.organizerName ??
       event.organizer?.name ??
@@ -144,34 +154,57 @@ function mapEventCard(event: any) {
 }
 
 function mapEventDetail(event: any) {
-  const start = event.startTime ?? event.startDate ?? event.eventDate ?? null;
+  const start = event.startTime ?? event.startDate ?? event.eventDate ?? event.date ?? null;
   const end = event.endTime ?? event.endDate ?? null;
   const status = normalizeEventStatus(event.status);
   const allowedActions = getAllowedActions(status);
+  const latestComment = Array.isArray(event.adminComments)
+    ? event.adminComments[event.adminComments.length - 1]
+    : null;
 
   return {
     id: String(event._id),
     title: event.title ?? event.name ?? 'Untitled event',
     description: event.description ?? '',
-    date: toDateLabel(start),
+    date: event.date ? toDateLabel(event.date) : toDateLabel(start),
     venue: event.venue ?? event.location ?? 'TBA',
-    startTime: toTimeLabel(start, null),
-    endTime: toTimeLabel(end, null),
-    organizer: event.organizerName ?? event.organizer?.name ?? 'Unknown organizer',
-    campus: event.campus ?? 'N/A',
+    startTime:
+      typeof event.startTime === 'string' && event.startTime.trim()
+        ? event.startTime.trim()
+        : toTimeLabel(start, null),
+    endTime:
+      typeof event.endTime === 'string' && event.endTime.trim()
+        ? event.endTime.trim()
+        : toTimeLabel(end, null),
+    organizer:
+      event.requester ??
+      event.courseOrganizer ??
+      event.organizerName ??
+      event.organizer?.name ??
+      'Unknown organizer',
+    campus: event.school ?? event.campus ?? 'N/A',
     department: event.department ?? 'N/A',
-    course: event.course ?? 'N/A',
-    organization: event.organizationName ?? event.organization?.name ?? 'N/A',
+    course: event.courseCode ?? event.course ?? 'N/A',
+    organization:
+      event.organizationName ??
+      event.organizationPart ??
+      event.courseOrganizer ??
+      event.organization?.name ??
+      'N/A',
     type: event.type ?? event.eventType ?? 'N/A',
     duration: event.totalDuration ?? event.duration ?? 'N/A',
-    minimumAttendanceTime: event.minimumAttendanceTime ?? event.minAttendanceTime ?? 'N/A',
+    minimumAttendanceTime:
+      event.minimumAttendanceTime ?? event.minAttendance ?? event.minAttendanceTime ?? 'N/A',
+    submittedByEmail: event.submittedByEmail ?? null,
+    latestAdminComment: latestComment?.message ?? '',
     surveyLink: event.surveyLink ?? null,
     submittedAt: event.submittedAt ?? event.createdAt ?? null,
     status,
     canModerate: status !== 'approved',
     allowedActions,
     attachments: {
-      eventPoster: event.eventPoster ?? event.attachments?.eventPoster ?? null,
+      eventPoster:
+        event.posterImage ?? event.eventPoster ?? event.attachments?.eventPoster ?? null,
       roomReservationForm:
         event.roomReservationForm ?? event.attachments?.roomReservationForm ?? null,
       approvedConceptPaper:
@@ -208,8 +241,28 @@ export async function getEvents(params: GetEventsParams) {
   if (status === 'pending') {
     andConditions.push({
       status: {
-        $in: ['pending', 'pending_approval', 'changes_requested', 'PENDING', 'PENDING_APPROVAL'],
+        $nin: ['approved', 'rejected'],
       },
+    });
+    andConditions.push({
+      $or: [
+        {
+          status: {
+            $in: [
+              'pending',
+              'pending_approval',
+              'changes_requested',
+              'draft',
+              'Pending',
+              'PENDING',
+              'PENDING_APPROVAL',
+            ],
+          },
+        },
+        { status: { $exists: false } },
+        { status: null },
+        { status: '' },
+      ],
     });
   }
 
@@ -226,6 +279,9 @@ export async function getEvents(params: GetEventsParams) {
       $or: [
         { title: { $regex: search, $options: 'i' } },
         { name: { $regex: search, $options: 'i' } },
+        { requester: { $regex: search, $options: 'i' } },
+        { venue: { $regex: search, $options: 'i' } },
+        { submittedByEmail: { $regex: search, $options: 'i' } },
       ],
     });
   }
@@ -321,8 +377,33 @@ export async function updateEventStatus(id: string, status: string, comment?: st
     };
   }
 
+  if (normalizedStatus === 'changes_requested' && comment?.trim()) {
+    (updateOperation.$set as Record<string, unknown>).adminChangeRequest = comment.trim();
+  }
+
   await events.updateOne({ _id: objectId }, updateOperation as any);
   const updatedEvent = await events.findOne({ _id: objectId });
+
+  const organizerEmail = String(updatedEvent?.submittedByEmail || '').trim().toLowerCase();
+  const eventTitle = updatedEvent?.title ?? updatedEvent?.name ?? 'Event';
+  const eventId = String(updatedEvent?._id ?? id);
+
+  if (organizerEmail) {
+    const notificationType =
+      normalizedStatus === 'approved'
+        ? 'event_approved'
+        : normalizedStatus === 'rejected'
+          ? 'event_rejected'
+          : 'event_changes_requested';
+
+    await createUserNotification({
+      userEmail: organizerEmail,
+      eventId,
+      eventTitle,
+      type: notificationType,
+      message: comment?.trim() || undefined,
+    });
+  }
 
   return mapEventDetail(updatedEvent);
 }

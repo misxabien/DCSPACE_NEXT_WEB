@@ -46,6 +46,20 @@ async function getEventsCollection() {
   return db.collection<any>('events');
 }
 
+async function getEventRegistrationsCollection() {
+  const db = await getDatabase();
+  return db.collection<any>('event_registrations');
+}
+
+function isOrganizerUser(user: any) {
+  const orgRole = String(user.organizationRole || '').toLowerCase();
+  return user.role === 'organizer' || orgRole.includes('officer');
+}
+
+function resolveAccountStatus(user: any) {
+  return user.isActive === false ? 'inactive' : 'active';
+}
+
 function hashPassword(password: string, salt = randomBytes(16).toString('hex')) {
   const hash = scryptSync(password, salt, 64).toString('hex');
   return `${salt}:${hash}`;
@@ -135,26 +149,38 @@ function splitName(name: string) {
   return { firstName, lastName };
 }
 
-function mapUserRecord(user: any) {
+function mapUserRecord(user: any, registeredEventIds: string[] = []) {
   const timestamp = formatTimestamp(user.updatedAt ?? user.createdAt ?? null);
   const rfid = user.rfid ?? user.rfidNumber ?? null;
   const registrationStatus = user.registrationStatus ?? (rfid ? 'Registered' : 'Not Registered');
+  const organizer = isOrganizerUser(user);
+  const accountStatus = resolveAccountStatus(user);
+  const eventIds =
+    registeredEventIds.length > 0
+      ? registeredEventIds
+      : Array.isArray(user.assignedEventIds)
+        ? user.assignedEventIds
+        : [];
 
   return {
     id: String(user._id),
     name: user.name ?? user.fullName ?? [user.firstName, user.lastName].filter(Boolean).join(' ') ?? '',
     email: user.email ?? '',
-    role: user.role ?? 'student',
+    role: organizer ? 'organizer' : user.role === 'faculty' ? 'faculty' : 'student',
+    roleLabel: organizer ? 'Student Organizer' : user.role === 'faculty' ? 'Faculty' : 'Student',
+    organizationRole: user.organizationRole ?? '',
     organization: user.organizationName ?? user.organizationPart ?? user.organization?.name ?? 'Unassigned',
     rfid,
     rfidNumber: rfid,
     registrationStatus,
     isActive: user.isActive ?? true,
-    status: registrationStatus,
+    accountStatus,
+    status: accountStatus,
     studentId: user.studentId ?? user.studentNumber ?? user.idNumber ?? null,
     studentNumber: user.studentNumber ?? user.studentId ?? user.idNumber ?? null,
     course: user.course ?? '',
-    assignedEventIds: Array.isArray(user.assignedEventIds) ? user.assignedEventIds : [],
+    assignedEventIds: eventIds,
+    registeredEventIds: eventIds,
     timestamp,
     actions: {
       canEdit: true,
@@ -199,6 +225,8 @@ export type GetUsersParams = {
   role?: string | null;
   status?: string | null;
   organization?: string | null;
+  eventId?: string | null;
+  registeredOnly?: string | boolean | null;
   page?: number | null;
   limit?: number | null;
 };
@@ -380,11 +408,66 @@ export async function getUsers(params: GetUsersParams) {
   const role = normalizeFilter(params.role);
   const status = normalizeFilter(params.status);
   const organization = normalizeFilter(params.organization);
+  const eventId = normalizeFilter(params.eventId);
+  const registeredOnly =
+    params.registeredOnly !== false &&
+    params.registeredOnly !== 'false' &&
+    params.registeredOnly !== '0';
   const page = Math.max(Number(params.page ?? 1) || 1, 1);
   const limit = Math.max(Number(params.limit ?? 10) || 10, 1);
   const skip = (page - 1) * limit;
 
-  const andConditions: Record<string, unknown>[] = [];
+  const registrationMap = new Map<string, string[]>();
+
+  if (registeredOnly || eventId) {
+    const registrations = await getEventRegistrationsCollection();
+    const regMatch: Record<string, unknown> = {};
+    if (eventId) {
+      regMatch.eventId = eventId;
+    }
+
+    const registrationRows = await registrations.find(regMatch).sort({ createdAt: -1 }).toArray();
+
+    for (const row of registrationRows) {
+      const userId = String(row.userId || '').trim();
+      const registeredEventId = String(row.eventId || '').trim();
+      if (!userId) {
+        continue;
+      }
+      const existing = registrationMap.get(userId) ?? [];
+      if (registeredEventId && !existing.includes(registeredEventId)) {
+        existing.push(registeredEventId);
+      }
+      registrationMap.set(userId, existing);
+    }
+
+    if (registeredOnly && registrationMap.size === 0) {
+      return {
+        users: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0,
+          hasPrevious: false,
+          hasNext: false,
+          showingFrom: 0,
+          showingTo: 0,
+          summary: 'Showing 0 to 0 of 0 entries',
+          entriesPerPageOptions: [10, 25, 50, 100],
+        },
+      };
+    }
+  }
+
+  const andConditions: Record<string, unknown>[] = [{ role: { $ne: 'admin' } }];
+
+  if (registeredOnly && registrationMap.size > 0) {
+    const registeredUserIds = [...registrationMap.keys()]
+      .filter((id) => ObjectId.isValid(id))
+      .map((id) => new ObjectId(id));
+    andConditions.push({ _id: { $in: registeredUserIds } });
+  }
 
   if (search) {
     andConditions.push({
@@ -403,16 +486,31 @@ export async function getUsers(params: GetUsersParams) {
   }
 
   if (role) {
-    andConditions.push({
-      role: role.toLowerCase(),
-    });
+    const normalizedRole = role.toLowerCase();
+    if (normalizedRole === 'organizer') {
+      andConditions.push({
+        $or: [
+          { role: 'organizer' },
+          { organizationRole: { $regex: 'officer', $options: 'i' } },
+        ],
+      });
+    } else if (normalizedRole === 'student') {
+      andConditions.push({
+        role: { $in: ['student', 'faculty'] },
+        organizationRole: { $not: { $regex: 'officer', $options: 'i' } },
+      });
+    } else {
+      andConditions.push({ role: normalizedRole });
+    }
   }
 
   if (status) {
     const normalizedStatus = status.toLowerCase();
 
-    if (normalizedStatus === 'active' || normalizedStatus === 'inactive') {
-      andConditions.push({ isActive: normalizedStatus === 'active' });
+    if (normalizedStatus === 'active') {
+      andConditions.push({ isActive: { $ne: false } });
+    } else if (normalizedStatus === 'inactive') {
+      andConditions.push({ isActive: false });
     } else {
       andConditions.push({ registrationStatus: status });
     }
@@ -422,6 +520,7 @@ export async function getUsers(params: GetUsersParams) {
     andConditions.push({
       $or: [
         { organizationName: { $regex: organization, $options: 'i' } },
+        { organizationPart: { $regex: organization, $options: 'i' } },
         { department: { $regex: organization, $options: 'i' } },
       ],
     });
@@ -441,7 +540,9 @@ export async function getUsers(params: GetUsersParams) {
   const showingTo = total === 0 ? 0 : Math.min(skip + rows.length, total);
 
   return {
-    users: rows.map(mapUserRecord),
+    users: rows.map((user) =>
+      mapUserRecord(user, registrationMap.get(String(user._id)) ?? []),
+    ),
     pagination: {
       page,
       limit,

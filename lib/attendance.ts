@@ -38,7 +38,10 @@ export type RegisteredEvent = {
   certificate?: string;
   minAttendance?: string;
   duration?: string;
+  surveyFormLink?: string;
+  announcements?: string;
   requirements?: string[];
+  bannerDataUrl?: string;
   requirementFile?: UploadedRequirementFile;
   requirementFiles?: UploadedRequirementFile[];
 };
@@ -79,6 +82,24 @@ export type AttendanceTapResult = {
   message: string;
 };
 
+function isBrowser() {
+  return typeof window !== "undefined";
+}
+
+const guestAttendanceUser: AttendanceUser = {
+  firstName: "",
+  lastName: "",
+  studentNumber: DEFAULT_STUDENT_NUMBER,
+  studentEmail: "",
+  rfidNumber: "",
+  course: "",
+  school: "",
+  organizationPart: "",
+  organizationRole: "",
+  accountKey: "guest",
+  isLoggedIn: false,
+};
+
 function readJson<T>(storage: Storage, key: string, fallback: T): T {
   try {
     const raw = storage.getItem(key);
@@ -102,6 +123,7 @@ function normalizeRfid(value: string) {
 }
 
 export function readRegisteredEvents() {
+  if (!isBrowser()) return [];
   return readJson<RegisteredEvent[]>(window.localStorage, REGISTERED_EVENTS_KEY, []);
 }
 
@@ -147,6 +169,10 @@ export function signOutAttendanceUser() {
 }
 
 export function getCurrentAttendanceUser(): AttendanceUser {
+  if (!isBrowser()) {
+    return guestAttendanceUser;
+  }
+
   const sessionUser = readJson<Partial<AttendanceUser>>(window.sessionStorage, CURRENT_USER_KEY, {});
   const studentEmail =
     present(sessionUser.studentEmail) || present(window.localStorage.getItem("dcspaceStudentEmail"));

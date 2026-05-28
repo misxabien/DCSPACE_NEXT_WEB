@@ -25,8 +25,10 @@ export async function GET(request: NextRequest) {
       role: searchParams.get("role"),
       status: searchParams.get("status"),
       organization: searchParams.get("organization"),
+      eventId: searchParams.get("eventId"),
+      registeredOnly: searchParams.get("registeredOnly") ?? true,
       page: Number(searchParams.get("page") ?? 1),
-      limit: Number(searchParams.get("limit") ?? 10),
+      limit: Number(searchParams.get("limit") ?? 100),
     });
 
     return NextResponse.json(users, { status: 200 });

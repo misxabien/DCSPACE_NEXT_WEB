@@ -1,80 +1,65 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { postAttendanceRows } from "@/lib/admin/ecertRows";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useShowStatus } from "@/contexts/ShowStatusContext";
 
-const ECERT_EVENTS = [
-  {
-    name: "Digital Campus Ugnayan Seminar",
-    date: "April 15, 2026 · 1:00 PM – 5:00 PM",
-    venue: "DRA Hall",
-    organizer: "Misxa Bien Germino",
-  },
-  {
-    name: "Digital Skills Bootcamp",
-    date: "May 2, 2026 · 9:00 AM – 4:00 PM",
-    venue: "Computer Lab 3",
-    organizer: "Amira Marqueses",
-  },
-  {
-    name: "Student Research Colloquium",
-    date: "May 18, 2026 · 2:00 PM – 6:00 PM",
-    venue: "Main Auditorium",
-    organizer: "Paul Cielo",
-  },
-];
+function buildDetailFields(event) {
+  if (!event) return [];
+  return [
+    { label: "Date", value: event.dateLabel || event.date || "—" },
+    { label: "Venue", value: event.venue || "—" },
+    { label: "Organizer", value: event.organizer || "—" },
+    { label: "Start time", value: event.startTime || "—" },
+    { label: "End time", value: event.endTime || "—" },
+    { label: "Course", value: event.course || "—" },
+    { label: "Organization", value: event.organization || "—" },
+    { label: "Minimum attendance", value: event.minAttendance || "—" },
+  ];
+}
 
-const EVENT_META = [
-  { label: "Date", value: "April 15, 2026" },
-  { label: "Venue", value: "DRA Hall" },
-  { label: "Organizer", value: "Misxa Bien Germino" },
-  { label: "Start time", value: "1:00 PM" },
-  { label: "End time", value: "5:00 PM" },
-  { label: "Course", value: "BSIT" },
-  { label: "Organization", value: "Domini Xode" },
-];
+function attendanceChipClass(status) {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "completed") return "completed";
+  if (normalized === "incomplete") return "incomplete";
+  if (normalized === "undertime") return "incomplete";
+  return "pending";
+}
 
-const STUDENT_LOOKUP = {
-  "2023000": { name: "Misxa Bien Germino", course: "BSIT" },
-  "2023001": { name: "Gwyneth Mucio", course: "BSIT" },
-  "2023002": { name: "Paul Cielo", course: "BSIT" },
-  "2023003": { name: "Amira Marqueses", course: "BSIT" },
-  "2023004": { name: "Khrystelle Esplana", course: "BSIT" },
-  "2023005": { name: "Janelle Cruz", course: "BSCS" },
-  "2023006": { name: "Miguel Ramos", course: "BSCS" },
-  "2023007": { name: "Nicole Tan", course: "BSEMC" },
-  "2023008": { name: "Daniel Reyes", course: "BSEMC" },
-  "2023009": { name: "Catherine Lim", course: "BSIT" },
-};
-
-function EcertTableBody({ rows, onDownload }) {
+function EcertTableBody({ rows, downloadingId, onDownload }) {
   return (
     <>
-      {rows.map((row, idx) => {
-        const attendanceClass = row[5].toLowerCase();
+      {rows.map((row) => {
+        const attendanceClass = attendanceChipClass(row.attendanceStatus);
+        const registrationClass = String(row.status || "pending").toLowerCase();
         const certCell =
-          row[6] === "Download" ? (
-            <button className="btn-download" type="button" onClick={onDownload}>
-              Download
+          row.canDownload || row.canGenerate ? (
+            <button
+              className="btn-download"
+              type="button"
+              disabled={downloadingId === row.userId}
+              onClick={() => onDownload(row)}
+            >
+              {downloadingId === row.userId ? "…" : "Download"}
             </button>
           ) : (
             <span className="dash-placeholder">—</span>
           );
+
         return (
-          <tr key={`${row[0]}-${idx}`}>
-            <td>{row[0]}</td>
-            <td>{row[1]}</td>
+          <tr key={row.userId}>
+            <td>{row.id}</td>
+            <td>{row.timestamp?.display ?? "—"}</td>
             <td>
-              <span className={`ecert-chip ecert-chip--registration ${row[2].toLowerCase()}`}>
-                {row[2]}
+              <span className={`ecert-chip ecert-chip--registration ${registrationClass}`}>
+                {row.status}
               </span>
             </td>
-            <td>{row[3]}</td>
-            <td>{row[4]}</td>
+            <td>{row.tapIn || "—"}</td>
+            <td>{row.tapOut || "—"}</td>
             <td>
               <span className={`ecert-chip ecert-chip--attendance ${attendanceClass}`}>
-                {row[5]}
+                {row.attendanceStatus}
               </span>
             </td>
             <td>{certCell}</td>
@@ -87,10 +72,102 @@ function EcertTableBody({ rows, onDownload }) {
 
 export function EcertView({ openAttendance = false }) {
   const showStatus = useShowStatus();
+  const templateInputRef = useRef(null);
+
   const [query, setQuery] = useState("");
+  const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState("");
+
   const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [attendees, setAttendees] = useState([]);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
   const [attendanceQuery, setAttendanceQuery] = useState("");
-  const [selectedEvent, setSelectedEvent] = useState(ECERT_EVENTS[0]);
+  const [downloadingId, setDownloadingId] = useState(null);
+
+  const [templateInfo, setTemplateInfo] = useState(null);
+  const [templateUploading, setTemplateUploading] = useState(false);
+
+  const loadEvents = useCallback(async () => {
+    setEventsLoading(true);
+    setEventsError("");
+
+    try {
+      const params = new URLSearchParams();
+      if (query.trim()) params.set("search", query.trim());
+
+      const response = await fetch(`/api/admin/ecert/events?${params.toString()}`);
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to load events.");
+      }
+
+      setEvents(payload.events || []);
+    } catch (error) {
+      setEvents([]);
+      setEventsError(error instanceof Error ? error.message : "Failed to load events.");
+    } finally {
+      setEventsLoading(false);
+    }
+  }, [query]);
+
+  useEffect(() => {
+    void loadEvents();
+  }, [loadEvents]);
+
+  const loadTemplateInfo = useCallback(async (eventId) => {
+    if (!eventId) return;
+
+    try {
+      const response = await fetch(
+        `/api/admin/certificates/template?eventId=${encodeURIComponent(eventId)}`,
+      );
+      const payload = await response.json().catch(() => ({}));
+
+      if (response.ok) {
+        setTemplateInfo(payload);
+      }
+    } catch {
+      setTemplateInfo(null);
+    }
+  }, []);
+
+  const loadEventDetail = useCallback(
+    async (eventId, search = "") => {
+      if (!eventId) return;
+
+      setDetailLoading(true);
+      setDetailError("");
+
+      try {
+        const params = new URLSearchParams({ eventId });
+        if (search.trim()) params.set("search", search.trim());
+
+        const response = await fetch(`/api/admin/certificates?${params.toString()}`);
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(payload.error || "Failed to load attendance records.");
+        }
+
+        setSelectedEvent(payload.event || null);
+        setAttendees(payload.attendees || []);
+      } catch (error) {
+        setSelectedEvent(null);
+        setAttendees([]);
+        setDetailError(
+          error instanceof Error ? error.message : "Failed to load attendance records.",
+        );
+      } finally {
+        setDetailLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!openAttendance) return;
@@ -99,40 +176,118 @@ export function EcertView({ openAttendance = false }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once when opened from Events
   }, [openAttendance]);
 
-  const visibleCards = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return ECERT_EVENTS.filter((ev) => !q || ev.name.toLowerCase().includes(q));
-  }, [query]);
+  useEffect(() => {
+    if (!selectedEventId || !detailOpen) return;
+    void loadEventDetail(selectedEventId);
+    void loadTemplateInfo(selectedEventId);
+  }, [selectedEventId, detailOpen, loadEventDetail, loadTemplateInfo]);
+
+  const visibleCards = useMemo(() => events, [events]);
+
+  const filteredAttendees = useMemo(() => {
+    const q = attendanceQuery.trim().toLowerCase();
+    if (!q) return attendees;
+
+    return attendees.filter((row) => {
+      return (
+        row.id.toLowerCase().includes(q) ||
+        row.name.toLowerCase().includes(q) ||
+        row.email.toLowerCase().includes(q) ||
+        row.organization.toLowerCase().includes(q)
+      );
+    });
+  }, [attendees, attendanceQuery]);
+
+  const detailFields = useMemo(() => buildDetailFields(selectedEvent), [selectedEvent]);
 
   function openEvent(ev) {
+    setSelectedEventId(ev.id);
     setSelectedEvent(ev);
     setDetailOpen(true);
     setAttendanceQuery("");
     showStatus("Viewing attendance");
   }
 
-  const filteredAttendanceRows = useMemo(() => {
-    const q = attendanceQuery.trim().toLowerCase();
-    if (!q) return postAttendanceRows;
+  async function handleTemplateUpload(file) {
+    if (!selectedEventId || !file) return;
 
-    return postAttendanceRows.filter((row) => {
-      const studentNumber = row[0];
-      const profile = STUDENT_LOOKUP[studentNumber] ?? { name: "", course: "" };
-      return (
-        studentNumber.toLowerCase().includes(q) ||
-        profile.name.toLowerCase().includes(q) ||
-        profile.course.toLowerCase().includes(q)
+    setTemplateUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("eventId", selectedEventId);
+      formData.append("template", file);
+
+      const response = await fetch("/api/admin/certificates/template", {
+        method: "POST",
+        body: formData,
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to upload template.");
+      }
+
+      setTemplateInfo(payload);
+      showStatus("Certificate template uploaded");
+    } catch (error) {
+      showStatus(
+        error instanceof Error ? error.message : "Failed to upload certificate template.",
       );
-    });
-  }, [attendanceQuery]);
+    } finally {
+      setTemplateUploading(false);
+      if (templateInputRef.current) {
+        templateInputRef.current.value = "";
+      }
+    }
+  }
+
+  async function handleDownload(row) {
+    if (!selectedEventId || !row.userId) return;
+
+    if (!row.canDownload && !row.canGenerate) {
+      showStatus("Certificate not available yet");
+      return;
+    }
+
+    setDownloadingId(row.userId);
+
+    try {
+      const response = await fetch("/api/admin/certificates/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: selectedEventId,
+          userId: row.userId,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to generate certificate.");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `certificate-${row.id}.pdf`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+
+      showStatus(`Certificate downloaded for ${row.name}`);
+      void loadEventDetail(selectedEventId, attendanceQuery);
+    } catch (error) {
+      showStatus(error instanceof Error ? error.message : "Failed to download certificate.");
+    } finally {
+      setDownloadingId(null);
+    }
+  }
 
   return (
     <section className="view ecert-view" id="ecertView">
       <section className="ecert-wrap">
-        <div
-          className={`ecert-list-view${detailOpen ? " hidden" : ""}`}
-          id="ecertListView"
-        >
+        <div className={`ecert-list-view${detailOpen ? " hidden" : ""}`} id="ecertListView">
           <div className="ecert-search-row">
             <label className="search-wrap">
               <span aria-hidden="true">
@@ -151,24 +306,39 @@ export function EcertView({ openAttendance = false }) {
                 type="search"
                 placeholder="Search events"
                 value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  const q = e.target.value.trim().toLowerCase();
-                  const n = ECERT_EVENTS.filter(
-                    (ev) => !q || ev.name.toLowerCase().includes(q),
-                  ).length;
-                  showStatus(`${n} e-certificate event(s) shown`);
-                }}
+                onChange={(e) => setQuery(e.target.value)}
               />
             </label>
           </div>
 
+          {eventsLoading ? (
+            <p className="admin-muted">Loading approved events…</p>
+          ) : null}
+
+          {eventsError ? <p className="admin-error">{eventsError}</p> : null}
+
+          {!eventsLoading && !eventsError && visibleCards.length === 0 ? (
+            <p className="admin-muted">No approved events found.</p>
+          ) : null}
+
           <div className="ecert-list" id="ecertList">
             {visibleCards.map((ev) => (
-              <article key={ev.name} className="event-card" data-ecert-name={ev.name}>
-                <div className="event-thumb">Image placeholder</div>
+              <article key={ev.id} className="event-card" data-ecert-id={ev.id}>
+                <div className="event-thumb">
+                  {ev.posterImage ? (
+                    <Image
+                      src={ev.posterImage}
+                      alt=""
+                      width={82}
+                      height={82}
+                      unoptimized
+                    />
+                  ) : (
+                    "Image placeholder"
+                  )}
+                </div>
                 <div className="event-info">
-                  <h3>{ev.name}</h3>
+                  <h3>{ev.title}</h3>
                   <p>{ev.date}</p>
                   <p>{ev.venue}</p>
                   <p>{ev.organizer}</p>
@@ -185,27 +355,57 @@ export function EcertView({ openAttendance = false }) {
           </div>
         </div>
 
-        <div
-          className={`ecert-detail-view${detailOpen ? "" : " hidden"}`}
-          id="ecertDetailView"
-        >
+        <div className={`ecert-detail-view${detailOpen ? "" : " hidden"}`} id="ecertDetailView">
           <article className="ecert-detail-card">
             <header className="ecert-detail-card__header">
               <p className="ecert-detail-card__eyebrow">Event attendance</p>
-              <button
-                className="btn-sheets"
-                type="button"
-                id="viewInSheetsBtn"
-                onClick={() => showStatus("Opening sheet view")}
-              >
-                View in Sheets
-              </button>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <button
+                  className="btn-sheets"
+                  type="button"
+                  onClick={() => {
+                    setDetailOpen(false);
+                    setSelectedEventId(null);
+                    showStatus("Back to events");
+                  }}
+                >
+                  Back
+                </button>
+                <label className="btn-sheets" style={{ cursor: "pointer" }}>
+                  {templateUploading
+                    ? "Uploading…"
+                    : templateInfo?.hasCustomTemplate
+                      ? "Replace template"
+                      : "Upload template"}
+                  <input
+                    ref={templateInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    hidden
+                    disabled={templateUploading || !selectedEventId}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void handleTemplateUpload(file);
+                    }}
+                  />
+                </label>
+              </div>
             </header>
 
-            <h2 className="ecert-detail-card__title">{selectedEvent.name}</h2>
+            <h2 className="ecert-detail-card__title">
+              {selectedEvent?.title ?? "Event details"}
+            </h2>
+
+            {templateInfo ? (
+              <p className="admin-muted" style={{ marginBottom: "12px" }}>
+                {templateInfo.hasCustomTemplate
+                  ? `Custom template: ${templateInfo.fileName ?? "uploaded"}`
+                  : "Using default certificate template"}
+              </p>
+            ) : null}
 
             <dl className="ecert-meta-grid">
-              {EVENT_META.map((item) => (
+              {detailFields.map((item) => (
                 <div key={item.label} className="ecert-meta-field">
                   <dt>{item.label}</dt>
                   <dd>{item.value}</dd>
@@ -219,7 +419,12 @@ export function EcertView({ openAttendance = false }) {
                   <span aria-hidden="true">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                       <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-                      <path d="M20 20l-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <path
+                        d="M20 20l-3-3"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
                     </svg>
                   </span>
                   <input
@@ -227,23 +432,16 @@ export function EcertView({ openAttendance = false }) {
                     type="search"
                     placeholder="Search name, course, or student number"
                     value={attendanceQuery}
-                    onChange={(e) => {
-                      setAttendanceQuery(e.target.value);
-                      const q = e.target.value.trim().toLowerCase();
-                      const count = postAttendanceRows.filter((row) => {
-                        const profile = STUDENT_LOOKUP[row[0]] ?? { name: "", course: "" };
-                        return (
-                          !q ||
-                          row[0].toLowerCase().includes(q) ||
-                          profile.name.toLowerCase().includes(q) ||
-                          profile.course.toLowerCase().includes(q)
-                        );
-                      }).length;
-                      showStatus(`${count} attendee(s) shown`);
-                    }}
+                    onChange={(e) => setAttendanceQuery(e.target.value)}
                   />
                 </label>
               </div>
+
+              {detailLoading ? (
+                <p className="admin-muted">Loading attendees…</p>
+              ) : null}
+
+              {detailError ? <p className="admin-error">{detailError}</p> : null}
 
               <div className="ecert-table-wrap">
                 <table className="ecert-table">
@@ -259,10 +457,17 @@ export function EcertView({ openAttendance = false }) {
                     </tr>
                   </thead>
                   <tbody id="ecertTableBody">
-                    <EcertTableBody
-                      rows={filteredAttendanceRows}
-                      onDownload={() => showStatus("E-certificate downloaded")}
-                    />
+                    {!detailLoading && filteredAttendees.length === 0 ? (
+                      <tr>
+                        <td colSpan={7}>No attendee records yet.</td>
+                      </tr>
+                    ) : (
+                      <EcertTableBody
+                        rows={filteredAttendees}
+                        downloadingId={downloadingId}
+                        onDownload={handleDownload}
+                      />
+                    )}
                   </tbody>
                 </table>
               </div>

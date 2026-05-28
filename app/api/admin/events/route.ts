@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       search: searchParams.get('search'),
       filter: searchParams.get('filter'),
       page: Number(searchParams.get('page') ?? 1),
-      limit: Number(searchParams.get('limit') ?? 10),
+      limit: Number(searchParams.get('limit') ?? 50),
     });
 
     return NextResponse.json(events, { status: 200 });

@@ -1,56 +1,180 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShowStatus } from "@/contexts/ShowStatusContext";
 
-const EVENT_CARDS = [
-  { name: "Digital Campus Ugnayan Seminar" },
-  { name: "Career and Leadership Summit" },
-  { name: "Campus Research Symposium" },
-];
+function formatSubmittedAt(value) {
+  if (!value) return "Submitted recently";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Submitted recently";
+  return `Submitted ${date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  })} · ${date.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  })}`;
+}
 
-const DETAIL_FIELDS = [
-  { label: "Date", value: "April 15, 2026" },
-  { label: "Venue", value: "DRA Hall" },
-  { label: "Start time", value: "1:00 PM" },
-  { label: "End time", value: "5:00 PM" },
-  { label: "Organizer", value: "Misxa Bien Germino" },
-  { label: "Campus", value: "Main" },
-  { label: "Department", value: "SCMCS" },
-  { label: "Course", value: "BSIT" },
-  { label: "Organization", value: "Domini Xode" },
-  { label: "Event type", value: "Seminar" },
-  { label: "Duration", value: "5 hours" },
-  { label: "Minimum attendance", value: "4 hours" },
-];
+function buildDetailFields(detail) {
+  if (!detail) return [];
+  return [
+    { label: "Date", value: detail.date || "—" },
+    { label: "Venue", value: detail.venue || "—" },
+    { label: "Start time", value: detail.startTime || "—" },
+    { label: "End time", value: detail.endTime || "—" },
+    { label: "Organizer", value: detail.organizer || "—" },
+    { label: "Campus", value: detail.campus || "—" },
+    { label: "Department", value: detail.department || "—" },
+    { label: "Course", value: detail.course || "—" },
+    { label: "Organization", value: detail.organization || "—" },
+    { label: "Event type", value: detail.type || "—" },
+    { label: "Duration", value: detail.duration || "—" },
+    { label: "Minimum attendance", value: detail.minimumAttendanceTime || "—" },
+  ];
+}
 
-const DETAIL_FILES = [
-  { title: "Event Poster", file: "dc-seminar.pdf" },
-  { title: "Room Reservation Form", file: "dro.pdf" },
-  { title: "Approved Concept Paper", file: "concept-dc.pdf" },
-  { title: "E-Certificate Template", file: "cert_template.pdf" },
-];
+function buildAttachmentFiles(detail) {
+  if (!detail?.attachments) return [];
+  const files = [];
+  if (detail.attachments.eventPoster) {
+    files.push({ title: "Event Poster", file: "poster", url: detail.attachments.eventPoster });
+  }
+  if (detail.attachments.roomReservationForm) {
+    files.push({ title: "Room Reservation Form", file: "room-reservation" });
+  }
+  if (detail.attachments.approvedConceptPaper) {
+    files.push({ title: "Approved Concept Paper", file: "concept-paper" });
+  }
+  if (detail.attachments.eCertificateTemplate) {
+    files.push({ title: "E-Certificate Template", file: "certificate-template" });
+  }
+  return files;
+}
 
 export function EventsView() {
   const showStatus = useShowStatus();
   const [tab, setTab] = useState("pending");
   const [query, setQuery] = useState("");
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+  const [detail, setDetail] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [adminComment, setAdminComment] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
   const [approvedToggleOn, setApprovedToggleOn] = useState(true);
-
-  const visibleCards = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return EVENT_CARDS.filter((c) => !q || c.name.toLowerCase().includes(q));
-  }, [query]);
 
   const isApprovedTab = tab === "approved";
 
-  function openDetail() {
-    setApprovedToggleOn(true);
-    setDetailOpen(true);
-    showStatus("Viewing event details");
+  const loadEvents = useCallback(async () => {
+    setLoading(true);
+    setLoadError("");
+
+    try {
+      const params = new URLSearchParams();
+      params.set("status", tab);
+      params.set("limit", "50");
+      if (query.trim()) params.set("search", query.trim());
+
+      const response = await fetch(`/api/admin/events?${params.toString()}`);
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to load events.");
+      }
+
+      setEvents(payload.events || []);
+    } catch (error) {
+      setEvents([]);
+      setLoadError(error instanceof Error ? error.message : "Failed to load events.");
+    } finally {
+      setLoading(false);
+    }
+  }, [tab, query]);
+
+  useEffect(() => {
+    void loadEvents();
+  }, [loadEvents]);
+
+  const visibleCards = useMemo(() => events, [events]);
+
+  const openDetail = useCallback(
+    async (eventId) => {
+      setSelectedId(eventId);
+      setDetailOpen(true);
+      setDetailLoading(true);
+      setAdminComment("");
+
+      try {
+        const response = await fetch(`/api/admin/events/${eventId}`);
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error || "Failed to load event details.");
+        }
+        setDetail(payload);
+        setApprovedToggleOn(true);
+        showStatus("Viewing event details");
+      } catch (error) {
+        setDetail(null);
+        showStatus(error instanceof Error ? error.message : "Failed to load event details.");
+        setDetailOpen(false);
+      } finally {
+        setDetailLoading(false);
+      }
+    },
+    [showStatus],
+  );
+
+  async function moderateEvent(action) {
+    if (!selectedId || !detail) return;
+
+    const needsComment = action === "requestChanges";
+    if (needsComment && !adminComment.trim()) {
+      showStatus("Add a comment explaining the requested changes.");
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const response = await fetch(`/api/admin/events/${selectedId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          comment: adminComment.trim() || undefined,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || "Failed to update event.");
+      }
+
+      const labels = {
+        approve: "Event approved — organizer notified",
+        reject: "Event rejected — organizer notified",
+        requestChanges: "Changes requested — organizer notified",
+      };
+      showStatus(labels[action] || "Event updated");
+
+      setDetailOpen(false);
+      setDetail(null);
+      setSelectedId(null);
+      setAdminComment("");
+      await loadEvents();
+    } catch (error) {
+      showStatus(error instanceof Error ? error.message : "Failed to update event.");
+    } finally {
+      setActionLoading(false);
+    }
   }
+
+  const detailFields = buildDetailFields(detail);
+  const detailFiles = buildAttachmentFiles(detail);
 
   return (
     <section className="view" id="eventsView">
@@ -64,7 +188,6 @@ export function EventsView() {
             <button
               className={`event-tab${tab === "pending" ? " active" : ""}`}
               type="button"
-              data-event-tab="pending"
               onClick={() => {
                 setTab("pending");
                 setDetailOpen(false);
@@ -76,7 +199,6 @@ export function EventsView() {
             <button
               className={`event-tab${tab === "approved" ? " active" : ""}`}
               type="button"
-              data-event-tab="approved"
               onClick={() => {
                 setTab("approved");
                 setDetailOpen(false);
@@ -102,75 +224,110 @@ export function EventsView() {
                 type="search"
                 placeholder="Search events"
                 value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  const q = e.target.value.trim().toLowerCase();
-                  const n = EVENT_CARDS.filter(
-                    (c) => !q || c.name.toLowerCase().includes(q),
-                  ).length;
-                  showStatus(`${n} event(s) shown`);
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void loadEvents();
                 }}
               />
             </label>
+            <button className="btn-soft" type="button" disabled={loading} onClick={() => void loadEvents()}>
+              {loading ? "Loading…" : "Search"}
+            </button>
           </div>
 
           <div className="events-list" id="eventsList">
-            {visibleCards.map((ev) => (
-              <article key={ev.name} className="event-card" data-event-name={ev.name}>
-                <div className="event-thumb">Image placeholder</div>
-                <div className="event-info">
-                  <h3>{ev.name}</h3>
-                  <p>Event date and time</p>
-                  <p>Event venue</p>
-                  <p>Organizer</p>
-                </div>
-                <button className="btn-view" type="button" onClick={openDetail}>
-                  View details
-                </button>
-              </article>
-            ))}
+            {loading ? (
+              <p style={{ padding: "24px 12px", textAlign: "center" }}>Loading events from database…</p>
+            ) : null}
+            {!loading && loadError ? (
+              <p style={{ padding: "24px 12px", textAlign: "center", color: "#9f2f2f" }}>{loadError}</p>
+            ) : null}
+            {!loading && !loadError && visibleCards.length === 0 ? (
+              <p style={{ padding: "24px 12px", textAlign: "center" }}>
+                {isApprovedTab
+                  ? "No approved events yet."
+                  : "No pending events. Submitted events from the user app will appear here."}
+              </p>
+            ) : null}
+            {!loading &&
+              !loadError &&
+              visibleCards.map((ev) => (
+                <article key={ev.id} className="event-card" data-event-id={ev.id}>
+                  {ev.pubmatImage ? (
+                    <div className="event-thumb">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={ev.pubmatImage} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </div>
+                  ) : (
+                    <div className="event-thumb">No poster</div>
+                  )}
+                  <div className="event-info">
+                    <h3>{ev.title}</h3>
+                    <p>
+                      {ev.date}
+                      {ev.time ? ` · ${ev.time}` : ""}
+                    </p>
+                    <p>{ev.venue}</p>
+                    <p>{ev.organizer}</p>
+                  </div>
+                  <button className="btn-view" type="button" onClick={() => void openDetail(ev.id)}>
+                    View details
+                  </button>
+                </article>
+              ))}
           </div>
         </div>
 
         <div className={`event-detail-view${detailOpen ? "" : " hidden"}`} id="eventDetailView">
           <div className="detail-top">
             <div
-              className={`detail-state-pill ${isApprovedTab ? "approved" : "pending"}`}
+              className={`detail-state-pill ${isApprovedTab || detail?.status === "approved" ? "approved" : "pending"}`}
               id="detailStatePill"
             >
-              {isApprovedTab ? "Approved event" : "Pending approval"}
+              {detailLoading
+                ? "Loading…"
+                : isApprovedTab || detail?.status === "approved"
+                  ? "Approved event"
+                  : detail?.status === "rejected"
+                    ? "Rejected event"
+                    : detail?.status === "changes_requested"
+                      ? "Changes requested"
+                      : "Pending approval"}
             </div>
-            <div className={`detail-actions${isApprovedTab ? " hidden" : ""}`} id="pendingActions">
+            <div
+              className={`detail-actions${isApprovedTab || detail?.status === "approved" ? " hidden" : ""}`}
+              id="pendingActions"
+            >
               <button
                 className="btn-approve"
                 type="button"
-                id="approveEventBtn"
-                onClick={() => showStatus("Event approved")}
+                disabled={actionLoading || detailLoading}
+                onClick={() => void moderateEvent("approve")}
               >
                 Approve
               </button>
               <button
                 className="btn-reject"
                 type="button"
-                id="rejectEventBtn"
-                onClick={() => showStatus("Event rejected")}
+                disabled={actionLoading || detailLoading}
+                onClick={() => void moderateEvent("reject")}
               >
                 Reject
               </button>
               <button
                 className="btn-request"
                 type="button"
-                id="requestChangesBtn"
-                onClick={() => showStatus("Requested changes sent")}
+                disabled={actionLoading || detailLoading}
+                onClick={() => void moderateEvent("requestChanges")}
               >
                 Request changes
               </button>
               <button
                 className="btn-soft"
                 type="button"
-                id="backToEventsBtn"
                 onClick={() => {
                   setDetailOpen(false);
+                  setDetail(null);
                   showStatus("Back to events");
                 }}
               >
@@ -178,12 +335,12 @@ export function EventsView() {
               </button>
             </div>
             <div
-              className={`detail-actions detail-actions--approved${isApprovedTab ? "" : " hidden"}`}
+              className={`detail-actions detail-actions--approved${isApprovedTab || detail?.status === "approved" ? "" : " hidden"}`}
               id="approvedActions"
             >
               <Link
                 className="btn-primary btn-tap-attendance"
-                href="/admin/tap?event=Digital%20Campus%20Ugnayan%20Seminar"
+                href={detail ? `/admin/tap?event=${encodeURIComponent(detail.title)}` : "/admin/tap"}
                 onClick={() => showStatus("Opening tap in / tap out")}
               >
                 Tap in / Tap out
@@ -191,9 +348,9 @@ export function EventsView() {
               <button
                 className="btn-soft"
                 type="button"
-                id="backToEventsBtnApproved"
                 onClick={() => {
                   setDetailOpen(false);
+                  setDetail(null);
                   showStatus("Back to events");
                 }}
               >
@@ -204,84 +361,94 @@ export function EventsView() {
                 type="button"
                 aria-label="Approved status toggle"
                 onClick={() => {
-                  setApprovedToggleOn((v) => {
-                    const next = !v;
-                    showStatus(next ? "Approved event is active" : "Approved event is inactive");
-                    return next;
-                  });
+                  setApprovedToggleOn((v) => !v);
+                  showStatus(approvedToggleOn ? "Event marked inactive" : "Event marked active");
                 }}
               />
             </div>
           </div>
 
           <article className="event-detail-card">
-            <header className="event-detail-card__header">
-              <p className="event-detail-card__eyebrow">Event details</p>
-              <span className="submitted">Submitted March 26, 2026 · 3:39 PM</span>
-            </header>
+            {detailLoading ? (
+              <p style={{ padding: 24 }}>Loading event details…</p>
+            ) : detail ? (
+              <>
+                <header className="event-detail-card__header">
+                  <p className="event-detail-card__eyebrow">Event details</p>
+                  <span className="submitted">{formatSubmittedAt(detail.submittedAt)}</span>
+                </header>
 
-            <h2 className="detail-title">Digital Campus Ugnayan Seminar</h2>
-            <p className="detail-desc">
-              This seminar covers &quot;Digital Footprints in AI&quot; and &quot;Lifelong Learner in
-              AI&quot;, guiding students on online responsibility, how their digital activities are
-              tracked, and the importance of continuous learning.
-            </p>
+                <h2 className="detail-title">{detail.title}</h2>
+                <p className="detail-desc">{detail.description || "No description provided."}</p>
 
-            <section className="detail-section" aria-label="Event information">
-              <h3 className="detail-section__title">Information</h3>
-              <dl className="detail-grid">
-                {DETAIL_FIELDS.map((field) => (
-                  <div key={field.label} className="detail-field">
-                    <dt className="detail-field__label">{field.label}</dt>
-                    <dd className="detail-field__value">{field.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
+                <section className="detail-section" aria-label="Event information">
+                  <h3 className="detail-section__title">Information</h3>
+                  <dl className="detail-grid">
+                    {detailFields.map((field) => (
+                      <div key={field.label} className="detail-field">
+                        <dt className="detail-field__label">{field.label}</dt>
+                        <dd className="detail-field__value">{field.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
 
-            <section className="detail-section" aria-label="Attachments">
-              <h3 className="detail-section__title">Attachments</h3>
-              <div className="files-row">
-                {DETAIL_FILES.map((file) => (
-                  <button key={file.file} type="button" className="file-card">
-                    <span className="file-card__icon" aria-hidden="true">
-                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                        <path
-                          d="M8 4h8l4 4v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
-                          stroke="currentColor"
-                          strokeWidth="1.6"
-                          strokeLinejoin="round"
-                        />
-                        <path
-                          d="M16 4v4h4M9 13h6M9 17h4"
-                          stroke="currentColor"
-                          strokeWidth="1.6"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </span>
-                    <span className="file-card__title">{file.title}</span>
-                    <span className="file-card__name">{file.file}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
+                {detailFiles.length > 0 ? (
+                  <section className="detail-section" aria-label="Attachments">
+                    <h3 className="detail-section__title">Attachments</h3>
+                    <div className="files-row">
+                      {detailFiles.map((file) => (
+                        <a
+                          key={file.file}
+                          href={file.url || "#"}
+                          target={file.url ? "_blank" : undefined}
+                          rel={file.url ? "noreferrer" : undefined}
+                          className="file-card"
+                          style={{ textDecoration: "none", color: "inherit" }}
+                        >
+                          <span className="file-card__icon" aria-hidden="true">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M8 4h8l4 4v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+                                stroke="currentColor"
+                                strokeWidth="1.6"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </span>
+                          <span className="file-card__title">{file.title}</span>
+                          <span className="file-card__name">{file.url ? "View file" : "Not uploaded"}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
 
-            <section className="admin-comment" aria-label="Admin comment">
-              <label className="admin-comment__label" htmlFor="adminCommentInput">
-                Admin note
-              </label>
-              <input
-                type="text"
-                id="adminCommentInput"
-                placeholder="Write a comment for the organizer…"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && e.currentTarget.value.trim()) {
-                    showStatus("Admin comment added");
-                  }
-                }}
-              />
-            </section>
+                {detail.latestAdminComment ? (
+                  <section className="detail-section" aria-label="Previous admin comment">
+                    <h3 className="detail-section__title">Previous admin note</h3>
+                    <p>{detail.latestAdminComment}</p>
+                  </section>
+                ) : null}
+
+                {!isApprovedTab && detail.status !== "approved" ? (
+                  <section className="admin-comment" aria-label="Admin comment">
+                    <label className="admin-comment__label" htmlFor="adminCommentInput">
+                      Admin note (required for request changes)
+                    </label>
+                    <input
+                      type="text"
+                      id="adminCommentInput"
+                      placeholder="Write a comment for the organizer…"
+                      value={adminComment}
+                      onChange={(e) => setAdminComment(e.target.value)}
+                    />
+                  </section>
+                ) : null}
+              </>
+            ) : (
+              <p style={{ padding: 24 }}>Event details unavailable.</p>
+            )}
           </article>
         </div>
       </section>
