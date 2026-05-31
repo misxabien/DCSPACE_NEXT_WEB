@@ -15,6 +15,7 @@ export function LoginForm() {
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<"student" | "faculty">("student");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const isRegistered = searchParams.get("registered") === "1";
@@ -30,8 +31,22 @@ export function LoginForm() {
     const email = String(formData.get("email") || "").trim();
     const password = String(formData.get("password") || "");
 
+    // Clear previous errors
+    setError("");
+    setFieldErrors({});
+
+    // Simple client-side validation with helpful inline messages
+    if (!email) {
+      setFieldErrors({ email: "Please enter your school email." });
+      return;
+    }
+
+    if (!password) {
+      setFieldErrors({ password: "Please enter your password." });
+      return;
+    }
+
     try {
-      setError("");
       setIsLoading(true);
       const result = await loginUser(email, password);
       saveAuthSession(result.token, result.user);
@@ -39,6 +54,7 @@ export function LoginForm() {
       signInAttendanceUser(result.user.email || email);
       router.push("/dashboard");
     } catch (loginError) {
+      setFieldErrors({});
       setError(loginError instanceof Error ? loginError.message : "Failed to login.");
     } finally {
       setIsLoading(false);
@@ -115,11 +131,11 @@ export function LoginForm() {
             </p>
           )}
 
-          <form
-            onSubmit={handleSubmit}
-            autoComplete="on"
-          >
-            <label className="field field--password">
+          <form onSubmit={handleSubmit} autoComplete="on">
+            <div className="aria-live" aria-live="assertive" aria-atomic="true">
+              {error || fieldErrors.email || fieldErrors.password || googleSignInError}
+            </div>
+            <label className={`field ${fieldErrors.email ? 'field--error' : ''}`}>
               <span className="sr-only">Email</span>
               <span className="icon-left" aria-hidden>
                 <svg viewBox="0 0 24 24" fill="none">
@@ -145,10 +161,20 @@ export function LoginForm() {
                 placeholder="Email"
                 defaultValue={prefilledEmail}
                 required
+                aria-invalid={Boolean(fieldErrors.email)}
+                aria-describedby={fieldErrors.email ? 'email-error' : undefined}
               />
+
+              {fieldErrors.email ? (
+                <div id="email-error" className="field-error-inline">
+                  {fieldErrors.email}
+                </div>
+              ) : (
+                <div className="field-help">Use your school email address.</div>
+              )}
             </label>
 
-            <label className="field">
+            <label className={`field field--password ${fieldErrors.password ? 'field--error' : ''}`}>
               <span className="sr-only">Password</span>
               <span className="icon-left" aria-hidden>
                 <svg viewBox="0 0 24 24" fill="none">
@@ -175,6 +201,8 @@ export function LoginForm() {
                 placeholder="Password"
                 autoComplete="current-password"
                 required
+                aria-invalid={Boolean(fieldErrors.password)}
+                aria-describedby={fieldErrors.password ? 'password-error' : undefined}
               />
 
               <button
@@ -185,6 +213,13 @@ export function LoginForm() {
               >
                 {showPw ? <EyeOpenIcon /> : <EyeClosedIcon />}
               </button>
+              {fieldErrors.password ? (
+                <div id="password-error" className="field-error-inline">
+                  {fieldErrors.password}
+                </div>
+              ) : (
+                <div className="field-help">Enter your account password.</div>
+              )}
             </label>
 
             <div className="actions">

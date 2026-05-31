@@ -50,6 +50,7 @@ export function RegisterAccountContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedPhotoDataUrl, setUploadedPhotoDataUrl] = useState("");
   const [uploadedPhotoName, setUploadedPhotoName] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const passwordChecks = [
     { label: "At least 8 characters", valid: password.length >= 8 },
@@ -100,12 +101,22 @@ export function RegisterAccountContent() {
   const handleReview = () => {
     if (!formRef.current) return;
 
+    const formData = new FormData(formRef.current);
+
+    const errors: Record<string, string> = {};
+    if (!formData.get("first_name")?.toString().trim()) errors["first_name"] = "First name is required.";
+    if (!formData.get("last_name")?.toString().trim()) errors["last_name"] = "Last name is required.";
+    if (!formData.get("student_number")?.toString().trim()) errors["student_number"] = "Student number is required.";
+
+    if (Object.keys(errors).length) {
+      setFieldErrors(errors);
+      return;
+    }
+
     if (!passwordIsValid) {
       setValidationError("Please complete all password requirements before reviewing.");
       return;
     }
-
-    const formData = new FormData(formRef.current);
 
     setReview({
       firstName: getValue(formData, "first_name"),
@@ -185,27 +196,83 @@ export function RegisterAccountContent() {
           <h1>Register your Account!</h1>
 
           <form ref={formRef} className="register-form">
-            <div className="register-two-col">
-              <input name="first_name" type="text" placeholder="First Name:" aria-label="First Name" />
-              <input name="last_name" type="text" placeholder="Last Name:" aria-label="Last Name" />
+            <div className="aria-live" aria-live="assertive" aria-atomic="true">
+              {validationError || Object.values(fieldErrors)[0]}
             </div>
 
             <div className="register-two-col">
-              <input name="student_number" type="text" placeholder="Student Number:" aria-label="Student Number" />
+              <div>
+                <input
+                  name="first_name"
+                  type="text"
+                  placeholder="First Name:"
+                  aria-label="First Name"
+                  className={`field ${fieldErrors['first_name'] ? 'field--error' : ''}`}
+                  aria-invalid={!!fieldErrors['first_name']}
+                  aria-describedby={fieldErrors['first_name'] ? 'first_name-error' : undefined}
+                  onChange={() => setFieldErrors((s) => { const c = { ...s }; delete c['first_name']; return c; })}
+                />
+                {fieldErrors['first_name'] && (
+                  <div id="first_name-error" className="field-error-inline">{fieldErrors['first_name']}</div>
+                )}
+              </div>
 
-              <input
-                name="rfid_number"
-                type="text"
-                placeholder="RFID Tag No.:"
-                aria-label="RFID Number"
-                autoFocus
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    handleReview();
-                  }
-                }}
-              />
+              <div>
+                <input
+                  name="last_name"
+                  type="text"
+                  placeholder="Last Name:"
+                  aria-label="Last Name"
+                  className={`field ${fieldErrors['last_name'] ? 'field--error' : ''}`}
+                  aria-invalid={!!fieldErrors['last_name']}
+                  aria-describedby={fieldErrors['last_name'] ? 'last_name-error' : undefined}
+                  onChange={() => setFieldErrors((s) => { const c = { ...s }; delete c['last_name']; return c; })}
+                />
+                {fieldErrors['last_name'] && (
+                  <div id="last_name-error" className="field-error-inline">{fieldErrors['last_name']}</div>
+                )}
+              </div>
+            </div>
+
+            <div className="register-two-col">
+              <div>
+                <input
+                  name="student_number"
+                  type="text"
+                  placeholder="Student Number:"
+                  aria-label="Student Number"
+                  className={`field ${fieldErrors['student_number'] ? 'field--error' : ''}`}
+                  aria-invalid={!!fieldErrors['student_number']}
+                  aria-describedby={fieldErrors['student_number'] ? 'student_number-error' : undefined}
+                  onChange={() => setFieldErrors((s) => { const c = { ...s }; delete c['student_number']; return c; })}
+                />
+                {fieldErrors['student_number'] && (
+                  <div id="student_number-error" className="field-error-inline">{fieldErrors['student_number']}</div>
+                )}
+              </div>
+
+              <div>
+                <input
+                  name="rfid_number"
+                  type="text"
+                  placeholder="RFID Tag No.:"
+                  aria-label="RFID Number"
+                  autoFocus
+                  className={`field ${fieldErrors['rfid_number'] ? 'field--error' : ''}`}
+                  aria-invalid={!!fieldErrors['rfid_number']}
+                  aria-describedby={fieldErrors['rfid_number'] ? 'rfid_number-error' : undefined}
+                  onChange={() => setFieldErrors((s) => { const c = { ...s }; delete c['rfid_number']; return c; })}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      handleReview();
+                    }
+                  }}
+                />
+                {fieldErrors['rfid_number'] && (
+                  <div id="rfid_number-error" className="field-error-inline">{fieldErrors['rfid_number']}</div>
+                )}
+              </div>
             </div>
 
             <div className="register-two-col">
@@ -265,17 +332,26 @@ export function RegisterAccountContent() {
               </select>
             </div>
 
-            <input
-              name="student_email"
-              type="email"
-              placeholder="Student Email:"
-              aria-label="Student Email"
-              value={studentEmail}
-              onChange={(event) => {
-                setStudentEmail(event.target.value);
-                setValidationError("");
-              }}
-            />
+            <div>
+              <input
+                name="student_email"
+                type="email"
+                placeholder="Student Email:"
+                aria-label="Student Email"
+                value={studentEmail}
+                className={`field ${fieldErrors['student_email'] ? 'field--error' : ''}`}
+                aria-invalid={!!fieldErrors['student_email']}
+                aria-describedby={fieldErrors['student_email'] ? 'student_email-error' : undefined}
+                onChange={(event) => {
+                  setStudentEmail(event.target.value);
+                  setValidationError("");
+                  setFieldErrors((s) => { const c = { ...s }; delete c['student_email']; return c; });
+                }}
+              />
+              {fieldErrors['student_email'] && (
+                <div id="student_email-error" className="field-error-inline">{fieldErrors['student_email']}</div>
+              )}
+            </div>
 
             <label className="register-photo-field" aria-label="Upload profile photo">
               <span className="register-photo-label">
@@ -289,6 +365,10 @@ export function RegisterAccountContent() {
               />
             </label>
 
+            {fieldErrors['password'] && (
+              <div id="password-error" className="field-error-inline">{fieldErrors['password']}</div>
+            )}
+
             <label className="register-password-wrap">
               <span className="register-sr-only">Password</span>
               <input
@@ -298,9 +378,13 @@ export function RegisterAccountContent() {
                 aria-label="Password"
                 autoComplete="new-password"
                 value={password}
+                className={`field ${fieldErrors['password'] ? 'field--error' : ''}`}
+                aria-invalid={!!fieldErrors['password']}
+                aria-describedby={fieldErrors['password'] ? 'password-error' : undefined}
                 onChange={(event) => {
                   setPassword(event.target.value);
                   setValidationError("");
+                  setFieldErrors((s) => { const c = { ...s }; delete c['password']; return c; });
                 }}
               />
               <button
@@ -313,6 +397,10 @@ export function RegisterAccountContent() {
               </button>
             </label>
 
+            {fieldErrors['confirm_password'] && (
+              <div id="confirm_password-error" className="field-error-inline">{fieldErrors['confirm_password']}</div>
+            )}
+
             <label className="register-password-wrap">
               <span className="register-sr-only">Re-enter password</span>
               <input
@@ -322,9 +410,13 @@ export function RegisterAccountContent() {
                 aria-label="Re-enter password"
                 autoComplete="new-password"
                 value={confirmPassword}
+                className={`field ${fieldErrors['confirm_password'] ? 'field--error' : ''}`}
+                aria-invalid={!!fieldErrors['confirm_password']}
+                aria-describedby={fieldErrors['confirm_password'] ? 'confirm_password-error' : undefined}
                 onChange={(event) => {
                   setConfirmPassword(event.target.value);
                   setValidationError("");
+                  setFieldErrors((s) => { const c = { ...s }; delete c['confirm_password']; return c; });
                 }}
               />
               <button

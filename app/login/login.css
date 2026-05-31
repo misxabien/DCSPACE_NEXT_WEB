@@ -1,34 +1,47 @@
-.login-scope {
-  --bg-1: #0a84ff;
-  --bg-2: #5e5ce6;
-  --bg-3: #e8edf5;
-  --card: rgba(255, 255, 255, 0.72);
-  --text: #1c1c1e;
-  --muted: rgba(60, 60, 67, 0.72);
-  --border: rgba(255, 255, 255, 0.65);
-  --line: rgba(0, 0, 0, 0.08);
-  --blue: #0a84ff;
-  --blue-2: #409cff;
-  --pill: rgba(10, 132, 255, 0.12);
-  --shadow:
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    0 2px 8px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+﻿.login-scope {
+  --bg-1: #d7e7ff;
+  --bg-2: #448aff;
+  --bg-3: #dbe8ff;
+  --card: #fffef4;
+  --teal: #156884;
+  --cyan: #2ca6de;
+  --gray: #7e7d77;
+  --field-gray: #bbbbba;
+  --text: #2a2a2a;
+  --muted: rgba(42, 42, 42, 0.55);
+  --border: rgba(42, 42, 42, 0.26);
+  --line: rgba(42, 42, 42, 0.18);
+  --blue: #3f82f5;
+  --blue-2: #2f73ef;
+  --pill: #e7efff;
+  --shadow: 6px 8px 5px rgba(50, 59, 77, 0.35);
   min-height: 100vh;
   min-height: 100dvh;
   margin: 0;
-  font-family: var(--font-dm-sans), "DM Sans", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-poppins), "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, Arial,
+    sans-serif;
   color: var(--text);
   background:
-    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(10, 132, 255, 0.35), transparent 55%),
-    radial-gradient(ellipse 70% 50% at 90% 20%, rgba(94, 92, 230, 0.28), transparent 50%),
-    linear-gradient(165deg, #c5d8f5 0%, #a8c4f0 35%, #7eb3ff 70%, #5e9aff 100%);
+    linear-gradient(
+      180deg,
+      var(--bg-3) 0%,
+      #94bdff 30%,
+      var(--bg-2) 52%,
+      #8db9ff 78%,
+      var(--bg-3) 100%
+    );
 }
 
 .login-scope *,
 .login-scope *::before,
 .login-scope *::after {
   box-sizing: border-box;
+}
+
+.login-scope.register-scope {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .login-scope .page {
@@ -41,11 +54,12 @@
 }
 
 .login-scope .layout {
-  width: min(1160px, 100%);
+  width: min(1088px, 100%);
   display: grid;
-  grid-template-columns: minmax(430px, 1fr) minmax(440px, 478px);
+  grid-template-columns: minmax(390px, 1fr) 455px;
   align-items: center;
-  gap: clamp(26px, 4vw, 54px);
+  gap: clamp(42px, 8vw, 126px);
+  animation: authPageIn 0.72s cubic-bezier(0.2, 0.85, 0.22, 1) both;
 }
 
 .login-scope .brand {
@@ -53,15 +67,18 @@
   justify-items: center;
   text-align: center;
   padding: 0 4px;
-  transform: translateY(8px);
+  transform: translateY(7px);
+  animation: authBrandFloat 4.8s ease-in-out infinite;
+  gap: 0;
 }
 
 .login-scope .brand__logo-wrap {
-  width: min(390px, 76vw);
-  aspect-ratio: 1;
+  width: min(360px, 78vw);
+  aspect-ratio: 1.84;
   height: auto;
   display: grid;
   place-items: center;
+  margin-bottom: 12px;
 }
 
 .login-scope .brand__logo {
@@ -73,33 +90,44 @@
 }
 
 .login-scope .brand__headline {
-  margin-top: -28px;
-  font-size: clamp(22px, 3vw, 28px);
-  font-weight: 700;
-  letter-spacing: 0.6px;
-  color: rgba(255, 255, 255, 0.92);
+  margin-top: 0;
+  font-size: clamp(22px, 2.9vw, 28px);
+  font-weight: bold;
+  letter-spacing: 0;
+  color: white;
   text-shadow: none;
+  font-family: var(--font-montserrat), sans-serif;
 }
 
 .login-scope .brand__sub {
-  margin-top: 6px;
-  max-width: 520px;
-  font-size: 12px;
-  font-weight: 500;
+  margin-top: 8px;
+  max-width: 580px;
+  font-size: clamp(14px, 1.7vw, 17px);
+  line-height: 1.35;
+  font-weight: medium;
   color: rgba(255, 255, 255, 0.82);
   text-shadow: none;
+  font-family: var(--font-poppins), "Poppins", sans-serif;
 }
 
 .login-scope .card {
-  width: min(478px, 100%);
-  border: 1px solid var(--border);
-  border-radius: 24px;
+  width: min(455px, 100%);
+  border: 1px solid rgba(43, 63, 108, 0.16);
+  border-radius: 16px;
   background: var(--card);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  padding: 34px 42px 30px;
+  box-shadow: 4px 4px 3px rgba(50, 59, 77, 0.45);
+  padding: 22px 25px 23px;
   justify-self: center;
+}
+
+.login-scope .card h1 {
+  margin: 0 0 24px;
+  color: var(--teal);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 23px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
 }
 
 .login-scope .btn {
@@ -115,15 +143,15 @@
   width: 100%;
   min-height: 49px;
   height: auto;
-  border-radius: 14px;
-  border: 1px solid var(--line);
+  border-radius: 10px;
+  border: 1px solid var(--border);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  font-weight: 600;
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.55);
+  font-weight: 500;
+  color: rgba(42, 42, 42, 0.75);
+  background: rgba(255, 255, 255, 0.35);
   text-align: center;
   padding: 10px 14px;
 }
@@ -155,68 +183,96 @@
   position: relative;
   display: block;
   width: 100%;
-  margin-top: 11px;
+  margin-top: 0;
+}
+
+.login-scope .field + .field {
+  margin-top: 23px;
+}
+
+.login-scope .field__label {
+  display: block;
+  margin: 0 0 8px;
+  color: var(--gray);
+  font-size: 16px;
+  font-weight: light;
+  line-height: 1;
+  font-family: var(--font-poppins), "Poppins", sans-serif;
 }
 
 .login-scope .input {
   width: 100%;
-  height: 48px;
-  border-radius: 14px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.5);
-  padding: 0 48px 0 46px;
-  font-size: 15px;
-  font-weight: 500;
+  height: 31px;
+  border-radius: 7px;
+  border: 1.5px solid var(--field-gray);
+  background: rgba(255, 255, 255, 0.35);
+  padding: 0 56px 0 45px;
+  color: #000;
+  font-family: var(--font-poppins), "Poppins", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
   outline: none;
-}
-
-.login-scope .input:focus {
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.25);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .login-scope .field--password .input {
-  padding-right: 56px;
+  border-color: var(--field-gray);
+  padding-right: 58px;
 }
 
 .login-scope .input::placeholder {
-  color: rgba(42, 42, 42, 0.38);
-  font-weight: 500;
+  color: var(--field-gray);
+  font-weight: light;
+  font-family: var(--font-poppins), "Poppins", sans-serif;
+  line-height: 38px;
+}
+
+.login-scope .input:hover,
+.login-scope .input:focus {
+  border-color: #6b7df2;
+  box-shadow: 0 0 0 1px rgba(107, 125, 242, 0.08);
 }
 
 .login-scope .icon-left {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  color: rgba(42, 42, 42, 0.52);
+  left: 11px;
+  bottom: 0;
+  width: 24px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  color: var(--field-gray);
   pointer-events: none;
-  left: 16px;
+}
+
+.login-scope .icon-left img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
 }
 
 .login-scope .eye {
   position: absolute;
-  top: 50%;
-  right: 12px;
-  transform: translateY(-50%);
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
+  right: 11px;
+  bottom: 5.5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
   display: grid;
   place-items: center;
-  color: rgba(42, 42, 42, 0.52);
+  color: var(--field-gray);
 }
 
-.login-scope .eye svg {
-  width: 18px;
-  height: 18px;
+.login-scope .eye img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 
 .login-scope .actions {
   display: grid;
   justify-items: end;
-  margin-top: 14px;
+  margin-top: 5px;
 }
 
 .login-scope .auth-field-error {
@@ -229,10 +285,12 @@
 }
 
 .login-scope .link {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  color: var(--blue);
+  color: var(--teal);
   text-decoration: none;
+  font-family: var(--font-poppins), "Poppins", sans-serif;
+  line-height: 30px;
 }
 
 .login-scope .link:hover {
@@ -240,34 +298,37 @@
 }
 
 .login-scope .primary {
-  margin-top: 6px;
+  margin-top: 23px;
   width: 100%;
-  height: 50px;
-  border-radius: 14px;
-  background: var(--blue);
+  height: 52px;
+  border-radius: 7px;
+  background: var(--cyan);
   color: white;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  box-shadow: 0 8px 24px rgba(10, 132, 255, 0.4);
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  box-shadow: 0 3px 3px rgba(50, 59, 77, 0.28);
 }
 
 .login-scope .primary:hover {
-  background: var(--blue-2);
+  background: #2499ce;
 }
 
 .login-scope .below {
-  margin-top: 13px;
+  margin-top: 8px;
   text-align: center;
-  font-size: 11px;
-  font-weight: 500;
-  color: rgba(42, 42, 42, 0.65);
+  font-size: 10px;
+  font-weight: 300;
+  font-family: var(--font-poppins), "Poppins", sans-serif;
+  line-height: 25px;
+  color: #000;
   overflow-wrap: anywhere;
 }
 
 .login-scope .below a {
-  margin-left: 6px;
-  font-weight: 700;
-  color: var(--blue);
+  margin-left: 8px;
+  font-weight: 500;
+  line-height: 25px;
+  color: var(--teal);
   text-decoration: none;
 }
 
@@ -276,18 +337,35 @@
 }
 
 .login-scope .role {
-  margin-top: 14px;
-  width: 250px;
-  height: 43px;
+  margin-top: 13px;
+  width: 195px;
+  height: 29px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(42, 42, 42, 0.14);
+  border: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  padding: 6px;
-  gap: 6px;
+  padding: 0;
+  gap: 0;
   margin-left: auto;
   margin-right: auto;
+  overflow: hidden;
+  position: relative;
+}
+
+.login-scope .role::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 50%;
+  border-radius: inherit;
+  background: var(--cyan);
+  transition: transform 0.24s ease;
+  z-index: 0;
+}
+
+.login-scope .role--faculty::before {
+  transform: translateX(100%);
 }
 
 .login-scope .role__btn {
@@ -296,21 +374,33 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 6px;
   font-weight: 700;
-  font-size: 12px;
-  color: rgba(42, 42, 42, 0.5);
+  font-size: 8px;
+  color: var(--cyan);
+  position: relative;
+  z-index: 1;
+  transition: color 0.2s ease;
 }
 
 .login-scope .role__btn[aria-pressed="true"] {
-  background: var(--blue);
-  color: white;
-  box-shadow: 0 8px 14px rgba(63, 130, 245, 0.32);
+  color: var(--card);
+  box-shadow: none;
 }
 
-.login-scope .role__btn svg {
-  width: 18px;
-  height: 18px;
+.login-scope .role__btn img {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+  transition: filter 0.2s ease;
+}
+
+.login-scope .role__btn[aria-pressed="true"] img {
+  filter: brightness(0) invert(1);
+}
+
+.login-scope .role--faculty .role__btn:first-child img {
+  filter: brightness(0) saturate(100%) invert(55%) sepia(88%) saturate(1233%) hue-rotate(166deg) brightness(92%) contrast(90%);
 }
 
 .login-scope .sr-only {
@@ -323,6 +413,535 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+.login-scope .register-shell {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 37.7% 1fr;
+  background: var(--card);
+  color: #000;
+  overflow: hidden;
+  animation: authPageIn 0.72s cubic-bezier(0.2, 0.85, 0.22, 1) both;
+}
+
+.login-scope .register-shell.is-modal-open > :not(.privacy-modal-overlay):not(.auth-toast) {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.login-scope .register-side {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 42px 44px;
+  text-align: center;
+  background:
+    linear-gradient(
+      180deg,
+      #dbe8ff 0%,
+      #91bdff 34%,
+      #448aff 52%,
+      #8ebaff 76%,
+      #dbe8ff 100%
+    );
+}
+
+.login-scope .register-side__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: authBrandFloat 4.8s ease-in-out infinite;
+}
+
+.login-scope .register-side__logo {
+  width: min(305px, 78%);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 14px rgba(43, 63, 108, 0.18));
+}
+
+.login-scope .register-side h2 {
+  margin: 8px 0 0;
+  color: #fff;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(28px, 3vw, 35px);
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.login-scope .register-side p {
+  margin: 8px 0 22px;
+  color: #fff;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.login-scope .register-signin-btn {
+  width: min(243px, 100%);
+  height: 51px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--cyan);
+  color: #fff;
+  box-shadow: 0 3px 3px rgba(50, 59, 77, 0.28);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.login-scope .register-signin-btn img {
+  width: 27px;
+  height: 27px;
+}
+
+.login-scope .register-main {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 32px 50px 30px 36px;
+  background: var(--card);
+}
+
+.login-scope .register-form-panel {
+  width: min(100%, 602px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-scope .register-form-panel h1 {
+  margin: 0 0 32px;
+  color: var(--teal);
+  font-family: var(--font-montserrat), "Montserrat", sans-serif;
+  font-size: clamp(32px, 4vw, 36px);
+  font-weight: extra-bold;
+  line-height: 49px;
+}
+
+.login-scope .register-step {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  padding-bottom: 46px;
+  animation: registerStepIn 0.36s ease both;
+}
+
+.login-scope .register-step h2 {
+  margin: 0 0 30px;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.login-scope .register-step--school h2 {
+  margin-bottom: 22px;
+}
+
+.login-scope .register-step--school .register-field {
+  margin-bottom: 28px;
+}
+
+.login-scope .register-field {
+  display: block;
+  width: 100%;
+  margin-bottom: 51px;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+}
+
+.login-scope .register-field span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.login-scope .register-field input,
+.login-scope .register-field select {
+  width: 100%;
+  height: 37px;
+  border: 1.5px solid #8f8f8a;
+  border-radius: 8px;
+  background: transparent;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+  padding: 0 15px;
+  outline: none;
+  transition: border-color 0.18s ease;
+}
+
+.login-scope .register-field select {
+  color: var(--gray);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("/svg icons create account page/Arrow Buttons.svg");
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+  background-size: 18px 18px;
+  padding-right: 42px;
+}
+
+.login-scope .register-field input::placeholder {
+  color: var(--field-gray);
+}
+
+.login-scope .register-field select:invalid {
+  color: var(--field-gray);
+}
+
+.login-scope .register-field input:hover,
+.login-scope .register-field select:hover,
+.login-scope .register-field input:focus,
+.login-scope .register-field select:focus {
+  border-color: #6b7df2;
+}
+
+.login-scope .register-controls {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
+  min-height: 46px;
+  padding-bottom: 0;
+}
+
+.login-scope .register-controls--end {
+  justify-content: flex-end;
+}
+
+.login-scope .register-back-step {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.login-scope .register-continue {
+  width: 203px;
+  height: 36px;
+  border: 0;
+  border-radius: 3px;
+  background: #448aff;
+  color: #fff;
+  box-shadow: 0 2px 3px rgba(50, 59, 77, 0.32);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.login-scope .register-continue:hover,
+.login-scope .register-signin-btn:hover {
+  filter: brightness(1.04);
+}
+
+.login-scope .register-step--account {
+  min-height: 0;
+}
+
+.login-scope .register-step--account h2 {
+  margin-bottom: 18px;
+}
+
+.login-scope .register-field--compact {
+  margin-bottom: 20px;
+}
+
+.login-scope .register-step--verify h2 {
+  margin-bottom: 8px;
+}
+
+.login-scope .register-verify-copy {
+  margin: 0 0 64px;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.login-scope .register-field--verify {
+  margin-bottom: 0;
+}
+
+.login-scope .register-password-field {
+  position: relative;
+}
+
+.login-scope .register-password-field input {
+  padding-right: 52px;
+}
+
+.login-scope .register-password-eye {
+  position: absolute;
+  right: 8px;
+  bottom: 1px;
+  width: 35px;
+  height: 35px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--field-gray);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.login-scope .register-password-eye svg,
+.login-scope .register-password-eye img {
+  width: 22px;
+  height: 22px;
+}
+
+.login-scope .password-strength {
+  margin: -18px 0 20px;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+}
+
+.login-scope .password-strength__bars {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  width: 100%;
+  height: 8px;
+  margin-bottom: 4px;
+}
+
+.login-scope .password-strength__bars span {
+  border: 1.5px solid #8f8f8a;
+  background: transparent !important;
+}
+
+.login-scope .password-strength--weak .password-strength__bars span:first-child {
+  background: #e43d30 !important;
+}
+
+.login-scope .password-strength--weak .password-strength__bars span:nth-child(n + 2) {
+  background: transparent !important;
+}
+
+.login-scope .password-strength--medium .password-strength__bars span:nth-child(-n + 3) {
+  background: #f5d348 !important;
+}
+
+.login-scope .password-strength--medium .password-strength__bars span:nth-child(n + 4) {
+  background: transparent !important;
+}
+
+.login-scope .password-strength--strong .password-strength__bars span {
+  background: #2ca95f !important;
+}
+
+.login-scope .password-strength p {
+  margin: 0;
+  font-size: 8px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.login-scope .password-strength__warning {
+  color: #000;
+}
+
+.login-scope .password-match {
+  margin: -15px 0 0 4px;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.login-scope .password-match.is-match {
+  color: #2ca95f;
+}
+
+.login-scope .password-match.is-mismatch {
+  color: #e43d30;
+}
+
+.login-scope .auth-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  z-index: 80;
+  transform: translateX(-50%);
+  min-width: min(340px, calc(100vw - 32px));
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.84);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: center;
+  padding: 12px 16px;
+  animation: authToastIn 0.22s ease both;
+}
+
+.login-scope .privacy-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.login-scope .privacy-modal-overlay.is-closing {
+  animation: privacyOverlayOut 0.24s ease both;
+}
+
+.login-scope .privacy-modal-overlay.is-closing .privacy-modal {
+  animation: privacyModalDown 0.24s ease both;
+}
+
+.login-scope .privacy-modal {
+  position: relative;
+  width: min(1070px, calc(100vw - 8px));
+  max-height: min(91vh, 620px);
+  overflow: hidden;
+  border: 2px solid var(--teal);
+  border-radius: 5px;
+  background: var(--card);
+  color: #000;
+  box-shadow: 0 18px 42px rgba(30, 57, 92, 0.22);
+  padding: 70px 39px 16px;
+  animation: privacyModalUp 0.32s ease both;
+}
+
+.login-scope .privacy-modal__close {
+  position: absolute;
+  top: 9px;
+  left: 18px;
+  width: 39px;
+  height: 35px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--teal);
+  padding: 0;
+  cursor: pointer;
+}
+
+.login-scope .privacy-modal__close img {
+  width: 39px;
+  height: 35px;
+  object-fit: contain;
+}
+
+.login-scope .privacy-modal__content {
+  animation: privacyTextIn 0.34s ease 0.14s both;
+}
+
+.login-scope .privacy-modal__intro {
+  margin: 0 0 6px;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.login-scope .privacy-modal h2 {
+  margin: 0 0 22px;
+  text-align: center;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 39px;
+  font-weight: 700;
+  line-height: 1.15;
+  text-shadow: 2px 3px 2px rgba(0, 0, 0, 0.22);
+}
+
+.login-scope .privacy-modal h3 {
+  margin: 0 0 12px;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 31px;
+  font-weight: 600;
+  line-height: 1.1;
+  text-shadow: 2px 3px 2px rgba(0, 0, 0, 0.2);
+}
+
+.login-scope .privacy-modal p {
+  font-family: var(--font-poppins), sans-serif;
+}
+
+.login-scope .privacy-modal h3 + p {
+  margin: 0 0 22px;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.15;
+  text-align: justify;
+  text-shadow: 1px 2px 2px rgba(0, 0, 0, 0.2);
+}
+
+.login-scope .privacy-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 17px;
+  margin: 8px 0 23px 20px;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.12;
+  text-shadow: 1px 2px 2px rgba(0, 0, 0, 0.18);
+}
+
+.login-scope .privacy-consent input {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  accent-color: var(--teal);
+  flex: 0 0 auto;
+}
+
+.login-scope .privacy-modal__submit {
+  display: block;
+  width: 234px;
+  height: 40px;
+  margin: 0 auto;
+  border: 0;
+  border-radius: 3px;
+  background: var(--blue);
+  color: #fff;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 19px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 3px rgba(50, 59, 77, 0.32);
 }
 
 @media (max-width: 1060px) {
@@ -341,9 +960,105 @@
     width: min(520px, 100%);
     margin-left: 0;
   }
+
+  .login-scope .register-shell {
+    grid-template-columns: 360px 1fr;
+  }
+
+  .login-scope .register-side {
+    padding: 34px 28px;
+  }
+
+  .login-scope .register-main {
+    padding: 32px 34px 30px;
+  }
 }
 
 @media (max-width: 560px) {
+  .login-scope.forgot-scope {
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+
+  .login-scope .forgot-shell {
+    height: auto;
+    min-height: 100dvh;
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .login-scope .forgot-main {
+    min-height: auto;
+    padding: 28px 18px 32px;
+    order: 2;
+  }
+
+  .login-scope .forgot-side {
+    height: auto;
+    min-height: auto;
+    padding: 36px 18px 30px;
+    order: 1;
+  }
+
+  .login-scope .forgot-step {
+    padding-bottom: 0;
+  }
+
+  .login-scope .forgot-field {
+    margin-top: 42px;
+  }
+
+  .login-scope .forgot-controls {
+    position: static;
+    width: auto;
+    margin-top: 42px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .login-scope .forgot-back {
+    order: 2;
+  }
+
+  .login-scope .forgot-primary {
+    width: 100%;
+  }
+
+  .login-scope .privacy-modal {
+    width: min(100%, 520px);
+    max-height: 82vh;
+    padding: 58px 18px 24px;
+  }
+
+  .login-scope .privacy-modal__submit {
+    width: 100%;
+  }
+
+  .login-scope .privacy-modal__intro {
+    font-size: 20px;
+  }
+
+  .login-scope .privacy-modal h2 {
+    font-size: 30px;
+  }
+
+  .login-scope .privacy-modal h3 {
+    font-size: 24px;
+  }
+
+  .login-scope .privacy-modal h3 + p,
+  .login-scope .privacy-consent {
+    font-size: 15px;
+  }
+
+  .login-scope.register-scope {
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+
   .login-scope .page {
     padding: 24px 16px;
     align-items: start;
@@ -379,6 +1094,52 @@
   .login-scope .role {
     width: 100%;
     max-width: 340px;
+  }
+
+  .login-scope .register-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .login-scope .register-side {
+    min-height: auto;
+    padding: 36px 18px 30px;
+  }
+
+  .login-scope .register-side__logo {
+    width: min(250px, 78%);
+  }
+
+  .login-scope .register-main {
+    min-height: auto;
+    padding: 28px 18px 32px;
+  }
+
+  .login-scope .register-step {
+    min-height: auto;
+    padding-bottom: 0;
+  }
+
+  .login-scope .register-field {
+    margin-bottom: 28px;
+  }
+
+  .login-scope .register-controls {
+    position: static;
+    width: auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .login-scope .register-back-step {
+    order: 2;
+  }
+
+  .login-scope .register-continue {
+    width: 100%;
   }
 }
 
@@ -865,117 +1626,124 @@
 }
 
 .login-scope.forgot-scope {
-  --forgot-card: rgba(255, 255, 255, 0.76);
-  --forgot-border: rgba(255, 255, 255, 0.72);
-  --forgot-text: #1c1c1e;
-  --forgot-muted: rgba(60, 60, 67, 0.72);
-  --forgot-blue: #0a84ff;
-  --forgot-blue-deep: #2868d8;
-  min-height: 100vh;
-  min-height: 100dvh;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(10, 132, 255, 0.35), transparent 55%),
-    radial-gradient(ellipse 70% 50% at 90% 20%, rgba(94, 92, 230, 0.28), transparent 50%),
-    linear-gradient(165deg, #c5d8f5 0%, #a8c4f0 35%, #7eb3ff 70%, #5e9aff 100%);
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .login-scope .forgot-shell {
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   display: grid;
-  grid-template-columns: minmax(420px, 1fr) minmax(360px, 520px);
-  align-items: stretch;
-  gap: clamp(28px, 5vw, 72px);
-  padding: clamp(24px, 5vw, 54px);
+  grid-template-columns: 63% 37%;
+  overflow: hidden;
+  background: var(--card);
+  color: #000;
+  animation: authPageIn 0.72s cubic-bezier(0.2, 0.85, 0.22, 1) both;
 }
 
-.login-scope .forgot-main,
-.login-scope .forgot-side {
-  display: grid;
-  align-items: center;
+.login-scope .forgot-main {
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  background: var(--card);
+  padding: 40px 44px 27px;
 }
 
 .login-scope .forgot-form-panel {
-  width: min(100%, 620px);
-  justify-self: end;
-  border: 1px solid var(--forgot-border);
-  border-radius: 24px;
-  background: var(--forgot-card);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    0 2px 8px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  padding: clamp(28px, 5vw, 48px);
+  width: min(100%, 690px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .login-scope .forgot-step {
-  display: grid;
-  gap: 22px;
-  animation: registerActionsIn 0.35s ease both;
+  position: relative;
+  flex: 1;
+  padding-bottom: 52px;
+  animation: registerStepIn 0.36s ease both;
 }
 
 .login-scope .forgot-step h1 {
-  margin: 0;
-  color: var(--forgot-text);
-  font-size: clamp(30px, 5vw, 46px);
-  font-weight: 800;
-  line-height: 1;
+  margin: 0 0 12px;
+  color: var(--teal);
+  font-family: var(--font-montserrat), "Montserrat", sans-serif;
+  font-size: clamp(30px, 4vw, 36px);
+  font-weight: extra-bold;
+  line-height: 49px;
 }
 
 .login-scope .forgot-copy {
   margin: 0;
-  color: var(--forgot-muted);
-  font-size: 15px;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 16px;
   font-weight: 500;
-  line-height: 1.5;
+  line-height: 1.35;
 }
 
 .login-scope .forgot-field {
-  display: grid;
-  gap: 9px;
-  color: var(--forgot-text);
-  font-size: 14px;
-  font-weight: 700;
+  display: block;
+  width: 100%;
+  margin-top: 88px;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+}
+
+.login-scope .forgot-field + .forgot-field {
+  margin-top: 24px;
+}
+
+.login-scope .forgot-field span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.1;
 }
 
 .login-scope .forgot-field input {
   width: 100%;
-  height: 50px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.62);
-  color: var(--forgot-text);
-  font: inherit;
-  font-weight: 500;
+  height: 31px;
+  border: 1.5px solid #8f8f8a;
+  border-radius: 7px;
+  background: transparent;
+  color: #000;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 15px;
+  font-weight: 400;
   outline: none;
-  padding: 0 16px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  padding: 0 15px;
+  transition: border-color 0.18s ease;
 }
 
+.login-scope .forgot-field input::placeholder {
+  color: var(--field-gray);
+}
+
+.login-scope .forgot-field input:hover,
 .login-scope .forgot-field input:focus {
-  border-color: rgba(10, 132, 255, 0.75);
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.14);
+  border-color: #6b7df2;
 }
 
 .login-scope .forgot-password-field {
   position: relative;
+  margin-top: 36px;
 }
 
 .login-scope .forgot-password-field input {
-  padding-right: 56px;
+  padding-right: 44px;
 }
 
 .login-scope .forgot-eye {
   position: absolute;
-  right: 8px;
-  bottom: 5px;
-  width: 40px;
-  height: 40px;
+  right: 11px;
+  bottom: 5.5px;
+  width: 20px;
+  height: 20px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 6px;
   background: transparent;
   display: grid;
   place-items: center;
@@ -983,96 +1751,137 @@
 }
 
 .login-scope .forgot-eye img {
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
 }
 
 .login-scope .forgot-controls {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  min-height: 42px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-top: 4px;
-}
-
-.login-scope .forgot-back,
-.login-scope .forgot-primary,
-.login-scope .forgot-signin-btn {
-  min-height: 48px;
-  border-radius: 14px;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+  justify-content: flex-end;
+  gap: 28px;
 }
 
 .login-scope .forgot-back {
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.54);
-  color: var(--forgot-muted);
-  padding: 0 18px;
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
 }
 
 .login-scope .forgot-primary {
+  width: 205px;
+  height: 34px;
   border: 0;
-  background: linear-gradient(135deg, var(--forgot-blue), var(--forgot-blue-deep));
+  border-radius: 3px;
+  background: var(--blue);
   color: #fff;
-  box-shadow: 0 12px 26px rgba(10, 132, 255, 0.22);
-  padding: 0 22px;
+  box-shadow: 0 2px 3px rgba(50, 59, 77, 0.32);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
-.login-scope .forgot-back:hover,
 .login-scope .forgot-primary:hover,
 .login-scope .forgot-signin-btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.03);
+  filter: brightness(1.04);
+}
+
+.login-scope .forgot-side {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 42px 36px;
+  text-align: center;
+  background:
+    linear-gradient(
+      180deg,
+      #dbe8ff 0%,
+      #91bdff 34%,
+      #448aff 52%,
+      #8ebaff 76%,
+      #dbe8ff 100%
+    );
 }
 
 .login-scope .forgot-side__content {
-  width: min(100%, 460px);
-  display: grid;
-  justify-items: center;
-  text-align: center;
-  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: authBrandFloat 4.8s ease-in-out infinite;
 }
 
 .login-scope .forgot-side__logo {
-  width: min(390px, 76vw);
+  width: min(295px, 88%);
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 12px 18px rgba(43, 63, 108, 0.2));
+  filter: drop-shadow(0 10px 14px rgba(43, 63, 108, 0.18));
 }
 
 .login-scope .forgot-side h2 {
-  margin: -18px 0 10px;
-  font-size: clamp(30px, 5vw, 48px);
-  font-weight: 800;
-  line-height: 1;
+  margin: 8px 0 0;
+  color: #fff;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(25px, 3vw, 28px);
+  font-weight: 700;
+  line-height: 1.08;
 }
 
 .login-scope .forgot-side p {
-  margin: 0 0 18px;
-  font-size: 16px;
+  margin: 34px 0 13px;
+  color: #fff;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 13px;
   font-weight: 600;
 }
 
 .login-scope .forgot-signin-btn {
-  border: 1px solid rgba(255, 255, 255, 0.54);
-  background: rgba(255, 255, 255, 0.18);
+  width: min(196px, 100%);
+  height: 40px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--cyan);
   color: #fff;
+  box-shadow: 0 3px 3px rgba(50, 59, 77, 0.28);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0 22px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  gap: 10px;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .login-scope .forgot-signin-btn img {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
+}
+
+.login-scope .auth-mobile-back {
+  display: none;
+}
+
+.login-scope .auth-mobile-control-back {
+  display: none;
 }
 
 @keyframes registerCardIn {
@@ -1096,6 +1905,99 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes authPageIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes registerStepIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes authToastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes privacyModalUp {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes privacyModalDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+@keyframes privacyOverlayOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes privacyTextIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes authBrandFloat {
+  0%,
+  100% {
+    transform: translateY(7px);
+  }
+
+  50% {
+    transform: translateY(-5px);
   }
 }
 
@@ -1149,49 +2051,6 @@
   .login-scope .forgot-form button {
     height: 54px;
   }
-
-  .login-scope .forgot-shell {
-    grid-template-columns: 1fr;
-    padding: 22px 16px 28px;
-  }
-
-  .login-scope .forgot-main {
-    order: 2;
-  }
-
-  .login-scope .forgot-side {
-    order: 1;
-    align-items: end;
-  }
-
-  .login-scope .forgot-form-panel {
-    justify-self: stretch;
-    border-radius: 18px;
-    padding: 24px 18px;
-  }
-
-  .login-scope .forgot-step h1 {
-    font-size: 30px;
-  }
-
-  .login-scope .forgot-controls {
-    flex-direction: column-reverse;
-    align-items: stretch;
-  }
-
-  .login-scope .forgot-back,
-  .login-scope .forgot-primary {
-    width: 100%;
-  }
-
-  .login-scope .forgot-side__logo {
-    width: min(240px, 70vw);
-  }
-
-  .login-scope .forgot-side h2 {
-    margin-top: -14px;
-    font-size: 28px;
-  }
 }
 
 @media (max-width: 380px) {
@@ -1219,4 +2078,455 @@
     flex: 1;
     min-width: 0;
   }
+}
+
+@media (max-width: 640px) {
+  .login-scope {
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  .login-scope .page {
+    min-height: 100dvh;
+    padding: 18px 11px;
+    place-items: start center;
+  }
+
+  .login-scope .layout {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .login-scope .brand {
+    width: 100%;
+    transform: none;
+  }
+
+  .login-scope .brand__logo-wrap {
+    width: min(250px, 74vw);
+    margin-bottom: 4px;
+  }
+
+  .login-scope .brand__headline {
+    margin-top: 0;
+    font-size: clamp(16px, 5.2vw, 20px);
+    line-height: 1.05;
+  }
+
+  .login-scope .brand__sub {
+    width: min(310px, 90vw);
+    margin-top: 6px;
+    font-size: clamp(10px, 3.2vw, 13px);
+    line-height: 1.25;
+  }
+
+  .login-scope .card {
+    width: 100%;
+    max-width: 390px;
+    border-radius: 12px;
+    padding: 17px 14px 16px;
+  }
+
+  .login-scope .card h1 {
+    margin-bottom: 18px;
+    font-size: clamp(16px, 5.2vw, 22px);
+    line-height: 1.15;
+  }
+
+  .login-scope .field + .field {
+    margin-top: 17px;
+  }
+
+  .login-scope .field__label {
+    font-size: 13px;
+  }
+
+  .login-scope .input {
+    height: 34px;
+    min-width: 0;
+    padding-left: 43px;
+    padding-right: 42px;
+    font-size: 11px;
+  }
+
+  .login-scope .icon-left {
+    height: 34px;
+    left: 10px;
+  }
+
+  .login-scope .icon-left img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .login-scope .eye {
+    right: 9px;
+    bottom: 7px;
+  }
+
+  .login-scope .primary {
+    height: 44px;
+    margin-top: 17px;
+    font-size: 13px;
+  }
+
+  .login-scope .below {
+    font-size: 8px;
+    line-height: 18px;
+  }
+
+  .login-scope .role {
+    width: min(218px, 90%);
+    height: 29px;
+  }
+
+  .login-scope .role__btn {
+    font-size: 8px;
+  }
+
+  .login-scope.register-scope,
+  .login-scope.forgot-scope {
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: auto;
+  }
+
+  .login-scope .register-shell,
+  .login-scope .forgot-shell {
+    height: auto;
+    min-height: 100dvh;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+
+  .login-scope .register-side,
+  .login-scope .forgot-side {
+    display: none;
+  }
+
+  .login-scope .register-side,
+  .login-scope .forgot-side {
+    height: auto;
+    min-height: 210px;
+    padding: 28px 16px 24px;
+  }
+
+  .login-scope .register-side__logo,
+  .login-scope .forgot-side__logo {
+    width: min(230px, 70vw);
+  }
+
+  .login-scope .register-side h2,
+  .login-scope .forgot-side h2 {
+    font-size: clamp(22px, 7vw, 28px);
+  }
+
+  .login-scope .register-main,
+  .login-scope .forgot-main {
+    height: auto;
+    min-height: 100dvh;
+    padding: 24px 18px 28px;
+    align-items: stretch;
+  }
+
+  .login-scope .register-form-panel,
+  .login-scope .forgot-form-panel {
+    width: 100%;
+    height: auto;
+    min-height: calc(100dvh - 52px);
+  }
+
+  .login-scope .auth-mobile-back {
+    display: inline-flex;
+    width: fit-content;
+    margin: 0 0 18px;
+    border: 0;
+    background: transparent;
+    color: var(--blue);
+    font-family: var(--font-poppins), sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .login-scope .register-form-panel h1,
+  .login-scope .forgot-step h1 {
+    margin-bottom: 20px;
+    font-size: clamp(28px, 9vw, 34px);
+    line-height: 1.1;
+  }
+
+  .login-scope .register-step,
+  .login-scope .forgot-step {
+    min-height: auto;
+    flex: 0 0 auto;
+    padding-bottom: 0;
+  }
+
+  .login-scope .register-step h2 {
+    margin-bottom: 22px;
+    font-size: clamp(20px, 6vw, 24px);
+  }
+
+  .login-scope .register-field,
+  .login-scope .register-step--school .register-field,
+  .login-scope .register-field--compact {
+    margin-bottom: 24px;
+  }
+
+  .login-scope .register-field span,
+  .login-scope .forgot-field span {
+    font-size: 15px;
+  }
+
+  .login-scope .register-field input,
+  .login-scope .register-field select,
+  .login-scope .forgot-field input {
+    height: 38px;
+    font-size: 14px;
+    min-width: 0;
+  }
+
+  .login-scope .register-controls,
+  .login-scope .forgot-controls {
+    position: static;
+    width: 100%;
+    margin-top: 28px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  .login-scope .register-controls {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+  }
+
+  .login-scope .register-back-step,
+  .login-scope .forgot-back {
+    text-align: center;
+  }
+
+  .login-scope .forgot-back {
+    order: 0;
+    flex: 1 1 0;
+    min-width: 0;
+    color: var(--blue);
+    font-size: clamp(9px, 2.8vw, 14px);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .login-scope .register-back-step {
+    order: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: clamp(11px, 3.2vw, 14px);
+    text-align: right;
+  }
+
+  .login-scope .register-continue,
+  .login-scope .forgot-primary {
+    width: auto;
+    height: 40px;
+  }
+
+  .login-scope .register-continue {
+    flex: 0 0 min(48%, 203px);
+  }
+
+  .login-scope .forgot-primary {
+    flex: 0 0 clamp(150px, 46vw, 205px);
+    padding-inline: 10px;
+    font-size: clamp(10px, 3vw, 14px);
+    white-space: nowrap;
+  }
+
+  .login-scope .auth-mobile-control-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: var(--blue);
+    text-decoration: none;
+  }
+
+  .login-scope .forgot-field {
+    margin-top: 46px;
+  }
+
+  .login-scope .forgot-password-field {
+    margin-top: 28px;
+  }
+
+  .login-scope .password-strength__bars {
+    gap: 6px;
+  }
+
+  .login-scope .privacy-modal-overlay {
+    padding: 12px;
+  }
+
+  .login-scope .privacy-modal {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    padding: 54px 16px 20px;
+  }
+
+  .login-scope .privacy-modal__intro {
+    font-size: clamp(16px, 5.2vw, 20px);
+  }
+
+  .login-scope .privacy-modal h2 {
+    margin-bottom: 18px;
+    font-size: clamp(24px, 7.4vw, 30px);
+  }
+
+  .login-scope .privacy-modal h3 {
+    font-size: clamp(20px, 6vw, 24px);
+  }
+
+  .login-scope .privacy-modal h3 + p,
+  .login-scope .privacy-consent {
+    font-size: clamp(13px, 4vw, 15px);
+    line-height: 1.25;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-scope .page {
+    padding: 14px 8px;
+  }
+
+  .login-scope .brand__logo-wrap {
+    width: min(220px, 76vw);
+  }
+
+  .login-scope .card {
+    padding: 15px 11px 14px;
+  }
+
+  .login-scope .register-main,
+  .login-scope .forgot-main {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
+
+.login-scope .register-field select {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .login-scope .register-step--school .register-field select {
+    background-position: right 9px center;
+    background-size: 16px 16px;
+    padding-left: 14px;
+    padding-right: 36px;
+  }
+}
+
+@media (max-width: 640px) {
+  .login-scope .register-step--school .register-field select {
+    height: 38px;
+    background-position: right 8px center;
+    background-size: 14px 14px;
+    font-size: clamp(12px, 3.6vw, 14px);
+    padding-left: 12px;
+    padding-right: 32px;
+  }
+
+  .login-scope .register-step--school .register-field select option {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-scope .register-step--school .register-field select {
+    font-size: 12px;
+    padding-left: 10px;
+    padding-right: 28px;
+  }
+}
+
+/* Helpful error & helper message styles */
+.login-scope .field--error .input {
+  border-color: #e43d30;
+  box-shadow: 0 0 0 4px rgba(228, 61, 48, 0.06);
+}
+
+.login-scope .field--error .field__label {
+  color: #e43d30;
+}
+
+.login-scope .field-error-inline {
+  margin-top: 6px;
+  color: #e43d30;
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.login-scope .field-help {
+  margin-top: 6px;
+  color: var(--gray);
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.login-scope .error-list {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  background: #fff3f3;
+  border: 1px solid rgba(228,61,48,0.12);
+  border-radius: 8px;
+  color: #b30000;
+  font-size: 13px;
+}
+
+.login-scope .error-list li {
+  margin: 6px 0;
+}
+
+.login-scope .error-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+  color: #e43d30;
+}
+
+.login-scope .field--warning .input {
+  border-color: #f5d348;
+  box-shadow: 0 0 0 4px rgba(245,211,72,0.06);
+}
+
+.login-scope .field-warning-inline {
+  margin-top: 6px;
+  color: #f5a623;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.login-scope .aria-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
