@@ -1,4 +1,4 @@
-﻿.login-scope {
+.login-scope {
   --bg-1: #d7e7ff;
   --bg-2: #448aff;
   --bg-3: #dbe8ff;
@@ -777,10 +777,13 @@
 }
 
 .login-scope .password-match {
-  margin: -15px 0 0 4px;
+  display: block;
+  margin: 28px 0 0;
+  padding-left: 2px;
   font-family: var(--font-poppins), sans-serif;
-  font-size: 13px;
-  font-weight: 400;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .login-scope .password-match.is-match {
@@ -1732,14 +1735,21 @@
   margin-top: 36px;
 }
 
-.login-scope .forgot-password-field input {
+.login-scope .forgot-input-wrap {
+  position: relative;
+  display: block;
+}
+
+.login-scope .forgot-input-wrap input {
+  width: 100%;
   padding-right: 44px;
 }
 
 .login-scope .forgot-eye {
   position: absolute;
   right: 11px;
-  bottom: 5.5px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 20px;
   height: 20px;
   border: 0;
@@ -2460,73 +2470,59 @@
   }
 }
 
-/* Helpful error & helper message styles */
-.login-scope .field--error .input {
-  border-color: #e43d30;
-  box-shadow: 0 0 0 4px rgba(228, 61, 48, 0.06);
+/* ── Form validation error styles ── */
+
+.login-scope .field--error .input,
+.login-scope .field--error input,
+.login-scope .field--error select {
+  border-color: #e33e33 !important;
 }
 
-.login-scope .field--error .field__label {
-  color: #e43d30;
+.login-scope .register-field.has-error input,
+.login-scope .register-field.has-error select {
+  border-color: #e33e33 !important;
 }
 
-.login-scope .field-error-inline {
-  margin-top: 6px;
-  color: #e43d30;
-  font-family: var(--font-poppins), sans-serif;
-  font-size: 12px;
-  font-weight: 700;
+.login-scope .forgot-field.has-error input {
+  border-color: #e33e33 !important;
 }
 
-.login-scope .field-help {
-  margin-top: 6px;
-  color: var(--gray);
-  font-family: var(--font-poppins), sans-serif;
-  font-size: 12px;
-  font-weight: 400;
-}
-
-.login-scope .error-list {
-  margin: 8px 0 0;
-  padding: 10px 12px;
-  background: #fff3f3;
-  border: 1px solid rgba(228,61,48,0.12);
-  border-radius: 8px;
-  color: #b30000;
-  font-size: 13px;
-}
-
-.login-scope .error-list li {
-  margin: 6px 0;
-}
-
-.login-scope .error-icon {
-  width: 16px;
-  height: 16px;
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 8px;
-  color: #e43d30;
-}
-
-.login-scope .field--warning .input {
-  border-color: #f5d348;
-  box-shadow: 0 0 0 4px rgba(245,211,72,0.06);
-}
-
-.login-scope .field-warning-inline {
-  margin-top: 6px;
-  color: #f5a623;
-  font-size: 12px;
+.login-scope .field-error-msg {
+  display: block;
+  
+  margin: 4px 0 0;
+  color: #e33e33;
+  font-family: var(--font-poppins), "Poppins", sans-serif;
+  font-size: 11px;
   font-weight: 600;
+  line-height: 1.3;
 }
 
-.login-scope .aria-live {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
+.login-scope .register-field.has-error .field-error-msg {
+  color: #e33e33;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 4px 0 0;
+}
+
+.login-scope .forgot-field.has-error .field-error-msg {
+  color: #e33e33;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 12px 0 0;
+  display: block;
+}
+
+.login-scope .forgot-password-field.has-error .field-error-msg {
+  position: relative;
+  margin-top: 4px;
+  padding-top: 2px;
+}
+
+.login-scope .forgot-step .password-strength {
+  margin: 2px 0 2px;
+}
+
+.login-scope .forgot-step .forgot-password-field input {
+  margin-bottom: 4px;
 }

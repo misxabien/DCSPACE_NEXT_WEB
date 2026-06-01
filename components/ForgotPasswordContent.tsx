@@ -13,18 +13,33 @@ export function ForgotPasswordContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const passwordChecks = [
+    newPassword.length >= 8,
+    /[A-Z]/.test(newPassword),
+    /[a-z]/.test(newPassword),
+    /\d/.test(newPassword),
+    /[^A-Za-z0-9]/.test(newPassword),
+  ];
+  const passedPasswordChecks = passwordChecks.filter(Boolean).length;
+  const passwordStrength = passedPasswordChecks >= 5 ? 'Strong' : passedPasswordChecks >= 3 ? 'Medium' : 'Weak';
+  const filledStrengthBoxes = passwordStrength === 'Strong' ? 5 : passwordStrength === 'Medium' ? 3 : 1;
+  const showPasswordWarning = newPassword.length > 0 && passwordStrength === 'Weak';
+  const showPasswordMatch = confirmNewPassword.length > 0;
+  const passwordMatches = newPassword.length > 0 && newPassword === confirmNewPassword;
 
   const handleSendCode = () => {
-    const errors: Record<string, string> = {};
-    if (!email.trim()) errors['email'] = 'Please enter your school email.';
-    else if (!email.includes('@')) errors['email'] = 'Please enter a valid email.';
-    if (Object.keys(errors).length) {
-      setFieldErrors(errors);
+    const emailInput = document.querySelector<HTMLInputElement>('.forgot-field input[type="email"]');
+    const email = emailInput?.value?.trim() || '';
+    if (!email) {
+      setFieldErrors({ email: 'School email is required' });
+      return;
+    }
+    if (!email.endsWith('@sdca.edu.ph')) {
+      setFieldErrors({ email: "Invalid school email. Email must end with '@sdca.edu.ph'" });
       return;
     }
     setFieldErrors({});
@@ -32,8 +47,10 @@ export function ForgotPasswordContent() {
   };
 
   const handleSubmitCode = () => {
-    if (!code.trim()) {
-      setFieldErrors({ code: 'Please enter the verification code.' });
+    const codeInput = document.querySelector<HTMLInputElement>('.forgot-field input[type="text"]');
+    const code = codeInput?.value?.trim() || '';
+    if (!code) {
+      setFieldErrors({ code: 'Please enter a valid verification code.' });
       return;
     }
     setFieldErrors({});
@@ -42,12 +59,27 @@ export function ForgotPasswordContent() {
 
   const handleSaveNewPassword = () => {
     const errors: Record<string, string> = {};
-    if (!newPassword) errors['newPassword'] = 'Enter a new password.';
-    if (!confirmNewPassword) errors['confirmNewPassword'] = 'Re-enter your new password.';
-    if (newPassword && confirmNewPassword && newPassword !== confirmNewPassword) {
-      errors['confirmNewPassword'] = "Passwords don't match.";
+    if (!newPassword) {
+      errors.newPassword = 'Password is required';
+    } else {
+      const checks = [
+        newPassword.length >= 8,
+        /[A-Z]/.test(newPassword),
+        /[a-z]/.test(newPassword),
+        /\d/.test(newPassword),
+        /[^A-Za-z0-9]/.test(newPassword),
+      ];
+      if (checks.filter(Boolean).length < 5) {
+        errors.newPassword = 'Password is too weak';
+      }
     }
-    if (Object.keys(errors).length) {
+    if (!confirmNewPassword) {
+      errors.confirmNewPassword = 'Re-enter your password';
+    } else if (newPassword !== confirmNewPassword) {
+      errors.confirmNewPassword = "Passwords don't match";
+    }
+
+    if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
@@ -71,22 +103,10 @@ export function ForgotPasswordContent() {
                 <>
                   <p className="forgot-copy">Enter your school email and we will send a verification code.</p>
 
-                  <div className="aria-live" aria-live="assertive" aria-atomic="true">
-                    {Object.values(fieldErrors)[0]}
-                  </div>
-
-                  <label className="forgot-field">
+                  <label className={`forgot-field${fieldErrors.email ? ' has-error' : ''}`}>
                     <span>School Email:</span>
-                    <input
-                      type="email"
-                      placeholder="Enter your school email"
-                      value={email}
-                      className={`field ${fieldErrors['email'] ? 'field--error' : ''}`}
-                      aria-invalid={!!fieldErrors['email']}
-                      aria-describedby={fieldErrors['email'] ? 'email-error' : undefined}
-                      onChange={(e) => { setEmail(e.target.value); setFieldErrors((s) => { const c = { ...s }; delete c['email']; return c; }); }}
-                    />
-                    {fieldErrors['email'] && <div id="email-error" className="field-error-inline">{fieldErrors['email']}</div>}
+                    <input type="email" placeholder="Enter your school email" onChange={() => setFieldErrors((prev) => { const next = { ...prev }; delete next.email; return next; })} />
+                    {fieldErrors.email && <span className="field-error-msg">{fieldErrors.email}</span>}
                   </label>
 
                   <div className="forgot-controls">
@@ -104,18 +124,10 @@ export function ForgotPasswordContent() {
                 <>
                   <p className="forgot-copy">Kindly check your email for the verification code.</p>
 
-                  <label className="forgot-field">
+                  <label className={`forgot-field${fieldErrors.code ? ' has-error' : ''}`}>
                     <span>Verification Code:</span>
-                    <input
-                      type="text"
-                      placeholder="Enter verification code"
-                      value={code}
-                      className={`field ${fieldErrors['code'] ? 'field--error' : ''}`}
-                      aria-invalid={!!fieldErrors['code']}
-                      aria-describedby={fieldErrors['code'] ? 'code-error' : undefined}
-                      onChange={(e) => { setCode(e.target.value); setFieldErrors((s) => { const c = { ...s }; delete c['code']; return c; }); }}
-                    />
-                    {fieldErrors['code'] && <div id="code-error" className="field-error-inline">{fieldErrors['code']}</div>}
+                    <input type="text" placeholder="Enter verification code" onChange={() => setFieldErrors((prev) => { const next = { ...prev }; delete next.code; return next; })} />
+                    {fieldErrors.code && <span className="field-error-msg">{fieldErrors.code}</span>}
                   </label>
 
                   <div className="forgot-controls">
@@ -133,59 +145,69 @@ export function ForgotPasswordContent() {
                 <>
                   <p className="forgot-copy">Change your password.</p>
 
-                  <label className="forgot-field forgot-password-field">
+                  <label className={`forgot-field forgot-password-field${fieldErrors.newPassword ? ' has-error' : ''}`}>
                     <span>New Password:</span>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter your new password"
-                      value={newPassword}
-                      className={`field ${fieldErrors['newPassword'] ? 'field--error' : ''}`}
-                      aria-invalid={!!fieldErrors['newPassword']}
-                      aria-describedby={fieldErrors['newPassword'] ? 'newPassword-error' : undefined}
-                      onChange={(e) => { setNewPassword(e.target.value); setFieldErrors((s) => { const c = { ...s }; delete c['newPassword']; return c; }); }}
-                    />
-                    <button
-                      className="forgot-eye"
-                      type="button"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      onClick={() => setShowPassword((current) => !current)}
-                    >
-                      <Image
-                        src={showPassword ? '/svg icons sign in page/Eye (1).svg' : '/svg icons sign in page/Eye off.svg'}
-                        alt=""
-                        width={48}
-                        height={48}
-                      />
-                    </button>
-                    {fieldErrors['newPassword'] && <div id="newPassword-error" className="field-error-inline">{fieldErrors['newPassword']}</div>}
+                    <div className="forgot-input-wrap">
+                      <input type={showPassword ? 'text' : 'password'} placeholder="Enter your new password" value={newPassword} onChange={(e) => { setNewPassword(e.target.value); setFieldErrors((prev) => { const next = { ...prev }; delete next.newPassword; return next; }); }} />
+                      <button
+                        className="forgot-eye"
+                        type="button"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        onClick={() => setShowPassword((current) => !current)}
+                      >
+                        <Image
+                          src={showPassword ? '/svg icons sign in page/Eye (1).svg' : '/svg icons sign in page/Eye off.svg'}
+                          alt=""
+                          width={48}
+                          height={48}
+                        />
+                      </button>
+                    </div>
+                    {fieldErrors.newPassword && <span className="field-error-msg">{fieldErrors.newPassword}</span>}
                   </label>
 
-                  <label className="forgot-field forgot-password-field">
+                  {newPassword.length > 0 && (
+                    <div className={`password-strength password-strength--${passwordStrength.toLowerCase()}`}>
+                      <div className="password-strength__bars" aria-hidden>
+                        {Array.from({ length: 5 }).map((_, index) => (
+                          <span className={index < filledStrengthBoxes ? 'is-filled' : ''} key={index} />
+                        ))}
+                      </div>
+                      <p>Password Strength: {passwordStrength}</p>
+                      {showPasswordWarning && (
+                        <p className="password-strength__warning">
+                          Password must be at least 8 characters and include uppercase, lowercase, number, and special character.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <label className={`forgot-field forgot-password-field${fieldErrors.confirmNewPassword ? ' has-error' : ''}`}>
                     <span>Re-enter Password:</span>
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="Re-enter your password"
-                      value={confirmNewPassword}
-                      className={`field ${fieldErrors['confirmNewPassword'] ? 'field--error' : ''}`}
-                      aria-invalid={!!fieldErrors['confirmNewPassword']}
-                      aria-describedby={fieldErrors['confirmNewPassword'] ? 'confirmNewPassword-error' : undefined}
-                      onChange={(e) => { setConfirmNewPassword(e.target.value); setFieldErrors((s) => { const c = { ...s }; delete c['confirmNewPassword']; return c; }); }}
-                    />
-                    <button
-                      className="forgot-eye"
-                      type="button"
-                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                      onClick={() => setShowConfirmPassword((current) => !current)}
-                    >
-                      <Image
-                        src={showConfirmPassword ? '/svg icons sign in page/Eye (1).svg' : '/svg icons sign in page/Eye off.svg'}
-                        alt=""
-                        width={48}
-                        height={48}
-                      />
-                    </button>
-                    {fieldErrors['confirmNewPassword'] && <div id="confirmNewPassword-error" className="field-error-inline">{fieldErrors['confirmNewPassword']}</div>}
+                    <div className="forgot-input-wrap">
+                      <input type={showConfirmPassword ? 'text' : 'password'} placeholder="Re-enter your password" value={confirmNewPassword} onChange={(e) => { setConfirmNewPassword(e.target.value); setFieldErrors((prev) => { const next = { ...prev }; delete next.confirmNewPassword; return next; }); }} />
+                      <button
+                        className="forgot-eye"
+                        type="button"
+                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                        onClick={() => setShowConfirmPassword((current) => !current)}
+                      >
+                        <Image
+                          src={showConfirmPassword ? '/svg icons sign in page/Eye (1).svg' : '/svg icons sign in page/Eye off.svg'}
+                          alt=""
+                          width={48}
+                          height={48}
+                        />
+                      </button>
+                    </div>
+                    {fieldErrors.confirmNewPassword && <span className="field-error-msg">{fieldErrors.confirmNewPassword}</span>}
                   </label>
+
+                  {showPasswordMatch && (
+                    <p className={`password-match ${passwordMatches ? 'is-match' : 'is-mismatch'}`}>
+                      {passwordMatches ? 'Password matched!' : "Password doesn't match."}
+                    </p>
+                  )}
 
                   <div className="forgot-controls">
                     <button className="forgot-back" type="button" onClick={() => setStep('code')}>
@@ -203,14 +225,13 @@ export function ForgotPasswordContent() {
 
         <aside className="forgot-side" aria-label="Forgot password brand panel">
           <div className="forgot-side__content">
-            <img
+            <Image
               className="forgot-side__logo"
               src="/dcspace-logos/dcspace-whitetext-transparent.svg"
               alt="DC Space logo"
               width={498}
               height={270}
-              decoding="async"
-              fetchPriority="high"
+              priority
             />
             <h2>Forgot your password?</h2>
             {step === 'email' && (

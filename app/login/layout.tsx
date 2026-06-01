@@ -9,10 +9,6 @@ const poppins = Poppins({
   adjustFontFallback: true,
 });
 
-interface LoginLayoutProps {
-  children: React.ReactNode;
-}
-
-export default function LoginLayout({ children }: Readonly<LoginLayoutProps>) {
+export default function LoginLayout({ children }: { children: React.ReactNode }) {
   return <div className={`login-scope ${poppins.variable}`}>{children}</div>;
 }
