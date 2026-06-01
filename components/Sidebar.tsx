@@ -5,15 +5,13 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { type CSSProperties, useEffect, useState } from 'react';
 import { LoadingScreen } from '@/components/LoadingScreen';
-import { clearAuthSession } from '@/lib/user-api';
-import { getProfilePhotoFitStorageKey, getProfilePhotoFromSession, getProfilePhotoStorageKey } from '@/lib/profile-images';
-import { userCanOrganize } from '@/lib/user-data';
+import { canOrganizeEvents } from '@/lib/dc-events';
 import {
   type DcNotification,
   NOTIFICATIONS_UPDATED_EVENT,
   formatNotificationTimeAgo,
   markNotificationsAsRead,
-  loadNotifications,
+  readNotifications,
 } from '@/lib/notifications';
 
 const AVATAR =
@@ -35,20 +33,16 @@ export function Sidebar() {
   const [profilePhotoFit, setProfilePhotoFit] = useState({ zoom: 1, x: 0, y: 0 });
 
   useEffect(() => {
-    const refreshAccess = () => setCanCreateEvents(userCanOrganize());
-    const refreshNotifications = () => {
-      void loadNotifications().then(setNotifications);
-    };
+    const refreshAccess = () => setCanCreateEvents(canOrganizeEvents());
+    const refreshNotifications = () => setNotifications(readNotifications());
     const refreshUserName = () => {
       const firstName = window.localStorage.getItem('dcspaceFirstName')?.trim();
       const lastName = window.localStorage.getItem('dcspaceLastName')?.trim();
       const fullName = [firstName, lastName].filter(Boolean).join(' ');
-      const savedFit = window.localStorage.getItem(getProfilePhotoFitStorageKey());
+      const savedFit = window.localStorage.getItem('dcspaceProfilePhotoFit');
 
       setUserName(fullName || 'User Name');
-      const sessionPhoto = getProfilePhotoFromSession();
-      const cachedPhoto = window.localStorage.getItem(getProfilePhotoStorageKey()) || '';
-      setProfilePhotoImage(sessionPhoto || cachedPhoto);
+      setProfilePhotoImage(window.localStorage.getItem('dcspaceProfilePhotoImage') || '');
 
       if (savedFit) {
         try {
@@ -105,12 +99,12 @@ export function Sidebar() {
 
   const handleMarkAllNotificationsRead = () => {
     markNotificationsAsRead(notifications.map((notification) => notification.id));
-    void loadNotifications().then(setNotifications);
+    setNotifications(readNotifications());
   };
 
   const handleNotificationClick = (notificationId: string) => {
     markNotificationsAsRead([notificationId]);
-    void loadNotifications().then(setNotifications);
+    setNotifications(readNotifications());
     setIsNotificationsOpen(false);
     router.push('/notifications');
   };
@@ -248,7 +242,6 @@ export function Sidebar() {
           href="/login"
           onClick={() => {
             setIsNotificationsOpen(false);
-            clearAuthSession();
             setIsLoggingOut(true);
           }}
         >
@@ -355,6 +348,9 @@ export function Sidebar() {
               height={24}
               alt=""
             />
+          </button>
+          <button className="topbar__help" type="button" aria-label="Help" onClick={() => setIsNotificationsOpen(false)}>
+            ?
           </button>
         </div>
       </header>
