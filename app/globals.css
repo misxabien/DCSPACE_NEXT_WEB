@@ -247,6 +247,109 @@ a:active {
   line-height: 1.5;
 }
 
+.date-range-calendar {
+  width: min(260px, calc(100vw - 32px));
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+}
+
+.date-range-calendar header {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  background: #f7f8fc;
+  color: #1f2230;
+  padding: 0 8px;
+}
+
+.date-range-calendar header strong {
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.date-range-calendar header button {
+  border: 0;
+  background: transparent;
+  color: #9da7c0;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.date-range-calendar__weekdays,
+.date-range-calendar__days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.date-range-calendar__weekdays {
+  padding: 12px 14px 4px;
+}
+
+.date-range-calendar__weekdays span {
+  color: #98a2c0;
+  font-size: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.date-range-calendar__days {
+  gap: 2px;
+  padding: 0 14px 14px;
+}
+
+.date-range-calendar__days button {
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #1f2230;
+  cursor: pointer;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.date-range-calendar__days button.is-muted {
+  color: #c7ccda;
+}
+
+.date-range-calendar__days button.is-highlighted {
+  background: rgba(68, 138, 255, 0.18);
+  color: #448aff;
+}
+
+.date-range-calendar__days button.is-in-range {
+  background: rgba(68, 138, 255, 0.12);
+  color: #448aff;
+}
+
+.date-range-calendar__days button.is-selected,
+.date-range-calendar__days button:hover,
+.date-range-calendar__days button:focus-visible {
+  background: #448aff;
+  color: #ffffff;
+  outline: none;
+}
+
+.date-range-calendar__clear {
+  width: calc(100% - 28px);
+  height: 26px;
+  border: 1px solid #d7dae2;
+  border-radius: 999px;
+  display: block;
+  background: #ffffff;
+  color: #5b6378;
+  cursor: pointer;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 10px;
+  margin: 0 14px 14px;
+}
+
 @keyframes dcspace-rise-in {
   from {
     opacity: 0;
@@ -255,6 +358,107 @@ a:active {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.loading-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  color: #000000;
+}
+
+.loading-screen__content {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: 24px;
+}
+
+.loading-screen__content p {
+  margin: 0;
+  color: #000000;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: clamp(26px, 4vw, 34px);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.12;
+  text-align: center;
+}
+
+.loading-squares {
+  --loading-main: #f5d29d;
+  --loading-a: #2ca6de;
+  --loading-b: #156884;
+  --loading-c: #448aff;
+  --loading-d: #a0c0f8;
+  width: 42px;
+  height: 42px;
+  position: relative;
+  display: grid;
+  animation: dcspace-loading-orbit 1.08s steps(4, end) infinite;
+}
+
+.loading-squares span {
+  width: 11px;
+  height: 11px;
+  position: absolute;
+  border-radius: 1px;
+  background: var(--loading-d);
+  animation: dcspace-loading-color 1.08s steps(4, end) infinite;
+}
+
+.loading-squares span:nth-child(1) {
+  top: 7px;
+  left: 7px;
+  animation-delay: 0s;
+}
+
+.loading-squares span:nth-child(2) {
+  top: 7px;
+  right: 7px;
+  animation-delay: 0.27s;
+}
+
+.loading-squares span:nth-child(3) {
+  right: 7px;
+  bottom: 7px;
+  animation-delay: 0.54s;
+}
+
+.loading-squares span:nth-child(4) {
+  bottom: 7px;
+  left: 7px;
+  animation-delay: 0.81s;
+}
+
+@keyframes dcspace-loading-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dcspace-loading-color {
+  0% {
+    background: var(--loading-main);
+    box-shadow: 7px 7px 0 rgba(245, 210, 157, 0.28);
+  }
+  25% {
+    background: var(--loading-a);
+    box-shadow: 7px 7px 0 rgba(44, 166, 222, 0.2);
+  }
+  50% {
+    background: var(--loading-b);
+    box-shadow: 7px 7px 0 rgba(21, 104, 132, 0.18);
+  }
+  75% {
+    background: var(--loading-c);
+    box-shadow: 7px 7px 0 rgba(68, 138, 255, 0.18);
   }
 }
 
@@ -272,6 +476,21 @@ a:active {
 @media (max-width: 960px) {
   :root {
     --main-pad-x: 24px;
+  }
+}
+
+@media (max-width: 700px) {
+  .date-range-calendar header {
+    min-height: 40px;
+    grid-template-columns: 34px 1fr 34px;
+  }
+
+  .date-range-calendar__weekdays {
+    padding: 10px 12px 4px;
+  }
+
+  .date-range-calendar__days {
+    padding: 0 12px 12px;
   }
 }
 

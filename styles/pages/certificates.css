@@ -139,6 +139,18 @@
   gap: 28px;
 }
 
+.certificates-page__empty {
+  grid-column: 1 / -1;
+  margin: 28px auto 0;
+  max-width: 520px;
+  color: #5b6378;
+  font-family: var(--font-ui), "Poppins", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+}
+
 .cert-card {
   height: 214px;
   min-height: 214px;
