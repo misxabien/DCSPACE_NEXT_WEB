@@ -7,14 +7,102 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 
 type ForgotStep = 'email' | 'code' | 'password';
 
+function isValidSchoolEmail(email: string) {
+  const trimmed = email.trim();
+  return trimmed.length > 0 && trimmed.endsWith('@sdca.edu.ph');
+}
+
+function getPasswordStrength(password: string) {
+  const checks = [
+    password.length >= 8,
+    /[A-Z]/.test(password),
+    /[a-z]/.test(password),
+    /\d/.test(password),
+    /[^A-Za-z0-9]/.test(password),
+  ];
+  const passed = checks.filter(Boolean).length;
+  return passed >= 5 ? 'Strong' : passed >= 3 ? 'Medium' : 'Weak';
+}
+
 export function ForgotPasswordContent() {
+
   const router = useRouter();
   const [step, setStep] = useState<ForgotStep>('email');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+
+  const passwordChecks = [
+    newPassword.length >= 8,
+    /[A-Z]/.test(newPassword),
+    /[a-z]/.test(newPassword),
+    /\d/.test(newPassword),
+    /[^A-Za-z0-9]/.test(newPassword),
+  ];
+  const passedPasswordChecks = passwordChecks.filter(Boolean).length;
+  const passwordStrength = passedPasswordChecks >= 5 ? 'Strong' : passedPasswordChecks >= 3 ? 'Medium' : 'Weak';
+  const filledStrengthBoxes = passwordStrength === 'Strong' ? 5 : passwordStrength === 'Medium' ? 3 : 1;
+  const showPasswordWarning = newPassword.length > 0 && passwordStrength === 'Weak';
+  const showPasswordMatch = confirmNewPassword.length > 0;
+  const passwordMatches = newPassword.length > 0 && newPassword === confirmNewPassword;
+
+  const handleSendCode = () => {
+    const emailInput = document.querySelector<HTMLInputElement>('.forgot-field input[type="email"]');
+    const email = emailInput?.value?.trim() || '';
+    if (!email) {
+      setFieldErrors({ email: 'School email is required' });
+      return;
+    }
+    if (!email.endsWith('@sdca.edu.ph')) {
+      setFieldErrors({ email: "Invalid school email. Email must end with '@sdca.edu.ph'" });
+      return;
+    }
+    setFieldErrors({});
+    setStep('code');
+  };
+
+  const handleSubmitCode = () => {
+    const codeInput = document.querySelector<HTMLInputElement>('.forgot-field input[type="text"]');
+    const code = codeInput?.value?.trim() || '';
+    if (!code) {
+      setFieldErrors({ code: 'Please enter a valid verification code.' });
+      return;
+    }
+    setFieldErrors({});
+    setStep('password');
+  };
 
   const handleSaveNewPassword = () => {
+    const errors: Record<string, string> = {};
+    if (!newPassword) {
+      errors.newPassword = 'Password is required';
+    } else {
+      const checks = [
+        newPassword.length >= 8,
+        /[A-Z]/.test(newPassword),
+        /[a-z]/.test(newPassword),
+        /\d/.test(newPassword),
+        /[^A-Za-z0-9]/.test(newPassword),
+      ];
+      if (checks.filter(Boolean).length < 5) {
+        errors.newPassword = 'Password is too weak';
+      }
+    }
+    if (!confirmNewPassword) {
+      errors.confirmNewPassword = 'Re-enter your password';
+    } else if (newPassword !== confirmNewPassword) {
+      errors.confirmNewPassword = "Passwords don't match";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setFieldErrors({});
     setIsSavingPassword(true);
     window.setTimeout(() => {
       router.push('/login');
@@ -33,16 +121,17 @@ export function ForgotPasswordContent() {
                 <>
                   <p className="forgot-copy">Enter your school email and we will send a verification code.</p>
 
-                  <label className="forgot-field">
+                  <label className={`forgot-field${fieldErrors.email ? ' has-error' : ''}`}>
                     <span>School Email:</span>
-                    <input type="email" placeholder="Enter your school email" />
+                    <input type="email" placeholder="Enter your school email" onChange={() => setFieldErrors((prev) => { const next = { ...prev }; delete next.email; return next; })} />
+                    {fieldErrors.email && <span className="field-error-msg">{fieldErrors.email}</span>}
                   </label>
 
                   <div className="forgot-controls">
                     <button className="forgot-back auth-mobile-control-back" type="button" onClick={() => router.back()}>
                       Go back to Sign In
                     </button>
-                    <button className="forgot-primary" type="button" onClick={() => setStep('code')}>
+                    <button className="forgot-primary" type="button" onClick={handleSendCode}>
                       Send verification code
                     </button>
                   </div>
@@ -53,16 +142,17 @@ export function ForgotPasswordContent() {
                 <>
                   <p className="forgot-copy">Kindly check your email for the verification code.</p>
 
-                  <label className="forgot-field">
+                  <label className={`forgot-field${fieldErrors.code ? ' has-error' : ''}`}>
                     <span>Verification Code:</span>
-                    <input type="text" placeholder="Enter your school email" />
+                    <input type="text" placeholder="Enter verification code" onChange={() => setFieldErrors((prev) => { const next = { ...prev }; delete next.code; return next; })} />
+                    {fieldErrors.code && <span className="field-error-msg">{fieldErrors.code}</span>}
                   </label>
 
                   <div className="forgot-controls">
                     <button className="forgot-back" type="button" onClick={() => setStep('email')}>
                       Go back to School Email
                     </button>
-                    <button className="forgot-primary" type="button" onClick={() => setStep('password')}>
+                    <button className="forgot-primary" type="button" onClick={handleSubmitCode}>
                       Submit
                     </button>
                   </div>
@@ -73,9 +163,9 @@ export function ForgotPasswordContent() {
                 <>
                   <p className="forgot-copy">Change your password.</p>
 
-                  <label className="forgot-field forgot-password-field">
+                  <label className={`forgot-field forgot-password-field${fieldErrors.newPassword ? ' has-error' : ''}`}>
                     <span>New Password:</span>
-                    <input type={showPassword ? 'text' : 'password'} placeholder="Enter your new password" />
+                    <input type={showPassword ? 'text' : 'password'} placeholder="Enter your new password" value={newPassword} onChange={(e) => { setNewPassword(e.target.value); setFieldErrors((prev) => { const next = { ...prev }; delete next.newPassword; return next; }); }} />
                     <button
                       className="forgot-eye"
                       type="button"
@@ -89,11 +179,28 @@ export function ForgotPasswordContent() {
                         height={48}
                       />
                     </button>
+                    {fieldErrors.newPassword && <span className="field-error-msg">{fieldErrors.newPassword}</span>}
                   </label>
 
-                  <label className="forgot-field forgot-password-field">
+                  {newPassword.length > 0 && (
+                    <div className={`password-strength password-strength--${passwordStrength.toLowerCase()}`}>
+                      <div className="password-strength__bars" aria-hidden>
+                        {Array.from({ length: 5 }).map((_, index) => (
+                          <span className={index < filledStrengthBoxes ? 'is-filled' : ''} key={index} />
+                        ))}
+                      </div>
+                      <p>Password Strength: {passwordStrength}</p>
+                      {showPasswordWarning && (
+                        <p className="password-strength__warning">
+                          Password must be at least 8 characters and include uppercase, lowercase, number, and special character.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <label className={`forgot-field forgot-password-field${fieldErrors.confirmNewPassword ? ' has-error' : ''}`}>
                     <span>Re-enter Password:</span>
-                    <input type={showConfirmPassword ? 'text' : 'password'} placeholder="Re-enter your password" />
+                    <input type={showConfirmPassword ? 'text' : 'password'} placeholder="Re-enter your password" value={confirmNewPassword} onChange={(e) => { setConfirmNewPassword(e.target.value); setFieldErrors((prev) => { const next = { ...prev }; delete next.confirmNewPassword; return next; }); }} />
                     <button
                       className="forgot-eye"
                       type="button"
@@ -107,7 +214,14 @@ export function ForgotPasswordContent() {
                         height={48}
                       />
                     </button>
+                    {fieldErrors.confirmNewPassword && <span className="field-error-msg">{fieldErrors.confirmNewPassword}</span>}
                   </label>
+
+                  {showPasswordMatch && (
+                    <p className={`password-match ${passwordMatches ? 'is-match' : 'is-mismatch'}`}>
+                      {passwordMatches ? 'Password matched!' : "Password doesn't match."}
+                    </p>
+                  )}
 
                   <div className="forgot-controls">
                     <button className="forgot-back" type="button" onClick={() => setStep('code')}>

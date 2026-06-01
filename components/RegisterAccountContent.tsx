@@ -41,7 +41,25 @@ function requiredLabel(label: string, value: string) {
   return `${label}${value.trim() ? '' : '*'}`;
 }
 
+function isValidSchoolEmail(email: string) {
+  const trimmed = email.trim();
+  return trimmed.length > 0 && trimmed.endsWith('@sdca.edu.ph');
+}
+
+function getPasswordStrength(password: string) {
+  const checks = [
+    password.length >= 8,
+    /[A-Z]/.test(password),
+    /[a-z]/.test(password),
+    /\d/.test(password),
+    /[^A-Za-z0-9]/.test(password),
+  ];
+  const passed = checks.filter(Boolean).length;
+  return passed >= 5 ? 'Strong' : passed >= 3 ? 'Medium' : 'Weak';
+}
+
 export function RegisterAccountContent() {
+
   const router = useRouter();
   const [step, setStep] = useState<RegisterStep>('personal');
   const [formData, setFormData] = useState<RegisterData>(initialData);
@@ -52,6 +70,7 @@ export function RegisterAccountContent() {
   const [privacyModalClosing, setPrivacyModalClosing] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const passwordChecks = [
     formData.password.length >= 8,
@@ -69,9 +88,23 @@ export function RegisterAccountContent() {
 
   const updateField = (field: keyof RegisterData, value: string) => {
     setFormData((current) => ({ ...current, [field]: value }));
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
   const handlePersonalContinue = () => {
+    const errors: Record<string, string> = {};
+    if (!formData.firstName.trim()) errors.firstName = 'First name is required';
+    if (!formData.lastName.trim()) errors.lastName = 'Last name is required';
+    if (!formData.studentNumber.trim()) errors.studentNumber = 'Student Number is required';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
     setStep('school');
   };
 
@@ -113,25 +146,40 @@ export function RegisterAccountContent() {
   };
 
   const handleVerifyAccount = () => {
-    if (requiredAccountDetailsAreFilled() && passwordStrength !== 'Strong') {
-      showToast('Password is too weak');
+    const errors: Record<string, string> = {};
+    if (!formData.rfidTagNumber.trim()) errors.rfidTagNumber = 'Please tap your school ID';
+    if (!formData.schoolEmail.trim()) {
+      errors.schoolEmail = 'School email is required';
+    } else if (!formData.schoolEmail.trim().endsWith('@sdca.edu.ph')) {
+      errors.schoolEmail = "Invalid school email. Email must end with '@sdca.edu.ph'";
+    }
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    } else if (passwordStrength !== 'Strong') {
+      errors.password = 'Password is too weak';
+    }
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = 'Re-enter your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "Passwords don't match";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
-    if (!accountIsComplete()) {
-      showToast('Please fill in the required details');
-      return;
-    }
-
+    setFieldErrors({});
     setStep('verify');
   };
 
   const handleVerificationCreate = () => {
     if (!formData.verificationCode.trim()) {
-      showToast('Please enter the verification code');
+      setFieldErrors({ verificationCode: 'Please enter a valid verification code.' });
       return;
     }
 
+    setFieldErrors({});
     setShowPrivacyModal(true);
     setPrivacyModalClosing(false);
   };
@@ -197,7 +245,7 @@ export function RegisterAccountContent() {
               <div className="register-step" key="personal" aria-label="Personal information">
                 <h2>Personal Info</h2>
 
-              <label className="register-field">
+              <label className={`register-field${fieldErrors.firstName ? ' has-error' : ''}`}>
                 <span>{requiredLabel('First Name', formData.firstName)}</span>
                 <input
                   name="first_name"
@@ -206,9 +254,10 @@ export function RegisterAccountContent() {
                   value={formData.firstName}
                   onChange={(event) => updateField('firstName', event.target.value)}
                 />
+                {fieldErrors.firstName && <span className="field-error-msg">{fieldErrors.firstName}</span>}
               </label>
 
-              <label className="register-field">
+              <label className={`register-field${fieldErrors.lastName ? ' has-error' : ''}`}>
                 <span>{requiredLabel('Last Name', formData.lastName)}</span>
                 <input
                   name="last_name"
@@ -217,9 +266,10 @@ export function RegisterAccountContent() {
                   value={formData.lastName}
                   onChange={(event) => updateField('lastName', event.target.value)}
                 />
+                {fieldErrors.lastName && <span className="field-error-msg">{fieldErrors.lastName}</span>}
               </label>
 
-              <label className="register-field">
+              <label className={`register-field${fieldErrors.studentNumber ? ' has-error' : ''}`}>
                 <span>{requiredLabel('Student Number', formData.studentNumber)}</span>
                 <input
                   name="student_number"
@@ -228,6 +278,7 @@ export function RegisterAccountContent() {
                   value={formData.studentNumber}
                   onChange={(event) => updateField('studentNumber', event.target.value)}
                 />
+                {fieldErrors.studentNumber && <span className="field-error-msg">{fieldErrors.studentNumber}</span>}
               </label>
 
               <div className="register-controls register-controls--end">
@@ -243,7 +294,7 @@ export function RegisterAccountContent() {
               <div className="register-step register-step--school" key="school" aria-label="School details">
               <h2>School Details</h2>
 
-              <label className="register-field">
+              <label className={`register-field${fieldErrors.course ? ' has-error' : ''}`}>
                 <span>{requiredLabel('Course', formData.course)}</span>
                 <select
                   name="course"
@@ -269,9 +320,10 @@ export function RegisterAccountContent() {
                   <option value="BMA">BMA - Bachelor of Multimedia Arts</option>
                   <option value="BSIT">BSIT - Bachelor of Science in Information Technology</option>
                 </select>
+                {fieldErrors.course && <span className="field-error-msg">{fieldErrors.course}</span>}
               </label>
 
-              <label className="register-field">
+              <label className={`register-field${fieldErrors.school ? ' has-error' : ''}`}>
                 <span>{requiredLabel('School/Department', formData.school)}</span>
                 <select
                   name="school"
@@ -287,10 +339,17 @@ export function RegisterAccountContent() {
                   <option value="SIHTM">SIHTM - School of International Hospitality, Tourism, and Management</option>
                   <option value="SCMCS">SCMCS - School of Communication, Multimedia, and Computer Studies</option>
                 </select>
+                {fieldErrors.school && <span className="field-error-msg">{fieldErrors.school}</span>}
               </label>
 
               <label className="register-field">
                 <span>Organization</span>
+                <input
+                  name="organization"
+                  type="text"
+                  placeholder="Enter your organization"
+                  value={formData.organization}
+                  onChange={(event) => updateField('organization', event.target.value)}
                 <input
                   name="organization"
                   type="text"
@@ -319,8 +378,15 @@ export function RegisterAccountContent() {
                 <button className="register-back-step" type="button" onClick={() => setStep('personal')}>
                   Go back to Personal Info
                 </button>
-                <button className="register-continue" type="button" onClick={() => setStep('account')}>
-                  Save &amp; Continue
+                <button className="register-continue" type="button" onClick={() => {
+                  const errors: Record<string, string> = {};
+                  if (!formData.course) errors.course = 'Course is required';
+                  if (!formData.school) errors.school = 'School/Department is required';
+                  if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
+                  setFieldErrors({});
+                  setStep('account');
+                }}>
+                  Save & Continue
                 </button>
               </div>
             </div>
@@ -328,7 +394,7 @@ export function RegisterAccountContent() {
               <div className="register-step register-step--account" key="account" aria-label="Account set up">
                 <h2>Account Set Up</h2>
 
-                <label className="register-field register-field--compact">
+                <label className={`register-field register-field--compact${fieldErrors.rfidTagNumber ? ' has-error' : ''}`}>
                   <span>{requiredLabel('RFID Tag Number', formData.rfidTagNumber)}</span>
                   <input
                     name="rfid_tag_number"
@@ -338,9 +404,10 @@ export function RegisterAccountContent() {
                     value={formData.rfidTagNumber}
                     onChange={(event) => updateField('rfidTagNumber', event.target.value)}
                   />
+                  {fieldErrors.rfidTagNumber && <span className="field-error-msg">{fieldErrors.rfidTagNumber}</span>}
                 </label>
 
-                <label className="register-field register-field--compact">
+                <label className={`register-field register-field--compact${fieldErrors.schoolEmail ? ' has-error' : ''}`}>
                   <span>{requiredLabel('School email', formData.schoolEmail)}</span>
                   <input
                     name="school_email"
@@ -349,9 +416,10 @@ export function RegisterAccountContent() {
                     value={formData.schoolEmail}
                     onChange={(event) => updateField('schoolEmail', event.target.value)}
                   />
+                  {fieldErrors.schoolEmail && <span className="field-error-msg">{fieldErrors.schoolEmail}</span>}
                 </label>
 
-                <label className="register-field register-field--compact register-password-field">
+                <label className={`register-field register-field--compact register-password-field${fieldErrors.password ? ' has-error' : ''}`}>
                   <span>{requiredLabel('Password', formData.password)}</span>
                   <input
                     name="password"
@@ -391,7 +459,7 @@ export function RegisterAccountContent() {
                   </div>
                 )}
 
-                <label className="register-field register-field--compact register-password-field">
+                <label className={`register-field register-field--compact register-password-field${fieldErrors.confirmPassword ? ' has-error' : ''}`}>
                   <span>{requiredLabel('Re-enter your password', formData.confirmPassword)}</span>
                   <input
                     name="confirm_password"
@@ -413,6 +481,7 @@ export function RegisterAccountContent() {
                       height={48}
                     />
                   </button>
+                  {fieldErrors.confirmPassword && <span className="field-error-msg">{fieldErrors.confirmPassword}</span>}
                 </label>
 
                 {showPasswordMatch && (
@@ -435,7 +504,7 @@ export function RegisterAccountContent() {
                 <h2>Verify your Account</h2>
                 <p className="register-verify-copy">Kindly check your email for the verification code.</p>
 
-                <label className="register-field register-field--verify">
+                <label className={`register-field register-field--verify${fieldErrors.verificationCode ? ' has-error' : ''}`}>
                   <span>{requiredLabel('Verification Code:', formData.verificationCode)}</span>
                   <input
                     name="verification_code"
@@ -445,6 +514,7 @@ export function RegisterAccountContent() {
                     value={formData.verificationCode}
                     onChange={(event) => updateField('verificationCode', event.target.value)}
                   />
+                  {fieldErrors.verificationCode && <span className="field-error-msg">{fieldErrors.verificationCode}</span>}
                 </label>
 
                 <div className="register-controls">

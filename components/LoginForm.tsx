@@ -7,20 +7,39 @@ import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { signInAttendanceUser } from '@/lib/attendance';
 
+function isValidSchoolEmail(email: string) {
+  const trimmed = email.trim();
+  return trimmed.length > 0 && trimmed.endsWith('@sdca.edu.ph');
+}
+
 export function LoginForm() {
   const router = useRouter();
+
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<'student' | 'faculty'>('student');
+
+  const [emailError, setEmailError] = useState<string>('');
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const email = formData.get('email');
+    const emailRaw = formData.get('email');
+    const email = typeof emailRaw === 'string' ? emailRaw : '';
 
+    const nextError = "Invalid school email. Email must end with '@sdca.edu.ph'";
+
+    if (!isValidSchoolEmail(email)) {
+      setEmailError(nextError);
+      return;
+    }
+
+    setEmailError('');
     window.localStorage.setItem('dcspaceAccountType', role);
-    signInAttendanceUser(typeof email === 'string' ? email : '');
+    signInAttendanceUser(email);
     router.push('/home');
   };
+
+
 
   return (
     <main className="page">
@@ -50,19 +69,24 @@ export function LoginForm() {
             onSubmit={handleSubmit}
             autoComplete="on"
           >
-            <label className="field">
+            <label className="field field--with-inline-error">
               <span className="field__label">Your School Email:</span>
+
               <span className="icon-left" aria-hidden>
                 <Image src="/svg icons sign in page/mail.svg" alt="" width={35} height={35} />
               </span>
+
               <input
-                className="input"
+                className={`input ${emailError ? 'is-error' : ''}`}
                 name="email"
                 type="email"
                 placeholder="Enter your school email address"
                 required
               />
+
+              {emailError && <p className="auth-field-error">{emailError}</p>}
             </label>
+
 
             <label className="field field--password">
               <span className="field__label">Password:</span>
