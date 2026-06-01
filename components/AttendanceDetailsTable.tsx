@@ -6,10 +6,11 @@ import {
   getCurrentAttendanceUser,
   getRegisteredEventId,
   getSelectedAttendanceEventId,
+  readRegisteredEvents,
+  readUserAttendanceRecords,
   type AttendanceRecord,
   type RegisteredEvent,
 } from '@/lib/attendance';
-import { loadAttendanceRecords, loadRegisteredEvents } from '@/lib/user-data';
 
 function getRequiredMinutes(minAttendance?: string) {
   if (!minAttendance) return 0;
@@ -79,30 +80,23 @@ export function AttendanceDetailsTable() {
   const [studentNumber, setStudentNumber] = useState('2025-0000');
 
   useEffect(() => {
-    let cancelled = false;
+    const user = getCurrentAttendanceUser();
+    const registeredEvents = readRegisteredEvents();
+    const selectedEventId = getSelectedAttendanceEventId();
 
-    void (async () => {
-      const user = getCurrentAttendanceUser();
-      const [registeredEvents, records] = await Promise.all([loadRegisteredEvents(), loadAttendanceRecords()]);
-      const selectedEventId = getSelectedAttendanceEventId();
+    const selectedEvent =
+      registeredEvents.find((item) => getRegisteredEventId(item) === selectedEventId) ||
+      registeredEvents[0] ||
+      null;
 
-      const selectedEvent =
-        registeredEvents.find((item) => getRegisteredEventId(item) === selectedEventId) ||
-        registeredEvents[0] ||
-        null;
+    const records = readUserAttendanceRecords(user);
+    const selectedRecord = selectedEvent
+      ? records[getRegisteredEventId(selectedEvent)]
+      : undefined;
 
-      const selectedRecord = selectedEvent ? records[getRegisteredEventId(selectedEvent)] : undefined;
-
-      if (cancelled) return;
-
-      setStudentNumber(user.studentNumber || '2025-0000');
-      setEvent(selectedEvent);
-      setRecord(selectedRecord);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    setStudentNumber(user.studentNumber || '2025-0000');
+    setEvent(selectedEvent);
+    setRecord(selectedRecord);
   }, []);
 
   const attendanceStatus = event

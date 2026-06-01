@@ -3,7 +3,7 @@ type EmptyStateProps = {
   icon?: 'calendar' | 'certificate';
 };
 
-export function EmptyState({ message, icon = 'calendar' }: Readonly<EmptyStateProps>) {
+export function EmptyState({ message, icon = 'calendar' }: EmptyStateProps) {
   return (
     <section className={`site-empty site-empty--${icon}`} aria-label="Empty state">
       {icon === 'certificate' ? <CertificateEmptyIcon /> : <CalendarEmptyIcon />}

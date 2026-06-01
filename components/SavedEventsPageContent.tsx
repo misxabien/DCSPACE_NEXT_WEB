@@ -4,10 +4,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { DateRangeCalendarPicker } from '@/components/DateRangeCalendarPicker';
-import { type FrontendEvent, setSelectedBrowseEventId } from '@/lib/dc-events';
-import { loadBookmarkedEvents, toggleEventBookmark } from '@/lib/user-data';
+import { type FrontendEvent, readBrowseEvents, setSelectedBrowseEventId } from '@/lib/dc-events';
 
+const HOME_SAVED_EVENTS_KEY = 'dcspaceHomeSavedEvents';
 const filters = ['All', 'Today', 'Tomorrow', 'This Weekend', 'Pick a date'];
+
+function readSavedEventIds() {
+  try {
+    return JSON.parse(window.localStorage.getItem(HOME_SAVED_EVENTS_KEY) || '[]') as string[];
+  } catch {
+    return [];
+  }
+}
 
 function getEventDate(event: FrontendEvent) {
   const parsedDate = new Date(`${event.month} ${event.day}, ${event.year}`);
@@ -103,22 +111,20 @@ export function SavedEventsPageContent() {
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
   useEffect(() => {
-    let cancelled = false;
-
-    const refreshEvents = async () => {
-      const bookmarked = await loadBookmarkedEvents();
-      if (cancelled) return;
-      setEvents(bookmarked);
-      setSavedEventIds(bookmarked.map((event) => event.id));
+    const refreshEvents = () => {
+      setEvents(readBrowseEvents());
+      setSavedEventIds(readSavedEventIds());
     };
 
-    void refreshEvents();
-    window.addEventListener('pageshow', () => void refreshEvents());
-    window.addEventListener('storage', () => void refreshEvents());
-    window.addEventListener('dcspace-events-updated', () => void refreshEvents());
+    refreshEvents();
+    window.addEventListener('pageshow', refreshEvents);
+    window.addEventListener('storage', refreshEvents);
+    window.addEventListener('dcspace-events-updated', refreshEvents);
 
     return () => {
-      cancelled = true;
+      window.removeEventListener('pageshow', refreshEvents);
+      window.removeEventListener('storage', refreshEvents);
+      window.removeEventListener('dcspace-events-updated', refreshEvents);
     };
   }, []);
 
@@ -151,9 +157,11 @@ export function SavedEventsPageContent() {
   }, [events, savedEventIds]);
 
   const removeSavedEvent = (eventId: string) => {
-    void toggleEventBookmark(eventId, savedEventIds).then((nextIds) => {
-      setSavedEventIds(nextIds);
-      setEvents((current) => current.filter((event) => nextIds.includes(event.id)));
+    setSavedEventIds((current) => {
+      const nextSavedEventIds = current.filter((savedEventId) => savedEventId !== eventId);
+
+      window.localStorage.setItem(HOME_SAVED_EVENTS_KEY, JSON.stringify(nextSavedEventIds));
+      return nextSavedEventIds;
     });
   };
 

@@ -5,18 +5,16 @@ import { useEffect, useMemo, useState } from "react";
 import { DateRangeCalendarPicker } from "@/components/DateRangeCalendarPicker";
 import {
   ATTENDANCE_UPDATED_EVENT,
+  REGISTERED_EVENTS_KEY,
   type AttendanceRecord,
   type RegisteredEvent,
   formatEventDate,
   getCertificateStatus,
+  getCurrentAttendanceUser,
   getRegisteredEventId,
+  readRegisteredEvents,
+  readUserAttendanceRecords,
 } from "@/lib/attendance";
-import {
-  hasBackendSession,
-  loadAttendanceRecords,
-  loadCertificatesFromBackend,
-  loadRegisteredEvents,
-} from "@/lib/user-data";
 
 const filters = ["All", "Yesterday", "This Week", "Pick a date"];
 
@@ -27,9 +25,40 @@ type CertificateCard = {
   issuedDate: string;
   issuedDateValue: string;
   imageSrc: string;
+  isPlaceholder?: boolean;
 };
 
 const certificateTemplateSrc = "/certificates/default-template.png";
+const placeholderCertificates: CertificateCard[] = [
+  {
+    id: "template-certificate-1",
+    certificateName: "Certificate Name",
+    eventName: "Event Name",
+    issuedDate: "Date Issued",
+    issuedDateValue: getDateInputValue(new Date()),
+    imageSrc: certificateTemplateSrc,
+    isPlaceholder: true,
+  },
+  {
+    id: "template-certificate-2",
+    certificateName: "Certificate Name",
+    eventName: "Event Name",
+    issuedDate: "Date Issued",
+    issuedDateValue: getDateInputValue(new Date()),
+    imageSrc: certificateTemplateSrc,
+    isPlaceholder: true,
+  },
+  {
+    id: "template-certificate-3",
+    certificateName: "Certificate Name",
+    eventName: "Event Name",
+    issuedDate: "Date Issued",
+    issuedDateValue: getDateInputValue(new Date()),
+    imageSrc: certificateTemplateSrc,
+    isPlaceholder: true,
+  },
+];
+
 function CertificateIcon() {
   return (
     <svg width="42" height="45" viewBox="0 0 42 45" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -110,53 +139,32 @@ export function CertificatesPageContent() {
   const [selectedCertificate, setSelectedCertificate] = useState<CertificateCard | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const refreshCertificates = async () => {
-      if (hasBackendSession()) {
-        const backendCertificates = await loadCertificatesFromBackend();
-        if (cancelled) return;
-        if (backendCertificates.length > 0) {
-          setCertificates(
-            backendCertificates.map((certificate) => ({
-              id: certificate.id,
-              certificateName: `${certificate.eventName || "Event"} Certificate`,
-              eventName: certificate.eventName || "Event Name",
-              issuedDate: certificate.issuedAt
-                ? new Date(certificate.issuedAt).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "2-digit",
-                    year: "numeric",
-                  })
-                : "Date Issued",
-              issuedDateValue: certificate.issuedAt
-                ? getDateInputValue(new Date(certificate.issuedAt))
-                : getDateInputValue(new Date()),
-              imageSrc: certificateTemplateSrc,
-            })),
-          );
-          return;
-        }
-      }
-
-      const [registered, records] = await Promise.all([loadRegisteredEvents(), loadAttendanceRecords()]);
-      if (cancelled) return;
-      setCertificates(buildCertificateCards(registered, records));
+    const refreshCertificates = () => {
+      const user = getCurrentAttendanceUser();
+      setCertificates(buildCertificateCards(readRegisteredEvents(), readUserAttendanceRecords(user)));
     };
 
-    void refreshCertificates();
-    window.addEventListener("pageshow", () => void refreshCertificates());
-    window.addEventListener("storage", () => void refreshCertificates());
-    window.addEventListener(ATTENDANCE_UPDATED_EVENT, () => void refreshCertificates());
-    window.addEventListener("dcspace-registered-events-updated", () => void refreshCertificates());
+    refreshCertificates();
+    window.addEventListener("pageshow", refreshCertificates);
+    window.addEventListener("storage", refreshCertificates);
+    window.addEventListener(ATTENDANCE_UPDATED_EVENT, refreshCertificates);
+    window.addEventListener("dcspace-registered-events-updated", refreshCertificates);
 
     return () => {
-      cancelled = true;
+      window.removeEventListener("pageshow", refreshCertificates);
+      window.removeEventListener("storage", refreshCertificates);
+      window.removeEventListener(ATTENDANCE_UPDATED_EVENT, refreshCertificates);
+      window.removeEventListener("dcspace-registered-events-updated", refreshCertificates);
     };
   }, []);
 
+  const visibleCertificates = certificates.length ? certificates : placeholderCertificates;
   const filteredCertificates = useMemo(() => {
-    return certificates.filter((certificate) => {
+    if (!certificates.length) {
+      return visibleCertificates;
+    }
+
+    return visibleCertificates.filter((certificate) => {
       const issuedDate = new Date(`${certificate.issuedDateValue}T00:00:00`);
 
       if (activeFilter === "Yesterday") {
@@ -179,10 +187,10 @@ export function CertificatesPageContent() {
 
       return true;
     });
-  }, [activeFilter, certificates, dateRange]);
+  }, [activeFilter, certificates.length, dateRange, visibleCertificates]);
   const certificateDateKeys = useMemo(
-    () => certificates.map((certificate) => certificate.issuedDateValue),
-    [certificates],
+    () => visibleCertificates.map((certificate) => certificate.issuedDateValue),
+    [visibleCertificates],
   );
 
   const handleFilterClick = (filter: string) => {
@@ -239,13 +247,6 @@ export function CertificatesPageContent() {
       </section>
 
       <section className="cert-grid" aria-label="Certificate cards">
-        {!filteredCertificates.length ? (
-          <p className="certificates-page__empty">
-            {hasBackendSession()
-              ? "No certificates are ready yet. Complete event attendance to earn certificates."
-              : "Sign in to view your earned certificates."}
-          </p>
-        ) : null}
         {filteredCertificates.map((certificate) => (
           <button
             className="cert-card"

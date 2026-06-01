@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { DashboardPageContent } from '@/components/DashboardPageContent';
+import '@/styles/pages/dashboard.css';
 
 export const metadata: Metadata = {
-  title: 'Dashboard',
+  title: 'Dashboard — DC Space',
 };
 
 export default function DashboardPage() {

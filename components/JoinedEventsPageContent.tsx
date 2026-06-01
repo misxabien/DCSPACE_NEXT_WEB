@@ -4,9 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { DateRangeCalendarPicker } from '@/components/DateRangeCalendarPicker';
-import { getRegisteredEventId, type RegisteredEvent } from '@/lib/attendance';
-import { getEventBanner, getEventTimeLabel, hasEventDateParts } from '@/lib/event-display';
-import { loadRegisteredEvents, refreshProfile } from '@/lib/user-data';
+import { getRegisteredEventId, readRegisteredEvents, type RegisteredEvent } from '@/lib/attendance';
 import { setSelectedBrowseEventId } from '@/lib/dc-events';
 
 const filters = ['All', 'Today', 'Tomorrow', 'This Weekend', 'Pick a date'];
@@ -81,33 +79,29 @@ function matchesFilter(event: RegisteredEvent, activeFilter: string, dateRange: 
   return day === 0 || day === 6;
 }
 
+function getEventTime(event: RegisteredEvent) {
+  return event.dateTime?.split(',').at(-1)?.trim() || 'Event Time';
+}
+
+function getEventBanner(event: RegisteredEvent) {
+  return (event as RegisteredEvent & { bannerDataUrl?: string }).bannerDataUrl || '';
+}
+
 export function JoinedEventsPageContent() {
   const [events, setEvents] = useState<RegisteredEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('All');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    const refreshEvents = () => setEvents(readRegisteredEvents());
 
-    const refreshEvents = async () => {
-      setIsLoading(true);
-      await refreshProfile();
-      const registered = await loadRegisteredEvents();
-      if (!cancelled) {
-        setEvents(registered);
-        setIsLoading(false);
-      }
-    };
-
-    void refreshEvents();
+    refreshEvents();
     window.addEventListener('pageshow', refreshEvents);
     window.addEventListener('storage', refreshEvents);
     window.addEventListener('dcspace-registered-events-updated', refreshEvents);
 
     return () => {
-      cancelled = true;
       window.removeEventListener('pageshow', refreshEvents);
       window.removeEventListener('storage', refreshEvents);
       window.removeEventListener('dcspace-registered-events-updated', refreshEvents);
@@ -176,46 +170,37 @@ export function JoinedEventsPageContent() {
           ))}
         </div>
 
-        {isLoading ? (
-          <p className="joined-events-empty">Loading your events…</p>
-        ) : visibleEvents.length ? (
+        {visibleEvents.length ? (
           <div className="joined-events-grid">
-            {visibleEvents.map((event) => {
-              const eventTime = getEventTimeLabel(event.dateTime);
-              const banner = getEventBanner(event);
-
-              return (
-                <article className="joined-event-card" key={getRegisteredEventId(event)}>
-                  <Link
-                    className="joined-event-card__link"
-                    href="/dashboard/events-joined/details"
-                    onClick={() => setSelectedBrowseEventId(getRegisteredEventId(event))}
-                  >
-                    <span className="joined-event-card__media" aria-hidden="true">
-                      {banner && <Image src={banner} alt="" fill unoptimized />}
+            {visibleEvents.map((event) => (
+              <article className="joined-event-card" key={getRegisteredEventId(event)}>
+                <Link
+                  className="joined-event-card__link"
+                  href="/dashboard/events-joined/details"
+                  onClick={() => setSelectedBrowseEventId(getRegisteredEventId(event))}
+                >
+                  <span className="joined-event-card__media" aria-hidden="true">
+                    {getEventBanner(event) && (
+                      <Image src={getEventBanner(event)} alt="" fill unoptimized />
+                    )}
+                  </span>
+                  <span className="joined-event-card__content">
+                    <span className="joined-event-card__date">
+                      <span>{event.month || 'MAY'}</span>
+                      <strong>{event.day || '17'}</strong>
                     </span>
-                    <span className="joined-event-card__content">
-                      {hasEventDateParts(event) && (
-                        <span className="joined-event-card__date">
-                          <span>{event.month}</span>
-                          <strong>{event.day}</strong>
-                        </span>
-                      )}
-                      <span className="joined-event-card__details">
-                        {event.name && <strong>{event.name}</strong>}
-                        {event.venue && <span>{event.venue}</span>}
-                        {eventTime && <small>{eventTime}</small>}
-                      </span>
+                    <span className="joined-event-card__details">
+                      <strong>{event.name || 'Event Name'}</strong>
+                      <span>{event.venue || 'Event Venue'}</span>
+                      <small>{getEventTime(event)}</small>
                     </span>
-                  </Link>
-                </article>
-              );
-            })}
+                  </span>
+                </Link>
+              </article>
+            ))}
           </div>
-        ) : events.length === 0 ? (
-          <p className="joined-events-empty">You haven&apos;t joined any events yet.</p>
         ) : (
-          <p className="joined-events-empty">No events match your filters.</p>
+          <p className="joined-events-empty">You haven&apos;t joined any events yet.</p>
         )}
       </div>
     </section>
