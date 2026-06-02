@@ -41,25 +41,7 @@ function requiredLabel(label: string, value: string) {
   return `${label}${value.trim() ? '' : '*'}`;
 }
 
-function isValidSchoolEmail(email: string) {
-  const trimmed = email.trim();
-  return trimmed.length > 0 && trimmed.endsWith('@sdca.edu.ph');
-}
-
-function getPasswordStrength(password: string) {
-  const checks = [
-    password.length >= 8,
-    /[A-Z]/.test(password),
-    /[a-z]/.test(password),
-    /\d/.test(password),
-    /[^A-Za-z0-9]/.test(password),
-  ];
-  const passed = checks.filter(Boolean).length;
-  return passed >= 5 ? 'Strong' : passed >= 3 ? 'Medium' : 'Weak';
-}
-
 export function RegisterAccountContent() {
-
   const router = useRouter();
   const [step, setStep] = useState<RegisterStep>('personal');
   const [formData, setFormData] = useState<RegisterData>(initialData);
@@ -97,9 +79,9 @@ export function RegisterAccountContent() {
 
   const handlePersonalContinue = () => {
     const errors: Record<string, string> = {};
-    if (!formData.firstName.trim()) errors.firstName = 'First name is required';
-    if (!formData.lastName.trim()) errors.lastName = 'Last name is required';
-    if (!formData.studentNumber.trim()) errors.studentNumber = 'Student Number is required';
+    if (!formData.firstName.trim()) errors.firstName = 'First name is required.';
+    if (!formData.lastName.trim()) errors.lastName = 'Last name is required.';
+    if (!formData.studentNumber.trim()) errors.studentNumber = 'Student number is required.';
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -145,27 +127,51 @@ export function RegisterAccountContent() {
     return !requiredValues.some((value) => !value.trim());
   };
 
+  const handleSchoolContinue = () => {
+    const errors: Record<string, string> = {};
+    if (!formData.course) errors.course = 'Please choose a course.';
+    if (!formData.school) errors.school = 'Please choose a school/department.';
+    if (!formData.organization.trim()) errors.organization = 'Please put your organization.';
+    if (!formData.role) errors.role = 'Please select a role.';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+    setStep('account');
+  };
+
   const handleVerifyAccount = () => {
     const errors: Record<string, string> = {};
-    if (!formData.rfidTagNumber.trim()) errors.rfidTagNumber = 'Please tap your school ID';
+    if (!formData.rfidTagNumber.trim()) errors.rfidTagNumber = 'Please tap your school ID.';
     if (!formData.schoolEmail.trim()) {
-      errors.schoolEmail = 'School email is required';
-    } else if (!formData.schoolEmail.trim().endsWith('@sdca.edu.ph')) {
-      errors.schoolEmail = "Invalid school email. Email must end with '@sdca.edu.ph'";
+      errors.schoolEmail = 'School email is required.';
+    } else if (!formData.schoolEmail.trim().toLowerCase().endsWith('@sdca.edu.ph')) {
+      errors.schoolEmail = "Invalid school email. Email must end with '@sdca.edu.ph'.";
     }
     if (!formData.password) {
-      errors.password = 'Password is required';
+      errors.password = 'Password is required.';
     } else if (passwordStrength !== 'Strong') {
-      errors.password = 'Password is too weak';
+      errors.password = 'Password is too weak.';
     }
-    if (!formData.confirmPassword) {
-      errors.confirmPassword = 'Re-enter your password';
-    } else if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = "Passwords don't match";
+    if (formData.password && !formData.confirmPassword) {
+      errors.confirmPassword = 'Please re-enter your password.';
+    } else if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match.';
     }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
+      return;
+    }
+
+    if (requiredAccountDetailsAreFilled() && passwordStrength !== 'Strong') {
+      showToast('Password is too weak');
+      return;
+    }
+
+    if (!accountIsComplete()) {
+      showToast('Please fill in the required details');
       return;
     }
 
@@ -254,7 +260,7 @@ export function RegisterAccountContent() {
                   value={formData.firstName}
                   onChange={(event) => updateField('firstName', event.target.value)}
                 />
-                {fieldErrors.firstName && <span className="field-error-msg">{fieldErrors.firstName}</span>}
+                {fieldErrors.firstName && <span className="auth-field-error">{fieldErrors.firstName}</span>}
               </label>
 
               <label className={`register-field${fieldErrors.lastName ? ' has-error' : ''}`}>
@@ -266,7 +272,7 @@ export function RegisterAccountContent() {
                   value={formData.lastName}
                   onChange={(event) => updateField('lastName', event.target.value)}
                 />
-                {fieldErrors.lastName && <span className="field-error-msg">{fieldErrors.lastName}</span>}
+                {fieldErrors.lastName && <span className="auth-field-error">{fieldErrors.lastName}</span>}
               </label>
 
               <label className={`register-field${fieldErrors.studentNumber ? ' has-error' : ''}`}>
@@ -278,7 +284,7 @@ export function RegisterAccountContent() {
                   value={formData.studentNumber}
                   onChange={(event) => updateField('studentNumber', event.target.value)}
                 />
-                {fieldErrors.studentNumber && <span className="field-error-msg">{fieldErrors.studentNumber}</span>}
+                {fieldErrors.studentNumber && <span className="auth-field-error">{fieldErrors.studentNumber}</span>}
               </label>
 
               <div className="register-controls register-controls--end">
@@ -286,7 +292,7 @@ export function RegisterAccountContent() {
                   Go back to Sign In
                 </button>
                 <button className="register-continue" type="button" onClick={handlePersonalContinue}>
-                  Save &amp; Continue
+                  Save & Continue
                 </button>
               </div>
               </div>
@@ -320,7 +326,7 @@ export function RegisterAccountContent() {
                   <option value="BMA">BMA - Bachelor of Multimedia Arts</option>
                   <option value="BSIT">BSIT - Bachelor of Science in Information Technology</option>
                 </select>
-                {fieldErrors.course && <span className="field-error-msg">{fieldErrors.course}</span>}
+                {fieldErrors.course && <span className="auth-field-error">{fieldErrors.course}</span>}
               </label>
 
               <label className={`register-field${fieldErrors.school ? ' has-error' : ''}`}>
@@ -339,17 +345,11 @@ export function RegisterAccountContent() {
                   <option value="SIHTM">SIHTM - School of International Hospitality, Tourism, and Management</option>
                   <option value="SCMCS">SCMCS - School of Communication, Multimedia, and Computer Studies</option>
                 </select>
-                {fieldErrors.school && <span className="field-error-msg">{fieldErrors.school}</span>}
+                {fieldErrors.school && <span className="auth-field-error">{fieldErrors.school}</span>}
               </label>
 
-              <label className="register-field">
-                <span>Organization</span>
-                <input
-                  name="organization"
-                  type="text"
-                  placeholder="Enter your organization"
-                  value={formData.organization}
-                  onChange={(event) => updateField('organization', event.target.value)}
+              <label className={`register-field${fieldErrors.organization ? ' has-error' : ''}`}>
+                <span>{requiredLabel('Organization', formData.organization)}</span>
                 <input
                   name="organization"
                   type="text"
@@ -357,10 +357,11 @@ export function RegisterAccountContent() {
                   value={formData.organization}
                   onChange={(event) => updateField('organization', event.target.value)}
                 />
+                {fieldErrors.organization && <span className="auth-field-error">{fieldErrors.organization}</span>}
               </label>
 
-              <label className="register-field">
-                <span>Role</span>
+              <label className={`register-field${fieldErrors.role ? ' has-error' : ''}`}>
+                <span>{requiredLabel('Role', formData.role)}</span>
                 <select
                   name="role"
                   value={formData.role}
@@ -372,20 +373,14 @@ export function RegisterAccountContent() {
                   <option value="Organization Member">Organization Member</option>
                   <option value="Organization Officer">Organization Officer</option>
                 </select>
+                {fieldErrors.role && <span className="auth-field-error">{fieldErrors.role}</span>}
               </label>
 
               <div className="register-controls">
                 <button className="register-back-step" type="button" onClick={() => setStep('personal')}>
                   Go back to Personal Info
                 </button>
-                <button className="register-continue" type="button" onClick={() => {
-                  const errors: Record<string, string> = {};
-                  if (!formData.course) errors.course = 'Course is required';
-                  if (!formData.school) errors.school = 'School/Department is required';
-                  if (Object.keys(errors).length > 0) { setFieldErrors(errors); return; }
-                  setFieldErrors({});
-                  setStep('account');
-                }}>
+                <button className="register-continue" type="button" onClick={handleSchoolContinue}>
                   Save & Continue
                 </button>
               </div>
@@ -404,7 +399,7 @@ export function RegisterAccountContent() {
                     value={formData.rfidTagNumber}
                     onChange={(event) => updateField('rfidTagNumber', event.target.value)}
                   />
-                  {fieldErrors.rfidTagNumber && <span className="field-error-msg">{fieldErrors.rfidTagNumber}</span>}
+                  {fieldErrors.rfidTagNumber && <span className="auth-field-error">{fieldErrors.rfidTagNumber}</span>}
                 </label>
 
                 <label className={`register-field register-field--compact${fieldErrors.schoolEmail ? ' has-error' : ''}`}>
@@ -416,7 +411,7 @@ export function RegisterAccountContent() {
                     value={formData.schoolEmail}
                     onChange={(event) => updateField('schoolEmail', event.target.value)}
                   />
-                  {fieldErrors.schoolEmail && <span className="field-error-msg">{fieldErrors.schoolEmail}</span>}
+                  {fieldErrors.schoolEmail && <span className="auth-field-error">{fieldErrors.schoolEmail}</span>}
                 </label>
 
                 <label className={`register-field register-field--compact register-password-field${fieldErrors.password ? ' has-error' : ''}`}>
@@ -459,6 +454,8 @@ export function RegisterAccountContent() {
                   </div>
                 )}
 
+                {fieldErrors.password && <p className="auth-field-error">{fieldErrors.password}</p>}
+
                 <label className={`register-field register-field--compact register-password-field${fieldErrors.confirmPassword ? ' has-error' : ''}`}>
                   <span>{requiredLabel('Re-enter your password', formData.confirmPassword)}</span>
                   <input
@@ -481,8 +478,9 @@ export function RegisterAccountContent() {
                       height={48}
                     />
                   </button>
-                  {fieldErrors.confirmPassword && <span className="field-error-msg">{fieldErrors.confirmPassword}</span>}
                 </label>
+
+                {fieldErrors.confirmPassword && <p className="auth-field-error">{fieldErrors.confirmPassword}</p>}
 
                 {showPasswordMatch && (
                   <p className={`password-match ${passwordMatches ? 'is-match' : 'is-mismatch'}`}>
@@ -514,8 +512,9 @@ export function RegisterAccountContent() {
                     value={formData.verificationCode}
                     onChange={(event) => updateField('verificationCode', event.target.value)}
                   />
-                  {fieldErrors.verificationCode && <span className="field-error-msg">{fieldErrors.verificationCode}</span>}
                 </label>
+
+                {fieldErrors.verificationCode && <p className="auth-field-error">{fieldErrors.verificationCode}</p>}
 
                 <div className="register-controls">
                   <button className="register-back-step" type="button" onClick={() => setStep('account')}>
@@ -552,7 +551,7 @@ export function RegisterAccountContent() {
                   To create your account, please review and agree to the Data Privacy Policy first.
                 </p>
 
-                <h2 id="privacy-modal-title">Agreement &amp; Data Privacy</h2>
+                <h2 id="privacy-modal-title">Agreement & Data Privacy</h2>
 
                 <h3>Data Privacy Notice</h3>
                 <p>
