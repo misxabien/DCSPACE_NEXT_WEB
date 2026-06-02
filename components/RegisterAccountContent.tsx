@@ -52,6 +52,7 @@ export function RegisterAccountContent() {
   const [privacyModalClosing, setPrivacyModalClosing] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const passwordChecks = [
     formData.password.length >= 8,
@@ -69,9 +70,23 @@ export function RegisterAccountContent() {
 
   const updateField = (field: keyof RegisterData, value: string) => {
     setFormData((current) => ({ ...current, [field]: value }));
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
   const handlePersonalContinue = () => {
+    const errors: Record<string, string> = {};
+    if (!formData.firstName.trim()) errors.firstName = 'First name is required.';
+    if (!formData.lastName.trim()) errors.lastName = 'Last name is required.';
+    if (!formData.studentNumber.trim()) errors.studentNumber = 'Student number is required.';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
     setStep('school');
   };
 
@@ -112,7 +127,44 @@ export function RegisterAccountContent() {
     return !requiredValues.some((value) => !value.trim());
   };
 
+  const handleSchoolContinue = () => {
+    const errors: Record<string, string> = {};
+    if (!formData.course) errors.course = 'Please choose a course.';
+    if (!formData.school) errors.school = 'Please choose a school/department.';
+    if (!formData.organization.trim()) errors.organization = 'Please put your organization.';
+    if (!formData.role) errors.role = 'Please select a role.';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+    setStep('account');
+  };
+
   const handleVerifyAccount = () => {
+    const errors: Record<string, string> = {};
+    if (!formData.rfidTagNumber.trim()) errors.rfidTagNumber = 'Please tap your school ID.';
+    if (!formData.schoolEmail.trim()) {
+      errors.schoolEmail = 'School email is required.';
+    } else if (!formData.schoolEmail.trim().toLowerCase().endsWith('@sdca.edu.ph')) {
+      errors.schoolEmail = "Invalid school email. Email must end with '@sdca.edu.ph'.";
+    }
+    if (!formData.password) {
+      errors.password = 'Password is required.';
+    } else if (passwordStrength !== 'Strong') {
+      errors.password = 'Password is too weak.';
+    }
+    if (formData.password && !formData.confirmPassword) {
+      errors.confirmPassword = 'Please re-enter your password.';
+    } else if (formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
     if (requiredAccountDetailsAreFilled() && passwordStrength !== 'Strong') {
       showToast('Password is too weak');
       return;
@@ -123,15 +175,17 @@ export function RegisterAccountContent() {
       return;
     }
 
+    setFieldErrors({});
     setStep('verify');
   };
 
   const handleVerificationCreate = () => {
     if (!formData.verificationCode.trim()) {
-      showToast('Please enter the verification code');
+      setFieldErrors({ verificationCode: 'Please enter a valid verification code.' });
       return;
     }
 
+    setFieldErrors({});
     setShowPrivacyModal(true);
     setPrivacyModalClosing(false);
   };
@@ -197,7 +251,7 @@ export function RegisterAccountContent() {
               <div className="register-step" key="personal" aria-label="Personal information">
                 <h2>Personal Info</h2>
 
-              <label className="register-field">
+              <label className={`register-field${fieldErrors.firstName ? ' has-error' : ''}`}>
                 <span>{requiredLabel('First Name', formData.firstName)}</span>
                 <input
                   name="first_name"
@@ -206,9 +260,10 @@ export function RegisterAccountContent() {
                   value={formData.firstName}
                   onChange={(event) => updateField('firstName', event.target.value)}
                 />
+                {fieldErrors.firstName && <span className="auth-field-error">{fieldErrors.firstName}</span>}
               </label>
 
-              <label className="register-field">
+              <label className={`register-field${fieldErrors.lastName ? ' has-error' : ''}`}>
                 <span>{requiredLabel('Last Name', formData.lastName)}</span>
                 <input
                   name="last_name"
@@ -217,9 +272,10 @@ export function RegisterAccountContent() {
                   value={formData.lastName}
                   onChange={(event) => updateField('lastName', event.target.value)}
                 />
+                {fieldErrors.lastName && <span className="auth-field-error">{fieldErrors.lastName}</span>}
               </label>
 
-              <label className="register-field">
+              <label className={`register-field${fieldErrors.studentNumber ? ' has-error' : ''}`}>
                 <span>{requiredLabel('Student Number', formData.studentNumber)}</span>
                 <input
                   name="student_number"
@@ -228,6 +284,7 @@ export function RegisterAccountContent() {
                   value={formData.studentNumber}
                   onChange={(event) => updateField('studentNumber', event.target.value)}
                 />
+                {fieldErrors.studentNumber && <span className="auth-field-error">{fieldErrors.studentNumber}</span>}
               </label>
 
               <div className="register-controls register-controls--end">
@@ -235,7 +292,7 @@ export function RegisterAccountContent() {
                   Go back to Sign In
                 </button>
                 <button className="register-continue" type="button" onClick={handlePersonalContinue}>
-                  Save &amp; Continue
+                  Save & Continue
                 </button>
               </div>
               </div>
@@ -243,7 +300,7 @@ export function RegisterAccountContent() {
               <div className="register-step register-step--school" key="school" aria-label="School details">
               <h2>School Details</h2>
 
-              <label className="register-field">
+              <label className={`register-field${fieldErrors.course ? ' has-error' : ''}`}>
                 <span>{requiredLabel('Course', formData.course)}</span>
                 <select
                   name="course"
@@ -269,9 +326,10 @@ export function RegisterAccountContent() {
                   <option value="BMA">BMA - Bachelor of Multimedia Arts</option>
                   <option value="BSIT">BSIT - Bachelor of Science in Information Technology</option>
                 </select>
+                {fieldErrors.course && <span className="auth-field-error">{fieldErrors.course}</span>}
               </label>
 
-              <label className="register-field">
+              <label className={`register-field${fieldErrors.school ? ' has-error' : ''}`}>
                 <span>{requiredLabel('School/Department', formData.school)}</span>
                 <select
                   name="school"
@@ -287,10 +345,11 @@ export function RegisterAccountContent() {
                   <option value="SIHTM">SIHTM - School of International Hospitality, Tourism, and Management</option>
                   <option value="SCMCS">SCMCS - School of Communication, Multimedia, and Computer Studies</option>
                 </select>
+                {fieldErrors.school && <span className="auth-field-error">{fieldErrors.school}</span>}
               </label>
 
-              <label className="register-field">
-                <span>Organization</span>
+              <label className={`register-field${fieldErrors.organization ? ' has-error' : ''}`}>
+                <span>{requiredLabel('Organization', formData.organization)}</span>
                 <input
                   name="organization"
                   type="text"
@@ -298,10 +357,11 @@ export function RegisterAccountContent() {
                   value={formData.organization}
                   onChange={(event) => updateField('organization', event.target.value)}
                 />
+                {fieldErrors.organization && <span className="auth-field-error">{fieldErrors.organization}</span>}
               </label>
 
-              <label className="register-field">
-                <span>Role</span>
+              <label className={`register-field${fieldErrors.role ? ' has-error' : ''}`}>
+                <span>{requiredLabel('Role', formData.role)}</span>
                 <select
                   name="role"
                   value={formData.role}
@@ -313,14 +373,15 @@ export function RegisterAccountContent() {
                   <option value="Organization Member">Organization Member</option>
                   <option value="Organization Officer">Organization Officer</option>
                 </select>
+                {fieldErrors.role && <span className="auth-field-error">{fieldErrors.role}</span>}
               </label>
 
               <div className="register-controls">
                 <button className="register-back-step" type="button" onClick={() => setStep('personal')}>
                   Go back to Personal Info
                 </button>
-                <button className="register-continue" type="button" onClick={() => setStep('account')}>
-                  Save &amp; Continue
+                <button className="register-continue" type="button" onClick={handleSchoolContinue}>
+                  Save & Continue
                 </button>
               </div>
             </div>
@@ -328,7 +389,7 @@ export function RegisterAccountContent() {
               <div className="register-step register-step--account" key="account" aria-label="Account set up">
                 <h2>Account Set Up</h2>
 
-                <label className="register-field register-field--compact">
+                <label className={`register-field register-field--compact${fieldErrors.rfidTagNumber ? ' has-error' : ''}`}>
                   <span>{requiredLabel('RFID Tag Number', formData.rfidTagNumber)}</span>
                   <input
                     name="rfid_tag_number"
@@ -338,9 +399,10 @@ export function RegisterAccountContent() {
                     value={formData.rfidTagNumber}
                     onChange={(event) => updateField('rfidTagNumber', event.target.value)}
                   />
+                  {fieldErrors.rfidTagNumber && <span className="auth-field-error">{fieldErrors.rfidTagNumber}</span>}
                 </label>
 
-                <label className="register-field register-field--compact">
+                <label className={`register-field register-field--compact${fieldErrors.schoolEmail ? ' has-error' : ''}`}>
                   <span>{requiredLabel('School email', formData.schoolEmail)}</span>
                   <input
                     name="school_email"
@@ -349,9 +411,10 @@ export function RegisterAccountContent() {
                     value={formData.schoolEmail}
                     onChange={(event) => updateField('schoolEmail', event.target.value)}
                   />
+                  {fieldErrors.schoolEmail && <span className="auth-field-error">{fieldErrors.schoolEmail}</span>}
                 </label>
 
-                <label className="register-field register-field--compact register-password-field">
+                <label className={`register-field register-field--compact register-password-field${fieldErrors.password ? ' has-error' : ''}`}>
                   <span>{requiredLabel('Password', formData.password)}</span>
                   <input
                     name="password"
@@ -391,7 +454,9 @@ export function RegisterAccountContent() {
                   </div>
                 )}
 
-                <label className="register-field register-field--compact register-password-field">
+                {fieldErrors.password && <p className="auth-field-error">{fieldErrors.password}</p>}
+
+                <label className={`register-field register-field--compact register-password-field${fieldErrors.confirmPassword ? ' has-error' : ''}`}>
                   <span>{requiredLabel('Re-enter your password', formData.confirmPassword)}</span>
                   <input
                     name="confirm_password"
@@ -415,6 +480,8 @@ export function RegisterAccountContent() {
                   </button>
                 </label>
 
+                {fieldErrors.confirmPassword && <p className="auth-field-error">{fieldErrors.confirmPassword}</p>}
+
                 {showPasswordMatch && (
                   <p className={`password-match ${passwordMatches ? 'is-match' : 'is-mismatch'}`}>
                     {passwordMatches ? 'Password matched!' : "Password doesn't match."}
@@ -435,7 +502,7 @@ export function RegisterAccountContent() {
                 <h2>Verify your Account</h2>
                 <p className="register-verify-copy">Kindly check your email for the verification code.</p>
 
-                <label className="register-field register-field--verify">
+                <label className={`register-field register-field--verify${fieldErrors.verificationCode ? ' has-error' : ''}`}>
                   <span>{requiredLabel('Verification Code:', formData.verificationCode)}</span>
                   <input
                     name="verification_code"
@@ -446,6 +513,8 @@ export function RegisterAccountContent() {
                     onChange={(event) => updateField('verificationCode', event.target.value)}
                   />
                 </label>
+
+                {fieldErrors.verificationCode && <p className="auth-field-error">{fieldErrors.verificationCode}</p>}
 
                 <div className="register-controls">
                   <button className="register-back-step" type="button" onClick={() => setStep('account')}>
@@ -482,7 +551,7 @@ export function RegisterAccountContent() {
                   To create your account, please review and agree to the Data Privacy Policy first.
                 </p>
 
-                <h2 id="privacy-modal-title">Agreement &amp; Data Privacy</h2>
+                <h2 id="privacy-modal-title">Agreement & Data Privacy</h2>
 
                 <h3>Data Privacy Notice</h3>
                 <p>
