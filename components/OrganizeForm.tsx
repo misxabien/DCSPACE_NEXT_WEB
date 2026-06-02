@@ -142,6 +142,7 @@ function formatTimeLabel(value: string) {
 export function OrganizeForm() {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const warningRef = useRef<HTMLParagraphElement>(null);
   const [canCreate, setCanCreate] = useState<boolean | null>(null);
   const [reviewDetails, setReviewDetails] = useState<ReviewDetails>(emptyReviewDetails);
   const [requiredFileDrafts, setRequiredFileDrafts] = useState<string[]>(['']);
@@ -159,13 +160,12 @@ export function OrganizeForm() {
   const [attendanceAccess, setAttendanceAccess] = useState<'all' | 'specific'>('all');
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [isCourseDropdownOpen, setIsCourseDropdownOpen] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const todayDate = getDateInputValue(new Date());
   const totalDuration = getDurationFromTimes(startTime, endTime);
   const requiredFiles = requiredFilesChoice === 'yes' ? requiredFileDrafts.map((file) => file.trim()).filter(Boolean) : [];
   const canAddRequiredFile = requiredFileDrafts.every((file) => file.trim());
-  const isReviewStep = progressIndex === progressSteps.length - 1;
-  const isFormComplete = isReviewStep ? Boolean(formRef.current?.checkValidity()) : false;
   const currentUser = typeof window === 'undefined' ? null : getCurrentAttendanceUser();
   const hostOrganization = currentUser?.organizationPart || 'Organization Name';
   const hostCourse = currentUser?.course || 'Course';
@@ -182,6 +182,137 @@ export function OrganizeForm() {
       }
     };
   }, [bannerPreview]);
+
+  const clearFieldError = (fieldName: string) => {
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[fieldName];
+      return next;
+    });
+  };
+
+  const scrollToWarningAndAnimate = () => {
+    if (warningRef.current) {
+      warningRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      warningRef.current.classList.add('animate-pop');
+      setTimeout(() => {
+        warningRef.current?.classList.remove('animate-pop');
+      }, 500);
+    }
+  };
+
+  const validateStep = (stepIndex: number, shouldScroll: boolean = false): boolean => {
+    const form = formRef.current;
+    if (!form) return false;
+
+    const errors: Record<string, string> = {};
+    const formData = new FormData(form);
+
+    if (stepIndex === 0) {
+      const eventName = formData.get('event_name');
+      if (!eventName || !eventName.toString().trim()) {
+        errors.event_name = 'Please provide Event Title.';
+      }
+
+      const eventType = formData.get('event_type');
+      if (!eventType || !eventType.toString().trim()) {
+        errors.event_type = 'Please provide Event Type.';
+      }
+
+      const eventDescription = formData.get('event_description');
+      if (!eventDescription || !eventDescription.toString().trim()) {
+        errors.event_description = 'Please provide Event Description.';
+      }
+
+      const banner = formData.get('poster');
+      if (!banner || (banner instanceof File && !banner.name)) {
+        errors.poster = 'Please provide Event Banner.';
+      }
+
+      const eventDate = formData.get('event_date');
+      if (!eventDate || !eventDate.toString().trim()) {
+        errors.event_date = 'Please provide Start Date.';
+      }
+
+      const startTimeValue = formData.get('start_time');
+      if (!startTimeValue || !startTimeValue.toString().trim()) {
+        errors.start_time = 'Please provide Start Time.';
+      }
+
+      const endTimeValue = formData.get('end_time');
+      if (!endTimeValue || !endTimeValue.toString().trim()) {
+        errors.end_time = 'Please provide End Time.';
+      }
+
+      const venue = formData.get('venue');
+      if (!venue || !venue.toString().trim()) {
+        errors.venue = 'Please provide Venue.';
+      }
+
+      if (registrationDeadlineChoice === '') {
+        errors.has_registration_deadline = 'Please select if there is a registration deadline.';
+      }
+
+      if (registrationDeadlineChoice === 'yes') {
+        const deadline = formData.get('registration_deadline');
+        if (!deadline || !deadline.toString().trim()) {
+          errors.registration_deadline = 'Please provide Registration Deadline.';
+        }
+      }
+    }
+
+    if (stepIndex === 1) {
+      const minAttendance = formData.get('min_attendance');
+      if (!minAttendance || !minAttendance.toString().trim()) {
+        errors.min_attendance = 'Please provide Minimum Attendance Time Required.';
+      }
+
+      const gracePeriod = formData.get('grace_period');
+      if (!gracePeriod || !gracePeriod.toString().trim()) {
+        errors.grace_period = 'Please provide Grace Period.';
+      }
+
+      if (attendanceAccess === 'specific' && selectedCourses.length === 0) {
+        errors.selected_courses = 'Please provide at least one course.';
+      }
+    }
+
+    if (stepIndex === 2) {
+      const conceptPaper = formData.get('concept_paper');
+      if (!conceptPaper || (conceptPaper instanceof File && !conceptPaper.name)) {
+        errors.concept_paper = 'Please provide Approved Concept Paper.';
+      }
+
+      const roomReservation = formData.get('room_reservation');
+      if (!roomReservation || (roomReservation instanceof File && !roomReservation.name)) {
+        errors.room_reservation = 'Please provide Room Reservation Form.';
+      }
+
+      const certificateTemplate = formData.get('certificate_template');
+      if (!certificateTemplate || (certificateTemplate instanceof File && !certificateTemplate.name)) {
+        errors.certificate_template = 'Please provide E-Certificate Template.';
+      }
+
+      if (requiredFilesChoice === 'yes') {
+        const emptyFileIndex = requiredFileDrafts.findIndex((file) => !file.trim());
+        if (emptyFileIndex !== -1) {
+          errors[`required_file_${emptyFileIndex}`] = 'Please provide file name required.';
+        }
+      }
+    }
+
+    setFieldErrors((prevErrors) => ({
+      ...prevErrors,
+      ...errors,
+    }));
+    
+    if (Object.keys(errors).length > 0 && shouldScroll) {
+      scrollToWarningAndAnimate();
+      return false;
+    }
+    
+    return Object.keys(errors).length === 0;
+  };
 
   const getFormValue = (formData: FormData, key: string) => {
     const value = formData.get(key);
@@ -219,7 +350,58 @@ export function OrganizeForm() {
     };
   };
 
+  const checkFormCompletion = (): boolean => {
+    if (!formRef.current) return false;
+    
+    const formData = new FormData(formRef.current);
+    
+    const eventName = formData.get('event_name');
+    const eventType = formData.get('event_type');
+    const eventDescription = formData.get('event_description');
+    const banner = formData.get('poster');
+    const eventDate = formData.get('event_date');
+    const startTimeValue = formData.get('start_time');
+    const endTimeValue = formData.get('end_time');
+    const venue = formData.get('venue');
+    
+    const hasEventDetailsComplete = !!(eventName && eventName.toString().trim() &&
+      eventType && eventType.toString().trim() &&
+      eventDescription && eventDescription.toString().trim() &&
+      banner && (banner instanceof File && banner.name) &&
+      eventDate && eventDate.toString().trim() &&
+      startTimeValue && startTimeValue.toString().trim() &&
+      endTimeValue && endTimeValue.toString().trim() &&
+      venue && venue.toString().trim());
+    
+    const minAttendance = formData.get('min_attendance');
+    const gracePeriod = formData.get('grace_period');
+    const hasAttendanceComplete = !!(minAttendance && minAttendance.toString().trim() &&
+      gracePeriod && gracePeriod.toString().trim() &&
+      (attendanceAccess === 'all' || (attendanceAccess === 'specific' && selectedCourses.length > 0)));
+    
+    const conceptPaper = formData.get('concept_paper');
+    const roomReservation = formData.get('room_reservation');
+    const certificateTemplate = formData.get('certificate_template');
+    
+    let hasRequirementsComplete = !!(conceptPaper && (conceptPaper instanceof File && conceptPaper.name) &&
+      roomReservation && (roomReservation instanceof File && roomReservation.name) &&
+      certificateTemplate && (certificateTemplate instanceof File && certificateTemplate.name));
+    
+    if (requiredFilesChoice === 'yes') {
+      const allFilesHaveNames = requiredFileDrafts.every((file) => file.trim() !== '');
+      hasRequirementsComplete = hasRequirementsComplete && allFilesHaveNames;
+    }
+    
+    return hasEventDetailsComplete && hasAttendanceComplete && hasRequirementsComplete;
+  };
+
+  const isFormComplete = checkFormCompletion();
+
   const goToStep = (nextStep: number) => {
+    if (nextStep > progressIndex) {
+      validateStep(progressIndex);
+    }
+    
     setReviewDetails(getReviewDetails());
     setProgressIndex(Math.min(Math.max(nextStep, 0), progressSteps.length - 1));
   };
@@ -238,6 +420,7 @@ export function OrganizeForm() {
     const file = event.target.files?.[0];
 
     setBannerWarning('');
+    clearFieldError('poster');
     if (bannerPreview) {
       URL.revokeObjectURL(bannerPreview);
       setBannerPreview('');
@@ -281,13 +464,24 @@ export function OrganizeForm() {
   };
 
   const addRequiredFile = () => {
-    if (requiredFileDrafts.some((file) => !file.trim())) return;
+    if (!canAddRequiredFile) {
+      const emptyIndex = requiredFileDrafts.findIndex((file) => !file.trim());
+      if (emptyIndex !== -1) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          [`required_file_${emptyIndex}`]: 'Please provide file name required.'
+        }));
+      }
+      scrollToWarningAndAnimate();
+      return;
+    }
 
     setRequiredFileDrafts((files) => [...files, '']);
   };
 
   const updateRequiredFileDraft = (index: number, value: string) => {
     setRequiredFileDrafts((files) => files.map((file, fileIndex) => (fileIndex === index ? value : file)));
+    clearFieldError(`required_file_${index}`);
   };
 
   const removeRequiredFileDraft = (index: number) => {
@@ -296,6 +490,15 @@ export function OrganizeForm() {
 
   const handleRequiredFilesChoice = (choice: 'yes' | 'no') => {
     setRequiredFilesChoice(choice);
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((key) => {
+        if (key.startsWith('required_file_')) {
+          delete next[key];
+        }
+      });
+      return next;
+    });
 
     if (choice === 'yes') {
       setRequiredFileDrafts((files) => (files.length ? files : ['']));
@@ -307,14 +510,16 @@ export function OrganizeForm() {
 
   const handleRegistrationDeadlineChoice = (choice: 'yes' | 'no') => {
     setRegistrationDeadlineChoice(choice);
-
+    clearFieldError('has_registration_deadline');
     if (choice === 'no') {
       setRegistrationDeadline('');
+      clearFieldError('registration_deadline');
     }
   };
 
   const handleAttendanceAccessChange = (access: 'all' | 'specific') => {
     setAttendanceAccess(access);
+    clearFieldError('selected_courses');
 
     if (access === 'all') {
       setSelectedCourses([]);
@@ -326,6 +531,7 @@ export function OrganizeForm() {
     setSelectedCourses((courses) =>
       courses.includes(course) ? courses.filter((selectedCourse) => selectedCourse !== course) : [...courses, course],
     );
+    clearFieldError('selected_courses');
   };
 
   const getOrganizedEventPayload = (status: 'Draft' | 'Pending') => {
@@ -358,7 +564,18 @@ export function OrganizeForm() {
   };
 
   const saveReviewEvent = (status: 'Draft' | 'Pending') => {
-    if (!canCreate || !formRef.current?.checkValidity()) return;
+    if (!canCreate) return;
+    
+    if (!validateStep(0, true) || !validateStep(1, true) || !validateStep(2, true)) {
+      setProgressIndex(0);
+      scrollToWarningAndAnimate();
+      return;
+    }
+
+    if (!formRef.current?.checkValidity()) {
+      scrollToWarningAndAnimate();
+      return;
+    }
 
     saveOrganizedEvent(getOrganizedEventPayload(status));
     router.push('/events-organized');
@@ -400,29 +617,62 @@ export function OrganizeForm() {
         <section className={`wizard-page${progressIndex === 0 ? ' is-active' : ''}`} aria-hidden={progressIndex !== 0}>
           <h2 className="form-group-title">Basic Information</h2>
           <div className="form-flow">
-            <label className="form-row form-row--span2">
+            <label className={`form-row form-row--span2${fieldErrors.event_name ? ' has-error' : ''}`}>
               <span className="form-row__label">Event Title*</span>
-              <input className="input-text" name="event_name" type="text" placeholder="Enter the name of your event" required />
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                <input 
+                  className="input-text" 
+                  name="event_name" 
+                  type="text" 
+                  placeholder="Enter the name of your event" 
+                  required 
+                  onChange={() => clearFieldError('event_name')}
+                />
+                {fieldErrors.event_name && <span className="field-error-message">{fieldErrors.event_name}</span>}
+              </div>
             </label>
 
-            <label className="form-row form-row--span2">
+            <label className={`form-row form-row--span2${fieldErrors.event_type ? ' has-error' : ''}`}>
               <span className="form-row__label">Event Type*</span>
-              <input className="input-text" name="event_type" type="text" placeholder="Enter what type your event is" required />
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                <input 
+                  className="input-text" 
+                  name="event_type" 
+                  type="text" 
+                  placeholder="Enter what type your event is" 
+                  required 
+                  onChange={() => clearFieldError('event_type')}
+                />
+                {fieldErrors.event_type && <span className="field-error-message">{fieldErrors.event_type}</span>}
+              </div>
             </label>
 
-            <label className="form-row form-row--span2 form-row--textarea">
+            <label className={`form-row form-row--span2 form-row--textarea${fieldErrors.event_description ? ' has-error' : ''}`}>
               <span className="form-row__label">Event Description*</span>
-              <textarea
-                className="input-text input-textarea"
-                name="event_description"
-                placeholder="Describe what's special about your event & other important details."
-                required
-              />
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                <textarea
+                  className="input-text input-textarea"
+                  name="event_description"
+                  placeholder="Describe what's special about your event & other important details."
+                  required
+                  onChange={() => clearFieldError('event_description')}
+                />
+                {fieldErrors.event_description && <span className="field-error-message">{fieldErrors.event_description}</span>}
+              </div>
             </label>
 
-            <label className="upload-tile upload-tile--banner">
+            <label className={`upload-tile upload-tile--banner${fieldErrors.poster ? ' has-error' : ''}`}>
               <span className="upload-tile__text">Event Banner*</span>
-              <input type="file" name="poster" accept=".jpg,.jpeg,.png,.gif,image/jpeg,image/png,image/gif" onChange={handleBannerChange} required />
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                <input 
+                  type="file" 
+                  name="poster" 
+                  accept=".jpg,.jpeg,.png,.gif,image/jpeg,image/png,image/gif" 
+                  onChange={handleBannerChange} 
+                  required 
+                />
+                {fieldErrors.poster && <span className="field-error-message" style={{ marginLeft: 0 }}>{fieldErrors.poster}</span>}
+              </div>
             </label>
             <p className="banner-hint">
               Event Banner must be at least 1170 pixels wide by 504 pixels high.
@@ -442,7 +692,7 @@ export function OrganizeForm() {
                 <span className="session-field">
                   <span className="form-row__label form-row__label--inline">Date(s)</span>
                   <span className="date-fields date-fields--range">
-                    <label className="date-field">
+                    <div className={`date-field${fieldErrors.event_date ? ' has-error' : ''}`}>
                       <span>Start Date</span>
                       <input
                         className="input-inline"
@@ -452,16 +702,16 @@ export function OrganizeForm() {
                         value={startDate}
                         onChange={(event) => {
                           const nextStartDate = event.target.value;
-
                           setStartDate(nextStartDate);
+                          clearFieldError('event_date');
                           if (endDate && nextStartDate && endDate < nextStartDate) {
                             setEndDate('');
                           }
                         }}
-                        required
                       />
-                    </label>
-                    <label className="date-field">
+                      {fieldErrors.event_date && <span className="field-error-message" style={{ fontWeight: 500 }}>{fieldErrors.event_date}</span>}
+                    </div>
+                    <div className="date-field">
                       <span>End Date</span>
                       <input
                         className="input-inline"
@@ -471,33 +721,65 @@ export function OrganizeForm() {
                         value={endDate}
                         onChange={(event) => setEndDate(event.target.value)}
                       />
-                    </label>
+                    </div>
                   </span>
                 </span>
                 <span className="session-field">
                   <span className="form-row__label form-row__label--inline">Time</span>
                   <span className="time-pair">
-                    <label className="date-field">
+                    <label className={`date-field${fieldErrors.start_time ? ' has-error' : ''}`}>
                       <span>Start Time</span>
-                      <input className="input-inline" type="time" name="start_time" value={startTime} onChange={(event) => setStartTime(event.target.value)} required />
+                      <input 
+                        className="input-inline" 
+                        type="time" 
+                        name="start_time" 
+                        value={startTime} 
+                        onChange={(event) => {
+                          setStartTime(event.target.value);
+                          clearFieldError('start_time');
+                        }} 
+                        required 
+                      />
+                      {fieldErrors.start_time && <span className="field-error-message" style={{ fontWeight: 500 }}>{fieldErrors.start_time}</span>}
                     </label>
-                    <label className="date-field">
+                    <label className={`date-field${fieldErrors.end_time ? ' has-error' : ''}`}>
                       <span>End Time</span>
-                      <input className="input-inline" type="time" name="end_time" value={endTime} onChange={(event) => setEndTime(event.target.value)} required />
+                      <input 
+                        className="input-inline" 
+                        type="time" 
+                        name="end_time" 
+                        value={endTime} 
+                        onChange={(event) => {
+                          setEndTime(event.target.value);
+                          clearFieldError('end_time');
+                        }} 
+                        required 
+                      />
+                      {fieldErrors.end_time && <span className="field-error-message" style={{ fontWeight: 500 }}>{fieldErrors.end_time}</span>}
                     </label>
                   </span>
                 </span>
               </span>
             </span>
 
-            <label className="form-row form-row--span2">
+            <label className={`form-row form-row--span2${fieldErrors.venue ? ' has-error' : ''}`}>
               <span className="form-row__label">Where will your event take place?*</span>
-              <input className="input-inline" type="text" name="venue" placeholder="Enter the location of the venue" required />
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                <input 
+                  className="input-inline" 
+                  type="text" 
+                  name="venue" 
+                  placeholder="Enter the location of the venue" 
+                  required 
+                  onChange={() => clearFieldError('venue')}
+                />
+                {fieldErrors.venue && <span className="field-error-message">{fieldErrors.venue}</span>}
+              </div>
             </label>
 
-            <div className="form-row form-row--span2 deadline-choice">
+            <div className={`form-row form-row--span2 deadline-choice${fieldErrors.has_registration_deadline ? ' has-error' : ''}`}>
               <span className="form-row__label" id="registration-deadline-choice-label">
-                Is there a deadline for the registration?{registrationDeadlineChoice ? '' : '*'}
+                Is there a deadline for the registration?*
               </span>
               <span className="deadline-choice__body" role="radiogroup" aria-labelledby="registration-deadline-choice-label">
                 <label>
@@ -523,20 +805,27 @@ export function OrganizeForm() {
                   <span>No</span>
                 </label>
               </span>
+              {fieldErrors.has_registration_deadline && <span className="field-error-message" style={{ gridColumn: 2, marginTop: 4 }}>{fieldErrors.has_registration_deadline}</span>}
             </div>
 
             {registrationDeadlineChoice === 'yes' && (
-              <label className="form-row form-row--span2">
-                <span className="form-row__label">Registration deadline{registrationDeadline ? '' : '*'}</span>
-                <input
-                  className="input-inline"
-                  type="date"
-                  name="registration_deadline"
-                  min={todayDate}
-                  value={registrationDeadline}
-                  required
-                  onChange={(event) => setRegistrationDeadline(event.target.value)}
-                />
+              <label className={`form-row form-row--span2${fieldErrors.registration_deadline ? ' has-error' : ''}`}>
+                <span className="form-row__label">Registration deadline*</span>
+                <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                  <input
+                    className="input-inline"
+                    type="date"
+                    name="registration_deadline"
+                    min={todayDate}
+                    value={registrationDeadline}
+                    required
+                    onChange={(event) => {
+                      setRegistrationDeadline(event.target.value);
+                      clearFieldError('registration_deadline');
+                    }}
+                  />
+                  {fieldErrors.registration_deadline && <span className="field-error-message">{fieldErrors.registration_deadline}</span>}
+                </div>
               </label>
             )}
 
@@ -559,15 +848,35 @@ export function OrganizeForm() {
         <section className={`wizard-page${progressIndex === 1 ? ' is-active' : ''}`} aria-hidden={progressIndex !== 1}>
           <div className="form-flow">
             <h2 className="form-group-title form-group-title--span">Attendance Requirements</h2>
-            <label className="form-row form-row--span2">
+            <label className={`form-row form-row--span2${fieldErrors.min_attendance ? ' has-error' : ''}`}>
               <span className="form-row__label">Minimum Attendance Time Required*</span>
-              <input className="input-inline" type="text" name="min_attendance" placeholder="Enter the minimum attendance time required" required />
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                <input 
+                  className="input-inline" 
+                  type="text" 
+                  name="min_attendance" 
+                  placeholder="Enter the minimum attendance time required" 
+                  onChange={() => clearFieldError('min_attendance')}
+                />
+                {fieldErrors.min_attendance && <span className="field-error-message">{fieldErrors.min_attendance}</span>}
+              </div>
             </label>
-            <label className="form-row form-row--span2">
+            
+            <label className={`form-row form-row--span2${fieldErrors.grace_period ? ' has-error' : ''}`}>
               <span className="form-row__label">Grace Period*</span>
-              <input className="input-inline" type="text" name="grace_period" placeholder="Enter the grace period" required />
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                <input 
+                  className="input-inline" 
+                  type="text" 
+                  name="grace_period" 
+                  placeholder="Enter the grace period" 
+                  onChange={() => clearFieldError('grace_period')}
+                />
+                {fieldErrors.grace_period && <span className="field-error-message">{fieldErrors.grace_period}</span>}
+              </div>
             </label>
-            <div className="form-row form-row--span2 attendance-access">
+            
+            <div className={`form-row form-row--span2 attendance-access${fieldErrors.selected_courses ? ' has-error' : ''}`}>
               <span className="form-row__label">Who can attend this event?*</span>
               <div className="attendance-access__body">
                 <div className="attendance-access__choices">
@@ -600,13 +909,12 @@ export function OrganizeForm() {
                       type="text"
                       name="selected_courses"
                       value={selectedCourses.join(', ')}
-                      required
                       readOnly
                       tabIndex={-1}
                       aria-hidden="true"
                     />
                     <button
-                      className="course-multiselect__button"
+                      className={`course-multiselect__button${fieldErrors.selected_courses ? ' has-error' : ''}`}
                       type="button"
                       aria-haspopup="listbox"
                       aria-expanded={isCourseDropdownOpen}
@@ -632,6 +940,7 @@ export function OrganizeForm() {
                     )}
                   </div>
                 )}
+                {fieldErrors.selected_courses && <span className="field-error-message">{fieldErrors.selected_courses}</span>}
               </div>
             </div>
           </div>
@@ -640,19 +949,46 @@ export function OrganizeForm() {
         <section className={`wizard-page wizard-page--files${progressIndex === 2 ? ' is-active' : ''}`} aria-hidden={progressIndex !== 2}>
           <div className="upload-grid">
             <h2 className="form-group-title upload-grid__title">Event Documents</h2>
-            <label className="upload-tile">
+            <label className={`upload-tile${fieldErrors.concept_paper ? ' has-error' : ''}`}>
               <span className="upload-tile__text">Approved Concept Paper*</span>
-              <input type="file" name="concept_paper" accept=".pdf,.png,.jpg,.jpeg" required />
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                <input 
+                  type="file" 
+                  name="concept_paper" 
+                  accept=".pdf,.png,.jpg,.jpeg" 
+                  required 
+                  onChange={() => clearFieldError('concept_paper')}
+                />
+                {fieldErrors.concept_paper && <span className="field-error-message">{fieldErrors.concept_paper}</span>}
+              </div>
             </label>
             <p className="upload-hint">Valid file formats: PDF, PNG, JPG, JPEG</p>
-            <label className="upload-tile">
+            <label className={`upload-tile${fieldErrors.room_reservation ? ' has-error' : ''}`}>
               <span className="upload-tile__text">Room Reservation Form*</span>
-              <input type="file" name="room_reservation" accept=".pdf,.png,.jpg,.jpeg" required />
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                <input 
+                  type="file" 
+                  name="room_reservation" 
+                  accept=".pdf,.png,.jpg,.jpeg" 
+                  required 
+                  onChange={() => clearFieldError('room_reservation')}
+                />
+                {fieldErrors.room_reservation && <span className="field-error-message">{fieldErrors.room_reservation}</span>}
+              </div>
             </label>
             <p className="upload-hint">Valid file formats: PDF, PNG, JPG, JPEG</p>
-            <label className="upload-tile">
+            <label className={`upload-tile${fieldErrors.certificate_template ? ' has-error' : ''}`}>
               <span className="upload-tile__text">E-Certificate Template*</span>
-              <input type="file" name="certificate_template" accept=".pdf,.png,.jpg,.jpeg" required />
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                <input 
+                  type="file" 
+                  name="certificate_template" 
+                  accept=".pdf,.png,.jpg,.jpeg" 
+                  required 
+                  onChange={() => clearFieldError('certificate_template')}
+                />
+                {fieldErrors.certificate_template && <span className="field-error-message">{fieldErrors.certificate_template}</span>}
+              </div>
             </label>
             <p className="upload-hint">Valid file formats: PDF, PNG, JPG, JPEG</p>
           </div>
@@ -689,22 +1025,26 @@ export function OrganizeForm() {
                 <div className="required-files__list">
                   {requiredFileDrafts.map((fileName, index) => {
                     const inputId = `required-file-name-${index}`;
+                    const hasError = fieldErrors[`required_file_${index}`];
 
                     return (
-                      <div className="required-files__row" key={inputId}>
+                      <div className={`required-files__row${hasError ? ' has-error' : ''}`} key={inputId}>
                         <label className="form-row__label" htmlFor={inputId}>
                           File Name*
                         </label>
-                        <input
-                          className="required-files__input"
-                          id={inputId}
-                          type="text"
-                          value={fileName}
-                          placeholder="Enter the required file name"
-                          autoComplete="off"
-                          required={index === 0}
-                          onChange={(event) => updateRequiredFileDraft(index, event.target.value)}
-                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                          <input
+                            className={`required-files__input${hasError ? ' has-error' : ''}`}
+                            id={inputId}
+                            type="text"
+                            value={fileName}
+                            placeholder="Enter the required file name"
+                            autoComplete="off"
+                            required={index === 0}
+                            onChange={(event) => updateRequiredFileDraft(index, event.target.value)}
+                          />
+                          {hasError && <span className="field-error-message">{hasError}</span>}
+                        </div>
                         <span className="required-files__controls">
                           {index > 0 && (
                             <button
@@ -741,11 +1081,13 @@ export function OrganizeForm() {
           <h2 className="review-page__heading">
             Nearly there! Check <span>if everything&apos;s correct.</span>
           </h2>
-          {!isFormComplete && (
-            <p className="review-page__warning" role="status">
-              Complete all required details to create the event.
-            </p>
-          )}
+          <p 
+            ref={warningRef}
+            className={`review-page__warning${!isFormComplete ? ' review-page__warning--error' : ''}`} 
+            role="status"
+          >
+            Complete all required details to create the event.
+          </p>
           <article className="review-event-card">
             <div className="review-event-card__banner">
               {bannerPreview ? <img src={bannerPreview} alt="" /> : <span />}
@@ -821,10 +1163,19 @@ export function OrganizeForm() {
             </button>
           ) : (
             <>
-              <button type="button" className="btn-review" onClick={() => saveReviewEvent('Draft')} disabled={!isFormComplete}>
+              <button 
+                type="button" 
+                className="btn-review" 
+                onClick={() => saveReviewEvent('Draft')}
+                disabled={!isFormComplete}
+              >
                 Save for Later
               </button>
-              <button type="submit" className="btn-submit" disabled={!isFormComplete}>
+              <button 
+                type="submit" 
+                className="btn-submit"
+                disabled={!isFormComplete}
+              >
                 Create Event
               </button>
             </>
