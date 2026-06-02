@@ -305,10 +305,31 @@
   border-color: #e43d30 !important;
 }
 
+/* Red border on forgot password fields with errors */
+.login-scope .forgot-field.has-error input,
+.login-scope .forgot-field.has-error select {
+  border-color: #e43d30 !important;
+}
+
+/* Red border on login fields with errors */
+.login-scope .input.is-error {
+  border-color: #e43d30 !important;
+}
+
+
 /* Account setup & verify error messages (less top padding) */
 .login-scope .register-step--account .auth-field-error,
 .login-scope .register-step--verify .auth-field-error {
   margin-top: 2px;
+  margin-bottom: 0;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* Exception for the password field's error (shows when strength indicator is hidden) */
+.login-scope .register-step--account .register-password-field + .auth-field-error:first-of-type {
+  margin-top: -18px;
+  margin-bottom: 18px;
 }
 
 /* Forgot password error messages */

@@ -80,7 +80,7 @@ export function ForgotPasswordContent() {
                 <>
                   <p className="forgot-copy">Enter your school email and we will send a verification code.</p>
 
-                  <label className="forgot-field">
+                  <label className={`forgot-field${fieldErrors.email ? ' has-error' : ''}`}>
                     <span>School Email:</span>
                     <input type="email" placeholder="Enter your school email" onChange={() => setFieldErrors((prev) => { const next = { ...prev }; delete next.email; return next; })} />
                   </label>
@@ -102,7 +102,7 @@ export function ForgotPasswordContent() {
                 <>
                   <p className="forgot-copy">Kindly check your email for the verification code.</p>
 
-                  <label className="forgot-field">
+                  <label className={`forgot-field${fieldErrors.code ? ' has-error' : ''}`}>
                     <span>Verification Code:</span>
                     <input type="text" placeholder="Enter verification code" onChange={() => setFieldErrors((prev) => { const next = { ...prev }; delete next.code; return next; })} />
                   </label>
@@ -124,7 +124,7 @@ export function ForgotPasswordContent() {
                 <>
                   <p className="forgot-copy">Change your password.</p>
 
-                  <label className="forgot-field forgot-password-field">
+                  <label className={`forgot-field forgot-password-field${fieldErrors.newPassword ? ' has-error' : ''}`}>
                     <span>New Password:</span>
                     <input type={showPassword ? 'text' : 'password'} placeholder="Enter your new password" value={newPassword} onChange={(e) => { setNewPassword(e.target.value); setFieldErrors((prev) => { const next = { ...prev }; delete next.newPassword; return next; }); }} />
                     <button
@@ -144,7 +144,7 @@ export function ForgotPasswordContent() {
 
                   {fieldErrors.newPassword && <p className="auth-field-error">{fieldErrors.newPassword}</p>}
 
-                  <label className="forgot-field forgot-password-field">
+                  <label className={`forgot-field forgot-password-field${fieldErrors.confirmNewPassword ? ' has-error' : ''}`}>
                     <span>Re-enter Password:</span>
                     <input type={showConfirmPassword ? 'text' : 'password'} placeholder="Re-enter your password" value={confirmNewPassword} onChange={(e) => { setConfirmNewPassword(e.target.value); setFieldErrors((prev) => { const next = { ...prev }; delete next.confirmNewPassword; return next; }); }} />
                     <button
